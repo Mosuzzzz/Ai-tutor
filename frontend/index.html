@@ -1,0 +1,2507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURA // Enterprise AI Tutor & Upskilling Platform</title>
+  
+  <!-- Premium Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Marked.js for Markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    /* --- CSS DESIGN SYSTEM & TOKENS --- */
+    :root {
+      --bg-base: #0b0f19;
+      --bg-surface: rgba(17, 24, 39, 0.7);
+      --bg-surface-solid: #111827;
+      --bg-surface-hover: rgba(31, 41, 55, 0.8);
+      
+      --accent-primary: #6366f1; /* Indigo */
+      --accent-primary-glow: rgba(99, 102, 241, 0.15);
+      --accent-secondary: #06b6d4; /* Cyan */
+      --accent-secondary-glow: rgba(6, 182, 212, 0.15);
+      --accent-success: #10b981; /* Emerald */
+      --accent-warning: #f59e0b; /* Amber */
+      --accent-danger: #ef4444; /* Rose */
+      
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-inverse: #ffffff;
+      
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(99, 102, 241, 0.5);
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      
+      --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      
+      --glass-blur: blur(12px);
+      --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      --glow-shadow: 0 0 20px rgba(99, 102, 241, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) transparent;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: var(--radius-sm);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Ambient background glows */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, var(--accent-primary-glow) 0%, transparent 70%);
+      top: -100px;
+      left: -100px;
+      z-index: -1;
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--accent-secondary-glow) 0%, transparent 70%);
+      bottom: -150px;
+      right: -150px;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    h1, h2, h3, h4, .brand-font {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* --- LAYOUT STRUCTURE --- */
+    .app-container {
+      display: flex;
+      flex: 1;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar Navigation */
+    aside {
+      width: 260px;
+      background: var(--bg-surface);
+      backdrop-filter: var(--glass-blur);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      z-index: 10;
+      transition: var(--transition-normal);
+    }
+
+    .sidebar-header {
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-header i {
+      font-size: 24px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff, #a5b4fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      border: 1px solid transparent;
+    }
+
+    .nav-item:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .nav-item.active {
+      color: var(--text-inverse);
+      background: var(--accent-primary-glow);
+      border-color: rgba(99, 102, 241, 0.25);
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.05);
+    }
+
+    .nav-item i {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+    }
+
+    .nav-item.active i {
+      color: var(--accent-primary);
+    }
+
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid var(--border-color);
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .user-profile-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px;
+      border-radius: var(--radius-sm);
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--text-inverse);
+      font-size: 14px;
+    }
+
+    .user-profile-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .profile-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .profile-role {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Main Workspace area */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    header {
+      height: 70px;
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(17, 24, 39, 0.4);
+      backdrop-filter: var(--glass-blur);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      z-index: 9;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .view-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .server-status-pill {
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--accent-success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .server-status-pill.offline {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--accent-danger);
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      background: currentColor;
+      border-radius: 50%;
+      animation: pulse-animation 2s infinite;
+    }
+
+    @keyframes pulse-animation {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .server-status-pill.offline .pulse {
+      animation: none;
+    }
+
+    /* Content Area Scrollable */
+    .content-viewport {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px;
+    }
+
+    .view-section {
+      display: none;
+      animation: fadeIn var(--transition-normal);
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- COMMON UI COMPONENTS --- */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      box-shadow: var(--glass-shadow);
+      transition: var(--transition-normal);
+    }
+
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .card-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      color: var(--text-inverse);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title i {
+      color: var(--accent-primary);
+    }
+
+    /* Input & Forms */
+    .form-group {
+      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input, select, textarea {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: var(--transition-fast);
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.15);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      text-decoration: none;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-primary), #4f46e5);
+      color: var(--text-inverse);
+      box-shadow: var(--glow-shadow);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #7c3aed, var(--accent-primary));
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--accent-danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-danger:hover {
+      background: var(--accent-danger);
+      color: var(--text-inverse);
+    }
+
+    .btn-icon {
+      padding: 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .btn-icon:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Badges */
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-primary { background: rgba(99, 102, 241, 0.15); color: var(--accent-primary); }
+    .badge-secondary { background: rgba(6, 182, 212, 0.15); color: var(--accent-secondary); }
+    .badge-success { background: rgba(16, 185, 129, 0.15); color: var(--accent-success); }
+    .badge-warning { background: rgba(245, 158, 11, 0.15); color: var(--accent-warning); }
+    .badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--accent-danger); }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 600;
+    }
+
+    td {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 14px;
+      color: var(--text-main);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* --- AUTH & CONTEXT SWITCHER --- */
+    .auth-card {
+      max-width: 480px;
+      margin: 40px auto;
+    }
+
+    .env-banner {
+      background: linear-gradient(90deg, var(--accent-primary-glow), var(--accent-secondary-glow));
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .env-banner i {
+      font-size: 20px;
+      color: var(--accent-secondary);
+    }
+
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .role-card {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .role-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .role-card.active {
+      border-color: var(--accent-primary);
+      background: var(--accent-primary-glow);
+      color: var(--text-inverse);
+    }
+
+    .role-card i {
+      font-size: 20px;
+      margin-bottom: 8px;
+      display: block;
+      color: var(--text-muted);
+    }
+
+    .role-card.active i {
+      color: var(--accent-primary);
+    }
+
+    .role-card span {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* --- CHAT TERMINAL --- */
+    .chat-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 134px); /* matches main viewport */
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .chat-bubble {
+      display: flex;
+      gap: 16px;
+      max-width: 80%;
+      animation: bubbleFadeIn var(--transition-normal);
+    }
+
+    @keyframes bubbleFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-bubble.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .chat-bubble.assistant {
+      align-self: flex-start;
+    }
+
+    .bubble-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 700;
+    }
+
+    .chat-bubble.user .bubble-avatar {
+      background: var(--accent-primary);
+      color: var(--text-inverse);
+    }
+
+    .chat-bubble.assistant .bubble-avatar {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--accent-secondary);
+      border: 1px solid var(--border-color);
+    }
+
+    .bubble-content {
+      padding: 16px 20px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .chat-bubble.user .bubble-content {
+      background: linear-gradient(135deg, var(--accent-primary), #4f46e5);
+      color: var(--text-inverse);
+      border-top-right-radius: 2px;
+    }
+
+    .chat-bubble.assistant .bubble-content {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      border-top-left-radius: 2px;
+    }
+
+    /* --- MARKDOWN STYLES IN BUBBLE --- */
+    .bubble-content p {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+    }
+    .bubble-content p:last-child {
+      margin-bottom: 0;
+    }
+    .bubble-content ul, .bubble-content ol {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      padding-left: 1.5rem;
+    }
+    .bubble-content li {
+      margin-bottom: 0.25rem;
+    }
+    .bubble-content strong {
+      color: var(--accent-primary);
+    }
+    
+    .citations-list {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .citation-tag {
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      color: var(--accent-secondary);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chat-input-bar {
+      padding: 24px;
+      border-top: 1px solid var(--border-color);
+      background: rgba(17, 24, 39, 0.6);
+      backdrop-filter: var(--glass-blur);
+      display: flex;
+      gap: 16px;
+    }
+
+    .chat-input-container {
+      flex: 1;
+      position: relative;
+    }
+
+    .chat-input-container input {
+      width: 100%;
+      padding-right: 48px;
+      height: 48px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: var(--radius-md);
+    }
+
+    .chat-input-container button {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--accent-primary);
+      font-size: 18px;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .chat-input-container button:hover {
+      color: var(--accent-secondary);
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    /* --- RECAP / MARKDOWN CONTAINER --- */
+    .recap-markdown {
+      line-height: 1.7;
+    }
+
+    .recap-markdown h1 {
+      font-size: 26px;
+      margin-bottom: 20px;
+      color: var(--text-inverse);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    .recap-markdown h2 {
+      font-size: 18px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: var(--accent-secondary);
+    }
+
+    .recap-markdown p {
+      margin-bottom: 16px;
+      color: var(--text-main);
+    }
+
+    .recap-markdown ul {
+      margin-bottom: 16px;
+      padding-left: 20px;
+    }
+
+    .recap-markdown li {
+      margin-bottom: 8px;
+    }
+
+    .recap-markdown strong {
+      color: var(--text-inverse);
+    }
+
+    /* --- EXAMS & UP-SKILLING --- */
+    .question-card {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 20px;
+      background: rgba(255, 255, 255, 0.01);
+      transition: var(--transition-normal);
+    }
+
+    .question-card.correct {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.02);
+    }
+
+    .question-card.incorrect {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.02);
+    }
+
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .question-index {
+      font-weight: 700;
+      color: var(--accent-primary);
+    }
+
+    .choices-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .choice-option {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: var(--transition-fast);
+    }
+
+    .choice-option:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .choice-option.selected {
+      border-color: var(--accent-primary);
+      background: var(--accent-primary-glow);
+    }
+
+    .choice-option.correct-choice {
+      border-color: var(--accent-success);
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    .choice-option.incorrect-choice {
+      border-color: var(--accent-danger);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .radio-circle {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .choice-option.selected .radio-circle {
+      border-color: var(--accent-primary);
+    }
+
+    .choice-option.selected .radio-circle::after {
+      content: '';
+      width: 10px;
+      height: 10px;
+      background: var(--accent-primary);
+      border-radius: 50%;
+    }
+
+    .choice-letter {
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .explanation-box {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.03);
+      border-left: 3px solid var(--accent-secondary);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* Modal dialog */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: var(--glass-blur);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg-surface-solid);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      max-width: 800px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    /* Skill gap dashboard widgets */
+    .skill-gap-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .skill-gap-item {
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+    }
+
+    .skill-gap-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .skill-gap-title {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .skill-gap-rate {
+      color: var(--accent-danger);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .skill-gap-bar-bg {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .skill-gap-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-danger), var(--accent-warning));
+      border-radius: 4px;
+    }
+
+    .skill-gap-diag {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      background: rgba(0,0,0,0.2);
+      padding: 10px;
+      border-radius: 4px;
+      border-left: 2px solid var(--accent-danger);
+    }
+
+    /* Analytics Dashboard numbers */
+    .metric-value {
+      font-size: 36px;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      background: linear-gradient(135deg, #fff, var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 8px 0;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* File drop zone styling */
+    .drop-zone {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      background: rgba(255, 255, 255, 0.01);
+      margin-bottom: 24px;
+    }
+
+    .drop-zone:hover {
+      border-color: var(--accent-primary);
+      background: rgba(99, 102, 241, 0.02);
+    }
+
+    .drop-zone i {
+      font-size: 40px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .drop-zone-text {
+      font-size: 14px;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .drop-zone-subtext {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    /* Toast Notification system */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 1000;
+    }
+
+    .toast {
+      background: var(--bg-surface-solid);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--accent-primary);
+      padding: 16px 20px;
+      border-radius: var(--radius-sm);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      color: var(--text-main);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 300px;
+      animation: toastSlideIn var(--transition-fast) forwards;
+    }
+
+    @keyframes toastSlideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .toast.success { border-left-color: var(--accent-success); }
+    .toast.error { border-left-color: var(--accent-danger); }
+    .toast.warning { border-left-color: var(--accent-warning); }
+
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- SIDEBAR -->
+    <aside>
+      <div class="sidebar-wrapper">
+        <div class="sidebar-header">
+          <i class="fa-solid fa-atom"></i>
+          <span class="brand-title">AURA</span>
+        </div>
+        
+        <ul class="nav-list">
+          <li class="nav-item active" onclick="switchView('dashboard')">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Dashboard</span>
+          </li>
+          <li class="nav-item" onclick="switchView('documents')">
+            <i class="fa-solid fa-folder-open"></i>
+            <span>Knowledge Base</span>
+          </li>
+          <li class="nav-item" onclick="switchView('chat')">
+            <i class="fa-solid fa-comments"></i>
+            <span>AI Tutor Chat</span>
+          </li>
+          <li class="nav-item" onclick="switchView('exams')">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span>Upskilling & Quizzes</span>
+          </li>
+          <li class="nav-item" onclick="switchView('settings')">
+            <i class="fa-solid fa-sliders"></i>
+            <span>SSO & Access Config</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-profile-badge">
+          <div class="avatar" id="sidebarAvatar">T</div>
+          <div class="user-profile-info">
+            <div class="profile-name" id="sidebarUserName">Trainer User</div>
+            <div class="profile-role" id="sidebarUserRole">Trainer</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEWPORT -->
+    <main>
+      
+      <!-- TOP HEADER BAR -->
+      <header>
+        <div class="header-left">
+          <span class="view-title" id="currentViewTitle">Dashboard</span>
+        </div>
+        <div class="header-right">
+          <div id="serverStatus" class="server-status-pill">
+            <div class="pulse"></div>
+            <span>Backend Connected</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- CONTENT BODY -->
+      <div class="content-viewport">
+
+        <!-- SECTION: DASHBOARD -->
+        <section id="view-dashboard" class="view-section active">
+          
+          <!-- Key Metrics -->
+          <div class="grid-3" style="margin-bottom: 24px;">
+            <div class="card">
+              <span class="metric-label">Streak Count</span>
+              <div class="metric-value" id="dashStreak">1 Day</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Keep learning to maintain your streak!</div>
+            </div>
+            <div class="card">
+              <span class="metric-label">Avg Quiz Score</span>
+              <div class="metric-value" id="dashScore">0%</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Calculated across all submissions</div>
+            </div>
+            <div class="card">
+              <span class="metric-label">Documents Indexed</span>
+              <div class="metric-value" id="dashDocsCount">0</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Ready for RAG matching & recaps</div>
+            </div>
+          </div>
+
+          <!-- Trainer/Admin diagnostics section -->
+          <div id="trainerDiagnosticsSection" style="margin-bottom: 24px;">
+            <div class="card" style="margin-bottom: 24px;">
+              <div class="card-title-bar">
+                <div class="card-title">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                  <span>Trainer Dashboard: Critical Skill Gaps</span>
+                </div>
+                <span class="badge badge-danger">High Priority</span>
+              </div>
+              <div class="skill-gap-list" id="dashboardSkillGaps">
+                <!-- Seeded / API gaps will load here -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Administrative Security Audit Trail -->
+          <div id="adminAuditSection">
+            <div class="card">
+              <div class="card-title-bar">
+                <div class="card-title">
+                  <i class="fa-solid fa-shield-halved"></i>
+                  <span>Security Audit Logs (Admin/Trainer View)</span>
+                </div>
+              </div>
+              <div style="overflow-x: auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>User</th>
+                      <th>IP Address</th>
+                      <th>Action</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody id="auditLogsBody">
+                    <tr>
+                      <td colspan="5" style="text-align: center; color: var(--text-muted);">No audit trails recorded yet.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- SECTION: DOCUMENTS -->
+        <section id="view-documents" class="view-section">
+          
+          <div class="grid-2" style="grid-template-columns: 1fr 2fr; align-items: start;">
+            
+            <!-- Ingest Document Card -->
+            <div class="card" id="uploadCardContainer">
+              <div class="card-title-bar">
+                <div class="card-title">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <span>Upload Document</span>
+                </div>
+              </div>
+              <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+                Ingest PDF, DOCX, PPTX manuals. Text will be parsed, segmented, embedded, and mapped with role-level isolation.
+              </p>
+              
+              <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+                <i class="fa-solid fa-file-pdf"></i>
+                <div class="drop-zone-text">Click or drag manual here</div>
+                <div class="drop-zone-subtext">PDF, DOCX, PPTX (Max 50MB)</div>
+                <input type="file" id="fileInput" accept=".pdf,.docx,.pptx">
+              </div>
+
+              <div id="uploadProgressContainer" style="display: none; margin-top: 10px;">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span>Uploading file...</span>
+                  <span id="uploadPercent">0%</span>
+                </div>
+                <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
+                  <div id="uploadProgressBar" style="width: 0%; height: 100%; background: var(--accent-primary);"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Documents List -->
+            <div class="card">
+              <div class="card-title-bar">
+                <div class="card-title">
+                  <i class="fa-solid fa-list"></i>
+                  <span>Indexed Manuals</span>
+                </div>
+                <button class="btn btn-secondary" onclick="loadFilesList()" style="padding: 6px 12px; font-size: 12px;">
+                  <i class="fa-solid fa-rotate"></i> Refresh
+                </button>
+              </div>
+              
+              <div style="overflow-x: auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Filename</th>
+                      <th>Status</th>
+                      <th>Ingested At</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="filesTableBody">
+                    <tr>
+                      <td colspan="4" style="text-align: center; color: var(--text-muted);">No manuals uploaded yet.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- SECTION: CHAT -->
+        <section id="view-chat" class="view-section">
+          
+          <div class="card" style="padding: 0;">
+            <div class="chat-wrapper">
+              
+              <!-- Chat Head/Settings -->
+              <div style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.15)">
+                <div>
+                  <h3 style="font-size: 16px; font-weight: 600;">Grounded Knowledge Assistant</h3>
+                  <p style="font-size: 12px; color: var(--text-muted);">Replies strictly constrained to your tenant's library chunks</p>
+                </div>
+                <div class="form-group" style="margin: 0; min-width: 200px;">
+                  <select id="chatFileContext" style="padding: 8px 12px; font-size: 13px;">
+                    <option value="">All Document Context</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Message list -->
+              <div class="chat-messages" id="chatMessageFlow">
+                <div class="chat-bubble assistant">
+                  <div class="bubble-avatar">AI</div>
+                  <div class="bubble-content">
+                    Hello! I'm your AURA AI Tutor. Ask me any questions about the uploaded corporate guidelines or manuals. I will only answer using verified documents from your workspace.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Input form -->
+              <form id="chatSubmitForm" class="chat-input-bar" onsubmit="sendChatQuery(event)">
+                <div class="chat-input-container">
+                  <input type="text" id="chatInputText" placeholder="Ask a question about standard operating procedures..." autocomplete="off">
+                  <button type="submit">
+                    <i class="fa-solid fa-paper-plane"></i>
+                  </button>
+                </div>
+              </form>
+
+            </div>
+          </div>
+
+        </section>
+
+        <!-- SECTION: EXAMS -->
+        <section id="view-exams" class="view-section">
+          
+          <div class="card" style="margin-bottom: 24px;" id="examCreatorPanel">
+            <div class="card-title-bar">
+              <div class="card-title">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Generate Compliance Quiz (Trainer Feature)</span>
+              </div>
+            </div>
+            
+            <div class="grid-3" style="align-items: end;">
+              <div class="form-group">
+                <label>Target manual context</label>
+                <select id="examManualSelect">
+                  <!-- Loaded via JS -->
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Number of questions</label>
+                <input type="number" id="examQuestionsCount" value="5" min="1" max="10">
+              </div>
+              <button class="btn btn-primary" onclick="generateQuizBlueprint()" style="margin-bottom: 18px;">
+                <i class="fa-solid fa-puzzle-piece"></i> Generate Blueprint Draft
+              </button>
+            </div>
+          </div>
+
+          <!-- Exams & Quizzes List -->
+          <div class="card">
+            <div class="card-title-bar">
+              <div class="card-title">
+                <i class="fa-solid fa-clipboard-list"></i>
+                <span>Tenant Quiz Dashboard</span>
+              </div>
+            </div>
+            <div style="overflow-x: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Exam ID</th>
+                    <th>Document Reference</th>
+                    <th>Questions</th>
+                    <th>Status</th>
+                    <th>Score / Action</th>
+                  </tr>
+                </thead>
+                <tbody id="examsTableBody">
+                  <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted);">No exams generated yet. Select a document above to create one.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- SECTION: SETTINGS -->
+        <section id="view-settings" class="view-section">
+          
+          <div class="grid-2">
+            
+            <!-- Connection & Tenant SSO simulation -->
+            <div class="card">
+              <div class="card-title-bar">
+                <div class="card-title">
+                  <i class="fa-solid fa-network-wired"></i>
+                  <span>Tenant SSO Gateway</span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>API Gateway Endpoint Base URL</label>
+                <input type="text" id="apiEndpointInput" value="http://127.0.0.1:8000" placeholder="e.g. http://127.0.0.1:8000">
+              </div>
+
+              <div class="form-group">
+                <label>SAML Domain Authentication Domain</label>
+                <div style="display: flex; gap: 10px;">
+                  <input type="text" id="ssoDomainInput" value="acme.com" style="flex: 1;">
+                  <button class="btn btn-secondary" onclick="checkSSODomain()">Preflight Check</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Corporate E-mail</label>
+                <input type="email" id="ssoEmailInput" value="trainer@acme.com">
+              </div>
+
+              <button class="btn btn-primary" onclick="triggerSSOLogin()" style="width: 100%;">
+                <i class="fa-solid fa-key"></i> Authenticate & Fetch Token
+              </button>
+            </div>
+
+            <!-- Role Simulator -->
+            <div class="card">
+              <div class="card-title-bar">
+                <div class="card-title">
+                  <i class="fa-solid fa-users-gear"></i>
+                  <span>B2B Multi-Tenant & RBAC Simulator</span>
+                </div>
+              </div>
+              <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                Simulate different roles & separate corporate accounts to verify authorization barriers, row-level isolation (RLS), and dashboard scopes.
+              </p>
+
+              <div class="form-group">
+                <label>Select Profile Simulation preset</label>
+                <div class="role-grid">
+                  <div class="role-card active" id="rc-trainer" onclick="setSimulationRole('trainer')">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    <span>Trainer</span>
+                  </div>
+                  <div class="role-card" id="rc-learner" onclick="setSimulationRole('learner')">
+                    <i class="fa-solid fa-user-graduate"></i>
+                    <span>Learner</span>
+                  </div>
+                  <div class="role-card" id="rc-admin" onclick="setSimulationRole('admin')">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span>Tenant Admin</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top: 20px;">
+                <label>Active JWT Token</label>
+                <textarea id="activeTokenArea" readonly style="font-family: 'JetBrains Mono', monospace; font-size: 11px; height: 80px; resize: none;"></textarea>
+              </div>
+
+              <!-- Reset Database (Admin only) -->
+              <div style="border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <h4 style="font-size: 14px; color: var(--accent-danger);">Sandbox Sandbox Tools</h4>
+                  <p style="font-size: 12px; color: var(--text-muted);">Re-initialize system data</p>
+                </div>
+                <button class="btn btn-danger" onclick="seedSandboxData()">Seed Initial Data</button>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- MODAL: DOCUMENT RECAP -->
+  <div class="modal-backdrop" id="recapModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="recapModalTitle">Document Recap</h3>
+        <button class="btn-icon" onclick="closeRecapModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+          <button class="btn btn-secondary active" id="btnRecapExec" onclick="fetchRecap('executive')">Executive Summary</button>
+          <button class="btn btn-secondary" id="btnRecapDetailed" onclick="fetchRecap('detailed')">Detailed Summary</button>
+        </div>
+        <div id="recapModalContent" class="recap-markdown">
+          Loading document analysis recap...
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeRecapModal()">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EXAM PREVIEW / WORKSPACE -->
+  <div class="modal-backdrop" id="examModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="examModalTitle">Quiz Sheet</h3>
+        <button class="btn-icon" onclick="closeExamModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="examModalBody">
+        <!-- Exam layout generates here dynamically -->
+      </div>
+      <div class="modal-footer" id="examModalFooter">
+        <!-- Footer action triggers -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Containers -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- --- JAVASCRIPT APP LOGIC --- -->
+  <script>
+    // --- GLOBAL APP STATE ---
+    let appState = {
+      apiBase: 'http://127.0.0.1:8000',
+      token: localStorage.getItem('aura_jwt') || '',
+      role: 'trainer', // Current simulation role preset
+      email: 'trainer@acme.com',
+      domain: 'acme.com',
+      activeView: 'dashboard',
+      selectedRecapFileId: null,
+      currentExam: null, // Stores active exam object
+      userAnswers: {}, // Learner exam tracking
+    };
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Sync form parameters
+      document.getElementById('apiEndpointInput').value = appState.apiBase;
+      document.getElementById('ssoDomainInput').value = appState.domain;
+      document.getElementById('ssoEmailInput').value = appState.email;
+      
+      if (appState.token) {
+        document.getElementById('activeTokenArea').value = appState.token;
+      }
+      
+      // Auto-check connection
+      await verifyBackendConnection();
+      
+      // Seed details in UI
+      setSimulationRole(appState.role);
+      
+      // Load view data
+      refreshData();
+    });
+
+    // Toast alerts helper
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      let icon = 'info';
+      if (type === 'success') icon = 'circle-check';
+      if (type === 'error') icon = 'circle-exclamation';
+      if (type === 'warning') icon = 'triangle-exclamation';
+      
+      toast.innerHTML = `
+        <i class="fa-solid fa-${icon}"></i>
+        <span>${message}</span>
+      `;
+      
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Toggle viewport sections
+    function switchView(viewId) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      
+      appState.activeView = viewId;
+      
+      // Toggle side-bar highlighter
+      const navItems = Array.from(document.querySelectorAll('.nav-item'));
+      const activeNav = navItems.find(item => item.getAttribute('onclick').includes(viewId));
+      if (activeNav) activeNav.classList.add('active');
+      
+      // Toggle view element
+      const section = document.getElementById(`view-${viewId}`);
+      if (section) section.classList.add('active');
+      
+      // Update heading title
+      const titleMapping = {
+        'dashboard': 'Analytics Dashboard',
+        'documents': 'Knowledge Hub & Extractor',
+        'chat': 'Grounded AI Co-Pilot',
+        'exams': 'Upskilling & Quiz Blueprints',
+        'settings': 'Tenant & Role Configuration'
+      };
+      document.getElementById('currentViewTitle').innerText = titleMapping[viewId] || 'Dashboard';
+      
+      refreshData();
+    }
+
+    // Load data specific to active view
+    function refreshData() {
+      if (!appState.token) {
+        showToast('System demands JWT Auth. Configure in Settings view.', 'warning');
+        return;
+      }
+      
+      if (appState.activeView === 'dashboard') {
+        loadAnalytics();
+      } else if (appState.activeView === 'documents') {
+        loadFilesList();
+      } else if (appState.activeView === 'exams') {
+        loadExamsList();
+        loadFilesDropdown();
+      } else if (appState.activeView === 'chat') {
+        loadFilesDropdown();
+      }
+    }
+
+    // Verify Backend connection
+    async function verifyBackendConnection() {
+      const statusPill = document.getElementById('serverStatus');
+      try {
+        const response = await fetch(`${appState.apiBase}/`);
+        if (response.ok) {
+          statusPill.className = 'server-status-pill';
+          statusPill.querySelector('span').innerText = 'Backend Connected';
+        } else {
+          throw new Error();
+        }
+      } catch (err) {
+        statusPill.className = 'server-status-offline offline';
+        statusPill.querySelector('span').innerText = 'Backend Offline';
+        showToast('Unable to reach FastAPI API server.', 'error');
+      }
+    }
+
+    // --- AUTHENTICATION & SECURITY SIMULATION ---
+    async function checkSSODomain() {
+      const domain = document.getElementById('ssoDomainInput').value.trim();
+      try {
+        const res = await fetch(`${appState.apiBase}/api/auth/sso/check`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domain })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`SSO pre-flight: ${data.message}`, 'success');
+        } else {
+          showToast(data.detail || 'SSO domain verify failed', 'error');
+        }
+      } catch (err) {
+        showToast('SSO pre-flight communication error', 'error');
+      }
+    }
+
+    async function triggerSSOLogin() {
+      const email = document.getElementById('ssoEmailInput').value.trim();
+      const domain = document.getElementById('ssoDomainInput').value.trim();
+      const gatewayInput = document.getElementById('apiEndpointInput').value.trim();
+      
+      // Update config parameters
+      appState.apiBase = gatewayInput;
+      appState.email = email;
+      appState.domain = domain;
+      
+      try {
+        const res = await fetch(`${appState.apiBase}/api/auth/sso/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, role: appState.role })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          appState.token = data.access_token;
+          localStorage.setItem('aura_jwt', data.access_token);
+          document.getElementById('activeTokenArea').value = data.access_token;
+          
+          showToast(`SSO Authenticated as ${data.user.full_name} (${data.user.role})`, 'success');
+          
+          // Re-populate profile elements
+          document.getElementById('sidebarUserName').innerText = data.user.full_name;
+          document.getElementById('sidebarUserRole').innerText = data.user.role;
+          document.getElementById('sidebarAvatar').innerText = data.user.full_name.charAt(0);
+          
+          refreshData();
+        } else {
+          showToast(data.detail || 'Authentication failed', 'error');
+        }
+      } catch (err) {
+        showToast('SSO login communication error', 'error');
+      }
+    }
+
+    function setSimulationRole(role) {
+      appState.role = role;
+      document.querySelectorAll('.role-card').forEach(el => el.classList.remove('active'));
+      document.getElementById(`rc-${role}`).classList.add('active');
+      
+      // Automatically configure email context matching the selected preset
+      const emailMapping = {
+        'trainer': 'trainer@acme.com',
+        'learner': 'learner@acme.com',
+        'admin': 'admin@acme.com'
+      };
+      
+      const emailInput = document.getElementById('ssoEmailInput');
+      if (emailInput) {
+        emailInput.value = emailMapping[role];
+      }
+
+      // Hide or show Trainer panel elements based on simulated role (RBAC verification)
+      const examCreatorPanel = document.getElementById('examCreatorPanel');
+      if (examCreatorPanel) {
+        examCreatorPanel.style.display = (role === 'trainer' || role === 'admin') ? 'block' : 'none';
+      }
+      
+      const trainerDiagSection = document.getElementById('trainerDiagnosticsSection');
+      if (trainerDiagSection) {
+        trainerDiagSection.style.display = (role === 'trainer' || role === 'admin') ? 'block' : 'none';
+      }
+
+      const adminAuditSection = document.getElementById('adminAuditSection');
+      if (adminAuditSection) {
+        adminAuditSection.style.display = (role === 'admin' || role === 'trainer') ? 'block' : 'none';
+      }
+
+      const uploadCard = document.getElementById('uploadCardContainer');
+      if (uploadCard) {
+        uploadCard.style.display = (role === 'trainer' || role === 'admin') ? 'block' : 'none';
+      }
+    }
+
+    async function seedSandboxData() {
+      try {
+        const res = await fetch(`${appState.apiBase}/api/auth/sandbox/seed`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast('Sandbox Database re-seeded successfully.', 'success');
+          // Automatically trigger login again to load the new seed
+          await triggerSSOLogin();
+        } else {
+          showToast(data.detail || 'Seeding error', 'error');
+        }
+      } catch (err) {
+        showToast('Communication error during database seeding', 'error');
+      }
+    }
+
+    // --- ANALYTICS DASHBOARD ---
+    async function loadAnalytics() {
+      if (!appState.token) return;
+      
+      try {
+        // Fetch Learner analytics
+        const resLearner = await fetch(`${appState.apiBase}/api/analytics/dashboard`, {
+          headers: { 'Authorization': `Bearer ${appState.token}` }
+        });
+        if (resLearner.ok) {
+          const learnerData = await resLearner.json();
+          document.getElementById('dashStreak').innerText = `${learnerData.streak} Day${learnerData.streak === 1 ? '' : 's'}`;
+          document.getElementById('dashScore').innerText = `${learnerData.average_score.toFixed(1)}%`;
+        }
+        
+        // Load documents count into dashboard
+        const resFiles = await fetch(`${appState.apiBase}/api/files/`, {
+          headers: { 'Authorization': `Bearer ${appState.token}` }
+        });
+        if (resFiles.ok) {
+          const files = await resFiles.json();
+          document.getElementById('dashDocsCount').innerText = files.length;
+        }
+
+        // Fetch Trainer/Admin specific metrics
+        if (appState.role === 'trainer' || appState.role === 'admin') {
+          const resTrainer = await fetch(`${appState.apiBase}/api/analytics/trainer`, {
+            headers: { 'Authorization': `Bearer ${appState.token}` }
+          });
+          if (resTrainer.ok) {
+            const trainerData = await resTrainer.json();
+            const gapsContainer = document.getElementById('dashboardSkillGaps');
+            gapsContainer.innerHTML = '';
+            
+            if (trainerData.skill_gaps && trainerData.skill_gaps.length > 0) {
+              trainerData.skill_gaps.forEach(gap => {
+                const gapEl = document.createElement('div');
+                gapEl.className = 'skill-gap-item';
+                gapEl.innerHTML = `
+                  <div class="skill-gap-header">
+                    <span class="skill-gap-title">${gap.topic}</span>
+                    <span class="skill-gap-rate">Error Rate: ${gap.error_rate}%</span>
+                  </div>
+                  <div class="skill-gap-bar-bg">
+                    <div class="skill-gap-bar-fill" style="width: ${gap.error_rate}%"></div>
+                  </div>
+                  <div class="skill-gap-diag">${gap.diagnostics}</div>
+                `;
+                gapsContainer.appendChild(gapEl);
+              });
+            } else {
+              gapsContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 13px;">No skill gaps detected. Great job!</div>`;
+            }
+          }
+
+          // Fetch Audit Logs
+          const resAudit = await fetch(`${appState.apiBase}/api/analytics/audit-logs`, {
+            headers: { 'Authorization': `Bearer ${appState.token}` }
+          });
+          if (resAudit.ok) {
+            const logs = await resAudit.json();
+            const tbody = document.getElementById('auditLogsBody');
+            tbody.innerHTML = '';
+            
+            if (logs.length > 0) {
+              logs.forEach(log => {
+                const tr = document.createElement('tr');
+                const timeFormatted = new Date(log.created_at).toLocaleString();
+                tr.innerHTML = `
+                  <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted);">${timeFormatted}</td>
+                  <td style="font-weight: 500;">${log.user_email}</td>
+                  <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">${log.ip_address}</td>
+                  <td><span class="badge ${log.action.includes('REJECTED') ? 'badge-danger' : 'badge-primary'}">${log.action}</span></td>
+                  <td style="font-size: 13px; color: var(--text-muted);">${log.details}</td>
+                `;
+                tbody.appendChild(tr);
+              });
+            } else {
+              tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No records found.</td></tr>`;
+            }
+          }
+        }
+        
+      } catch (err) {
+        console.error('Error rendering dashboard analytics', err);
+      }
+    }
+
+    // --- DOCUMENT HUB ---
+    async function loadFilesList() {
+      if (!appState.token) return;
+      
+      try {
+        const res = await fetch(`${appState.apiBase}/api/files/`, {
+          headers: { 'Authorization': `Bearer ${appState.token}` }
+        });
+        const tbody = document.getElementById('filesTableBody');
+        tbody.innerHTML = '';
+        
+        if (res.ok) {
+          const files = await res.json();
+          if (files.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No manuals uploaded yet.</td></tr>`;
+            return;
+          }
+          
+          files.forEach(file => {
+            const tr = document.createElement('tr');
+            const created = new Date(file.created_at).toLocaleDateString();
+            
+            // Format status badge
+            let statusBadge = `<span class="badge badge-warning">Processing</span>`;
+            if (file.status === 'ready') statusBadge = `<span class="badge badge-success">Ready</span>`;
+            if (file.status === 'error') statusBadge = `<span class="badge badge-danger">Error</span>`;
+            
+            // Action button rules based on role
+            let actionButtons = `
+              <button class="btn btn-secondary" onclick="openRecapModal('${file.id}')" style="padding: 6px 12px; font-size: 12px;" ${file.status !== 'ready' ? 'disabled' : ''}>
+                <i class="fa-solid fa-file-invoice"></i> Recap
+              </button>
+            `;
+            
+            if (appState.role === 'trainer' || appState.role === 'admin') {
+              actionButtons += `
+                <button class="btn btn-danger" onclick="deleteFile('${file.id}')" style="padding: 6px 12px; font-size: 12px; margin-left: 6px;">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              `;
+            }
+            
+            tr.innerHTML = `
+              <td style="font-weight: 500;">
+                <i class="fa-solid fa-file-lines" style="margin-right: 8px; color: var(--text-muted);"></i>
+                <a href="${file.storage_url}" target="_blank" style="color: inherit; text-decoration: none; hover: underline;">${file.filename}</a>
+              </td>
+              <td>${statusBadge}</td>
+              <td style="color: var(--text-muted); font-size: 13px;">${created}</td>
+              <td>${actionButtons}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } else {
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--accent-danger);">Failed to load document index.</td></tr>`;
+        }
+      } catch (err) {
+        showToast('Communication failure loading manuals list', 'error');
+      }
+    }
+
+    // Handle Drag & Drop uploading
+    const fileInput = document.getElementById('fileInput');
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        uploadFile(fileInput.files[0]);
+      }
+    });
+
+    async function uploadFile(file) {
+      if (!appState.token) {
+        showToast('Please login before uploading manuals.', 'warning');
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const container = document.getElementById('uploadProgressContainer');
+      const bar = document.getElementById('uploadProgressBar');
+      const text = document.getElementById('uploadPercent');
+      
+      container.style.display = 'block';
+      bar.style.width = '0%';
+      text.innerText = '0%';
+      
+      try {
+        // Use standard XMLHttpRequest to support progress bar easily
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${appState.apiBase}/api/files/upload`);
+        xhr.setRequestHeader('Authorization', `Bearer ${appState.token}`);
+        
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const pct = Math.round((event.loaded / event.total) * 100);
+            bar.style.width = `${pct}%`;
+            text.innerText = `${pct}%`;
+          }
+        };
+        
+        xhr.onload = () => {
+          container.style.display = 'none';
+          if (xhr.status === 200 || xhr.status === 201) {
+            showToast('Document uploaded successfully. Parsing and embedding in background...', 'success');
+            loadFilesList();
+          } else {
+            const err = JSON.parse(xhr.responseText);
+            showToast(err.detail || 'Upload failed', 'error');
+          }
+        };
+        
+        xhr.onerror = () => {
+          container.style.display = 'none';
+          showToast('Connection error during file upload', 'error');
+        };
+        
+        xhr.send(formData);
+      } catch (err) {
+        container.style.display = 'none';
+        showToast('Upload execution error', 'error');
+      }
+    }
+
+    async function deleteFile(fileId) {
+      if (!confirm('Are you sure you want to permanently delete this manual? All associated chunks, embeddings, and exams will be deleted.')) return;
+      
+      try {
+        const res = await fetch(`${appState.apiBase}/api/files/${fileId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${appState.token}` }
+        });
+        if (res.ok) {
+          showToast('Manual successfully deleted from workspace.', 'success');
+          loadFilesList();
+        } else {
+          const data = await res.json();
+          showToast(data.detail || 'Deletion failed', 'error');
+        }
+      } catch (err) {
+        showToast('Communication error during file delete', 'error');
+      }
+    }
+
+    // --- AI RECAP MODAL ---
+    function openRecapModal(fileId) {
+      appState.selectedRecapFileId = fileId;
+      document.getElementById('recapModal').classList.add('active');
+      
+      // Default to Executive Summary
+      fetchRecap('executive');
+    }
+
+    function closeRecapModal() {
+      document.getElementById('recapModal').classList.remove('active');
+    }
+
+    async function fetchRecap(depth) {
+      // Manage layout active indicators
+      document.getElementById('btnRecapExec').className = `btn btn-secondary ${depth === 'executive' ? 'active' : ''}`;
+      document.getElementById('btnRecapDetailed').className = `btn btn-secondary ${depth === 'detailed' ? 'active' : ''}`;
+      
+      const contentDiv = document.getElementById('recapModalContent');
+      contentDiv.innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+          <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 10px; color: var(--accent-primary);"></i>
+          <p>Extracting insights & formatting layout...</p>
+        </div>
+      `;
+      
+      try {
+        const res = await fetch(`${appState.apiBase}/api/recap/${appState.selectedRecapFileId}`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${appState.token}` 
+          },
+          body: JSON.stringify({ detail_level: depth })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          renderMarkdownSummary(data.summary_markdown);
+        } else {
+          contentDiv.innerText = 'Failed to load summary analysis from server.';
+        }
+      } catch (err) {
+        contentDiv.innerText = 'Communication failure requesting recap.';
+      }
+    }
+
+    // Lightweight markdown parser for recaps
+    function renderMarkdownSummary(mdText) {
+      let html = mdText
+        .replace(/\n/g, '<br>')
+        .replace(/### (.*?)(?:<br>|$)/g, '<h3>$1</h3>')
+        .replace(/## (.*?)(?:<br>|$)/g, '<h2>$1</h2>')
+        .replace(/# (.*?)(?:<br>|$)/g, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/-\s(.*?)<br>/g, '<li>$1</li>');
+        
+      document.getElementById('recapModalContent').innerHTML = html;
+    }
+
+    // --- GROUNDED AI CHAT ---
+    async function loadFilesDropdown() {
+      if (!appState.token) return;
+      
+      try {
+        const res = await fetch(`${appState.apiBase}/api/files/`, {
+          headers: { 'Authorization': `Bearer ${appState.token}` }
+        });
+        if (res.ok) {
+          const files = await res.json();
+          
+          const dropdowns = [
+            document.getElementById('chatFileContext'),
+            document.getElementById('examManualSelect')
+          ];
+          
+          dropdowns.forEach(drop => {
+            if (!drop) return;
+            const originalVal = drop.value;
+            
+            // Keep first option
+            const first = drop.options[0];
+            drop.innerHTML = '';
+            if (first) drop.appendChild(first);
+            
+            files.forEach(f => {
+              if (f.status === 'ready') {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.innerText = f.filename;
+                drop.appendChild(opt);
+              }
+            });
+            
+            drop.value = originalVal;
+          });
+        }
+      } catch (err) {
+        console.error('Error loading dropdown lists', err);
+      }
+    }
+
+    async function sendChatQuery(event) {
+      event.preventDefault();
+      
+      const input = document.getElementById('chatInputText');
+      const text = input.value.trim();
+      if (!text) return;
+      
+      const contextSelect = document.getElementById('chatFileContext');
+      const fileId = contextSelect.value || null;
+      
+      input.value = '';
+      
+      // Append user bubble
+      appendChatBubble(text, 'user');
+      
+      // Append Loading bubble
+      const loadBubble = appendChatBubble(`<i class="fa-solid fa-ellipsis fa-bounce"></i> Thinking...`, 'assistant');
+      
+      try {
+        const res = await fetch(`${appState.apiBase}/api/chat/query`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${appState.token}`
+          },
+          body: JSON.stringify({ prompt: text, file_id: fileId })
+        });
+        
+        loadBubble.remove();
+        
+        if (res.ok) {
+          const data = await res.json();
+          appendChatBubble(data.response_text, 'assistant', data.citations);
+        } else {
+          const err = await res.json();
+          appendChatBubble(`Error: ${err.detail || 'Chat query failed'}`, 'assistant');
+        }
+      } catch (err) {
+        loadBubble.remove();
+        appendChatBubble('Failed to communicate with RAG engine.', 'assistant');
+      }
+    }
+
+    function appendChatBubble(content, role, citations = []) {
+      const flow = document.getElementById('chatMessageFlow');
+      const bubble = document.createElement('div');
+      bubble.className = `chat-bubble ${role}`;
+      
+      let avatar = role === 'user' ? 'ME' : 'AI';
+      let citationHtml = '';
+      
+      if (citations && citations.length > 0) {
+        citationHtml = `<div class="citations-list">`;
+        citations.forEach(c => {
+          citationHtml += `<span class="citation-tag"><i class="fa-solid fa-quote-left"></i> ${c.filename} (Chunk: ${c.chunk_index})</span>`;
+        });
+        citationHtml += `</div>`;
+      }
+      
+      const parsedContent = (role === 'assistant' || role === 'ai') ? marked.parse(content) : content;
+      
+      bubble.innerHTML = `
+        <div class="bubble-avatar">${avatar}</div>
+        <div class="bubble-content">
+          ${parsedContent}
+          ${citationHtml}
+        </div>
+      `;
+      
+      flow.appendChild(bubble);
+      flow.scrollTop = flow.scrollHeight;
+      return bubble;
+    }
+
+    // --- UPSKILLING & COMPLIANCE QUIZZES ---
+    async function generateQuizBlueprint() {
+      const fileId = document.getElementById('examManualSelect').value;
+      const count = parseInt(document.getElementById('examQuestionsCount').value) || 5;
+      
+      if (!fileId) {
+        showToast('Please select a target manual context first.', 'warning');
+        return;
+      }
+      
+      showToast('Extracting topics and generating MCQ blueprint...', 'info');
+      
+      try {
+        const res = await fetch(`${appState.apiBase}/api/exams/generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${appState.token}`
+          },
+          body: JSON.stringify({ file_id: fileId, num_questions: count })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          showToast(`Blueprint generated successfully as Draft. ID: ${data.id}`, 'success');
+          loadExamsList();
+          openExamModal(data.id);
+        } else {
+          const err = await res.json();
+          showToast(err.detail || 'Quiz blueprint generation failed.', 'error');
+        }
+      } catch (err) {
+        showToast('Quiz blueprint generation communication error', 'error');
+      }
+    }
+
+    async function loadExamsList() {
+      if (!appState.token) return;
+      
+      try {
+        const res = await fetch(`${appState.apiBase}/api/exams/`, {
+          headers: { 'Authorization': `Bearer ${appState.token}` }
+        });
+        
+        const tbody = document.getElementById('examsTableBody');
+        tbody.innerHTML = '';
+        
+        if (res.ok) {
+          const exams = await res.json();
+          if (exams.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No exams generated yet. Select a document above to create one.</td></tr>`;
+            return;
+          }
+          
+          exams.forEach(exam => {
+            const tr = document.createElement('tr');
+            
+            // Format status badge
+            let statusBadge = `<span class="badge badge-warning">Draft</span>`;
+            if (exam.status === 'published') statusBadge = `<span class="badge badge-primary">Published</span>`;
+            
+            // Render Score or Action depending on role
+            let scoreActionHtml = '';
+            if (exam.status === 'draft') {
+              if (appState.role === 'trainer' || appState.role === 'admin') {
+                scoreActionHtml = `<button class="btn btn-secondary" onclick="openExamModal('${exam.id}')" style="padding: 6px 12px; font-size: 12px;"><i class="fa-solid fa-edit"></i> Edit Draft</button>`;
+              } else {
+                scoreActionHtml = `<span style="font-size:12px; color:var(--text-muted)">Unpublished</span>`;
+              }
+            } else {
+              // Published
+              if (exam.score !== null) {
+                scoreActionHtml = `<span style="font-weight:700; color:var(--accent-success);">${exam.score}%</span> 
+                                   <button class="btn btn-secondary" onclick="openExamModal('${exam.id}')" style="padding: 4px 8px; font-size: 11px; margin-left:6px;">Review</button>`;
+              } else {
+                scoreActionHtml = `<button class="btn btn-primary" onclick="openExamModal('${exam.id}')" style="padding: 6px 12px; font-size: 12px;"><i class="fa-solid fa-play"></i> Start Quiz</button>`;
+              }
+            }
+            
+            tr.innerHTML = `
+              <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">${exam.id.substring(0, 8)}...</td>
+              <td style="font-weight: 500;">${exam.file_name}</td>
+              <td>${exam.questions_count} Questions</td>
+              <td>${statusBadge}</td>
+              <td>${scoreActionHtml}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      } catch (err) {
+        showToast('Failed to load quiz list', 'error');
+      }
+    }
+
+    async function openExamModal(examId) {
+      document.getElementById('examModal').classList.add('active');
+      const body = document.getElementById('examModalBody');
+      const footer = document.getElementById('examModalFooter');
+      
+      body.innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+          <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: var(--accent-primary);"></i>
+          <p style="margin-top: 10px;">Loading exam config...</p>
+        </div>
+      `;
+      footer.innerHTML = '';
+      
+      try {
+        const res = await fetch(`${appState.apiBase}/api/exams/${examId}`, {
+          headers: { 'Authorization': `Bearer ${appState.token}` }
+        });
+        
+        if (res.ok) {
+          const exam = await res.json();
+          appState.currentExam = exam;
+          appState.userAnswers = {};
+          
+          renderExamContent(exam);
+        } else {
+          body.innerHTML = `<div style="color: var(--accent-danger);">Authorization Blocked: Learners cannot read draft quizzes.</div>`;
+        }
+      } catch (err) {
+        body.innerHTML = `<div style="color: var(--accent-danger);">Failed to retrieve exam blueprint.</div>`;
+      }
+    }
+
+    function closeExamModal() {
+      document.getElementById('examModal').classList.remove('active');
+      appState.currentExam = null;
+    }
+
+    function renderExamContent(exam) {
+      const body = document.getElementById('examModalBody');
+      const footer = document.getElementById('examModalFooter');
+      
+      body.innerHTML = '';
+      
+      // Title
+      document.getElementById('examModalTitle').innerText = `Exam ${exam.id.substring(0,8)} - ${exam.status.toUpperCase()}`;
+      
+      const qList = exam.questions;
+      qList.forEach((q, idx) => {
+        const card = document.createElement('div');
+        card.className = 'question-card';
+        card.id = `q-card-${idx}`;
+        
+        // Anti-cheating check: check if explanations exist in response (only unlocked if trainer OR exam is scored)
+        const hasAnswers = q.correct_index !== undefined;
+        
+        let choiceHtml = `<div class="choices-grid">`;
+        if (q.options && Array.isArray(q.options)) {
+          q.options.forEach((choice, choiceIdx) => {
+            let extraClass = '';
+            let icon = '';
+            
+            if (exam.status === 'published' && exam.score !== null) {
+              // Already taken and reviewed
+              const selected = exam.user_answers && exam.user_answers[idx] == choiceIdx;
+              const correct = choiceIdx == q.correct_index;
+              
+              if (correct) {
+                extraClass = 'correct-choice';
+                icon = '<i class="fa-solid fa-circle-check" style="color: var(--accent-success); margin-left: auto;"></i>';
+              } else if (selected) {
+                extraClass = 'incorrect-choice';
+                icon = '<i class="fa-solid fa-circle-xmark" style="color: var(--accent-danger); margin-left: auto;"></i>';
+              }
+            }
+            
+            choiceHtml += `
+              <div class="choice-option ${extraClass}" id="choice-${idx}-${choiceIdx}" onclick="selectChoice(${idx}, ${choiceIdx})">
+                <div class="radio-circle"></div>
+                <span class="choice-letter">${String.fromCharCode(65 + choiceIdx)}.</span>
+                <span>${choice}</span>
+                ${icon}
+              </div>
+            `;
+          });
+        }
+        choiceHtml += `</div>`;
+        
+        // Render explanation if available
+        let explanationHtml = '';
+        if (q.explanation) {
+          explanationHtml = `
+            <div class="explanation-box">
+              <strong>Grounding Citation:</strong> ${q.citation || 'N/A'}<br>
+              <strong>Explanation:</strong> ${q.explanation}
+            </div>
+          `;
+        }
+        
+        card.innerHTML = `
+          <div class="question-header">
+            <span class="question-index">Question ${idx + 1} of ${qList.length}</span>
+          </div>
+          <p style="font-weight: 500; font-size: 15px; margin-bottom: 16px;">${q.question_text}</p>
+          ${choiceHtml}
+          ${explanationHtml}
+        `;
+        body.appendChild(card);
+      });
+      
+      // Render footer actions based on Status & Role
+      if (exam.status === 'draft') {
+        footer.innerHTML = `
+          <span style="margin-right: auto; font-size: 13px; color: var(--accent-warning);"><i class="fa-solid fa-triangle-exclamation"></i> Editing mode enabled.</span>
+          <button class="btn btn-secondary" onclick="closeExamModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="publishExam('${exam.id}')"><i class="fa-solid fa-paper-plane"></i> Publish & Lock Blueprint</button>
+        `;
+      } else if (exam.score !== null) {
+        // Taken
+        footer.innerHTML = `
+          <span style="margin-right: auto; font-weight:700;">Score: <span style="color: var(--accent-success);">${exam.score}%</span></span>
+          <button class="btn btn-secondary" onclick="closeExamModal()">Close</button>
+        `;
+      } else {
+        // Active exam to submit
+        footer.innerHTML = `
+          <button class="btn btn-secondary" onclick="closeExamModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="submitExam('${exam.id}')"><i class="fa-solid fa-check"></i> Submit Quiz</button>
+        `;
+      }
+    }
+
+    function selectChoice(qIdx, choiceIdx) {
+      // Do not allow selection if exam has already been submitted (score exists)
+      if (appState.currentExam && appState.currentExam.score !== null && appState.currentExam.score !== undefined) return;
+      if (appState.currentExam && appState.currentExam.status === 'draft') return; // Edit mode
+      
+      appState.userAnswers[qIdx] = choiceIdx;
+      
+      // Toggle CSS selection styling
+      const exam = appState.currentExam;
+      const options = exam.questions[qIdx].options || [];
+      options.forEach((_, cIdx) => {
+        const el = document.getElementById(`choice-${qIdx}-${cIdx}`);
+        if (el) {
+          if (cIdx === choiceIdx) {
+            el.classList.add('selected');
+          } else {
+            el.classList.remove('selected');
+          }
+        }
+      });
+    }
+
+    async function publishExam(examId) {
+      try {
+        const res = await fetch(`${appState.apiBase}/api/exams/${examId}/publish`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${appState.token}` }
+        });
+        if (res.ok) {
+          showToast('Exam blueprint published to all learners.', 'success');
+          closeExamModal();
+          loadExamsList();
+        } else {
+          showToast('Publish failed.', 'error');
+        }
+      } catch (err) {
+        showToast('Communication error during publish', 'error');
+      }
+    }
+
+    async function submitExam(examId) {
+      const qCount = appState.currentExam.questions.length;
+      
+      // Ensure all questions are answered
+      if (Object.keys(appState.userAnswers).length < qCount) {
+        showToast('Please answer all questions before submitting.', 'warning');
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${appState.apiBase}/api/exams/${examId}/submit`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${appState.token}`
+          },
+          body: JSON.stringify({ answers: appState.userAnswers })
+        });
+        
+        if (res.ok) {
+          const result = await res.json();
+          showToast(`Exam graded: ${result.score}%`, 'success');
+          
+          // Re-load the modal containing results (this unlocks explanations)
+          openExamModal(examId);
+          loadExamsList();
+        } else {
+          showToast('Grading submission failed.', 'error');
+        }
+      } catch (err) {
+        showToast('Grading communication error', 'error');
+      }
+    }
+
+  </script>
+</body>
+</html>
