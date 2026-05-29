@@ -17,7 +17,7 @@ def list_exams(
     db: Session = Depends(get_db)
 ):
     """List all exams for the tenant workspace."""
-    exams = db.query(Exam).filter(Exam.tenant_id == current_user.tenant_id).all()
+    exams = db.query(Exam).filter(Exam.tenant_id == current_user.tenant_id).order_by(Exam.created_at.desc()).all()
     
     # Hide questions from list endpoint for efficiency, just return metadata
     result = []
@@ -27,7 +27,8 @@ def list_exams(
             "file_id": exam.file_id,
             "status": exam.status,
             "score": exam.score,
-            "taken_at": exam.taken_at
+            "taken_at": exam.taken_at,
+            "created_at": exam.created_at
         })
     return result
 

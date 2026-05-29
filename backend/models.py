@@ -86,6 +86,7 @@ class Exam(Base):
     score = Column(Integer, nullable=True) # 0 to 100
     status = Column(String(50), default="draft", nullable=False) # 'draft', 'published'
     taken_at = Column(DateTime, nullable=True) # Null if still a draft/uncompleted template
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
     tenant = relationship("Tenant", back_populates="exams")
