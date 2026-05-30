@@ -6,8 +6,8 @@ from database import get_db
 from models import File, User, Embedding, AuditLog
 import schemas
 from auth import get_current_user
-from embedding_service import generate_embedding, cosine_similarity
-from ai_service import generate_grounded_chat
+from services.embedding_service import generate_embedding, cosine_similarity
+from services.ai_service import generate_grounded_chat
 
 router = APIRouter(prefix="/chat", tags=["Private VPC AI Chatbot"])
 

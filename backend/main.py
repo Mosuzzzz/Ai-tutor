@@ -1,18 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Any, cast
 from slowapi import Limiter
-from slowapi._rate_limit_exceeded_handler import _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from database import engine, Base
 from config import settings
-import routers.auth as auth
-import routers.files as files
-import routers.recap as recap
-import routers.exams as exams
-import routers.chat as chat
-import routers.analytics as analytics
+import routers.public.auth as auth
+import routers.public.files as files
+import routers.public.recap as recap
+import routers.tenant.exams as exams
+import routers.public.chat as chat
+import routers.admin.analytics as analytics
 
 # Automatically create database tables on app launch (Development convenience)
 Base.metadata.create_all(bind=engine)
@@ -23,9 +24,11 @@ app = FastAPI(
     version="2.0.0"
 )
 
+__all__ = ["app"]
+
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"], storage_uri="memory://")
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, cast(Any, _rate_limit_exceeded_handler))
 app.add_middleware(SlowAPIMiddleware)
 
 # Configure CORS for integration with corporate frontends
