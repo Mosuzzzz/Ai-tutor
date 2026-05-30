@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+"""Minimal wrapper to run the FastAPI app via Uvicorn using `uv` entry.
+
+Usage:
+  python backend/uv
+  python backend/uv --host 0.0.0.0 --port 8000
+"""
+import sys
+import argparse
+
+def main():
+    parser = argparse.ArgumentParser(description="Run the FastAPI app via Uvicorn (alias: uv)")
+    parser.add_argument("--host", default="127.0.0.1", help="Host to bind")
+    parser.add_argument("--port", type=int, default=8000, help="Port to bind")
+    parser.add_argument("--reload", action="store_true", help="Enable auto-reload (development)")
+    parser.add_argument("app", nargs="?", default="main:app", help="ASGI app to run (module:app)")
+    args = parser.parse_args()
+
+    try:
+        import uvicorn as _uvicorn
+    except Exception:
+        print("uvicorn is not installed in the active environment. Install with: python3 -m pip install uvicorn", file=sys.stderr)
+        sys.exit(2)
+
+    _uvicorn.run(args.app, host=args.host, port=args.port, reload=args.reload)
+
+if __name__ == "__main__":
+    main()

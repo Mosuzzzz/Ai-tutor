@@ -3,6 +3,11 @@ import io
 import time
 from httpx2 import Client as HttpxClient
 from starlette.testclient import TestClient
+import os
+import sys
+# Ensure backend/ is on sys.path when tests run so local modules import correctly
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from main import app
 from database import engine, Base, SessionLocal
 from models import Tenant, User, File, Exam, Embedding, AuditLog
@@ -13,6 +18,10 @@ def setup_test_db():
     # Drop and recreate tables for clean test slate
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+
+
+# Ensure a clean DB for test runs
+setup_test_db()
 
 def print_banner(msg: str):
     print("=" * 60)

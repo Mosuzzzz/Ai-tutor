@@ -12,4 +12,7 @@
             "database": "enterprise_platform"
         }
     ]
+    ,
+    "python.analysis.extraPaths": ["./backend"],
+    "python.analysis.packageIndexDepths": [2]
 }

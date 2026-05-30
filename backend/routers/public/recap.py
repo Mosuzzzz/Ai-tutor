@@ -5,7 +5,7 @@ from database import get_db
 from models import File, User
 import schemas
 from auth import get_current_user
-from ai_service import generate_recap
+from services.ai_service import generate_recap
 
 router = APIRouter(prefix="/recap", tags=["AI Recap - Document Summarization"])
 

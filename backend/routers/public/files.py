@@ -11,8 +11,8 @@ from models import File as DBFile, User, Embedding, AuditLog
 import schemas
 from auth import get_current_user, require_role
 from config import settings
-from document_processor import extract_text_from_file, chunk_text
-from embedding_service import generate_embedding
+from services.document_processor import extract_text_from_file, chunk_text
+from services.embedding_service import generate_embedding
 
 router = APIRouter(prefix="/files", tags=["Enterprise Classroom - Document Library"])
 
@@ -61,6 +61,7 @@ def process_document_pipeline(file_id: str):
             db.commit()
     finally:
         db.close()
+
 
 
 @router.post("/upload", response_model=schemas.FileResponse, status_code=status.HTTP_201_CREATED)
@@ -129,6 +130,7 @@ async def upload_file(
     background_tasks.add_task(process_document_pipeline, db_file.id)
 
     return db_file
+
 
 
 @router.get("/", response_model=List[schemas.FileResponse])

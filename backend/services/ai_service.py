@@ -225,53 +225,6 @@ def _sandbox_quiz(filename: str, num_questions: int) -> List[Dict[str, Any]]:
             "explanation": "Corporate policy mandates immediate reporting to a supervisor to initiate mitigation procedures.",
             "citation": f"{filename} – Safety Protocol Section",
         },
-        {
-            "id": "q2",
-            "question_text": "What is the expiration limit for secure file Signed URLs?",
-            "options": ["5 minutes", "15 minutes", "1 hour", "24 hours"],
-            "correct_index": 1,
-            "explanation": "Signed URLs expire after 15 minutes to prevent unauthorised token reuse.",
-            "citation": f"{filename} – Security and Compliance Standard",
-        },
-        {
-            "id": "q3",
-            "question_text": "What does 'Zero-Data Retention SLA' mean for cloud AI services?",
-            "options": [
-                "Data is deleted after processing and not used for training",
-                "Data is retained indefinitely for search history",
-                "Data is backed up to public servers weekly",
-                "Data is encrypted and sold to analytics partners",
-            ],
-            "correct_index": 0,
-            "explanation": "Zero-Data Retention ensures prompt data is processed ephemerally and never cached or used for model training.",
-            "citation": f"{filename} – Data Privacy Clauses",
-        },
-        {
-            "id": "q4",
-            "question_text": "What is the minimum password complexity requirement for corporate accounts?",
-            "options": [
-                "At least 6 characters",
-                "8 characters, numbers only",
-                "12 characters including uppercase, lowercase, numbers, and symbols",
-                "No minimum requirement",
-            ],
-            "correct_index": 2,
-            "explanation": "A minimum of 12 complex characters prevents brute-force attacks.",
-            "citation": f"{filename} – Identity Security Section",
-        },
-        {
-            "id": "q5",
-            "question_text": "How should employees verify their identity on the corporate network?",
-            "options": [
-                "Use shared team passwords",
-                "Via Single Sign-On (SSO) with Multi-Factor Authentication",
-                "Call the IT help desk each login",
-                "No verification required on the internal LAN",
-            ],
-            "correct_index": 1,
-            "explanation": "OIDC/SAML SSO with MFA establishes verified, auditable identities.",
-            "citation": f"{filename} – Access Control Policy",
-        },
     ]
 
     result = pool[:num_questions]
