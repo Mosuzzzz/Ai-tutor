@@ -1,0 +1,363 @@
+# AI Tutor Frontend SRS
+
+เอกสารนี้สรุปโครงสร้างและสถานะของ Frontend ปัจจุบันสำหรับ Web app AI Tutor Platform ตามแนวทางใน `AGENTS_FRONTEND.md`
+
+## 1. Project Overview
+
+AI Tutor Frontend เป็น Next.js 16 App Router application สำหรับแพลตฟอร์มผู้ช่วยเรียนรู้ด้วย AI โดยช่วงปัจจุบันเน้นการสร้างฐาน UI และหน้า Auth แบบ mock ก่อนเชื่อมต่อ Backend จริง
+
+### Technology Stack
+
+| Area | Current Choice |
+| --- | --- |
+| Framework | Next.js 16 App Router |
+| Language | TypeScript strict mode |
+| UI | React 19, Tailwind CSS |
+| Icons | Lucide React |
+| Validation | Zod |
+| Test Runner | Vitest |
+| Component Tests | React Testing Library |
+| Styling | Tailwind tokens + global CSS helpers |
+
+### NPM Scripts
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start Next.js dev server on `127.0.0.1` |
+| `npm run build` | Build production app |
+| `npm run lint` | Run ESLint |
+| `npm test` | Run Vitest test suite |
+| `npm run test:watch` | Run Vitest watch mode |
+
+## 2. Current Feature Scope
+
+### Completed Phase 1: Frontend Foundation
+
+Foundation provides the shared app shell, navigation, theme tokens, placeholder pages, and reusable UI primitives needed for the AI Tutor application.
+
+Included:
+
+- Shared responsive `AppShell`
+- Sidebar navigation for desktop
+- Mobile navigation dialog
+- Sticky top bar with search, notification, help, and profile controls
+- Foundation dashboard preview
+- Placeholder pages for upcoming modules
+- Shared UI primitives: `Button`, `Card`
+- Base design tokens in Tailwind config and global CSS
+
+### Completed Phase 2: Auth: Login + Register
+
+Auth is currently frontend-only mock UI while waiting for Backend APIs.
+
+Included:
+
+- `/login` route
+- `/register` route
+- Login form with email/password validation
+- Register form with role selection, profile fields, password confirmation, and terms acceptance
+- Zod validation schemas
+- Mock success states
+- Disabled mock social auth buttons
+- Local WebP slideshow visual panel on auth pages
+- Security headers configured in Next.js
+- Tests for validation, routes, components, and security headers
+
+Out of scope until Backend is ready:
+
+- Real login/register API calls
+- Session creation
+- HttpOnly Secure cookie handling
+- Refresh token rotation
+- Auth redirect after successful login
+- Protected route enforcement
+- Role/permission checks from real user session
+- Backend error mapping
+
+## 3. Route Map
+
+| Route | File | Status | Purpose |
+| --- | --- | --- | --- |
+| `/` | `src/app/page.tsx` | Foundation ready | Dashboard/foundation preview |
+| `/courses` | `src/app/courses/page.tsx` | Placeholder | Courses module shell |
+| `/documents` | `src/app/documents/page.tsx` | Placeholder | AI document summary module shell |
+| `/chat` | `src/app/chat/page.tsx` | Placeholder | AI chat module shell |
+| `/quiz` | `src/app/quiz/page.tsx` | Placeholder | AI quiz generator module shell |
+| `/analytics` | `src/app/analytics/page.tsx` | Placeholder | Learning analytics module shell |
+| `/settings` | `src/app/settings/page.tsx` | Placeholder | Settings module shell |
+| `/login` | `src/app/login/page.tsx` | Mock UI ready | Login screen |
+| `/register` | `src/app/register/page.tsx` | Mock UI ready | Register screen |
+
+## 4. Frontend Folder Structure
+
+```text
+frontend/
+├── public/
+│   └── auth/
+│       ├── login-slide-1.webp
+│       ├── login-slide-2.webp
+│       └── login-slide-3.webp
+├── src/
+│   ├── app/
+│   │   ├── analytics/page.tsx
+│   │   ├── chat/page.tsx
+│   │   ├── courses/page.tsx
+│   │   ├── documents/page.tsx
+│   │   ├── login/page.tsx
+│   │   ├── quiz/page.tsx
+│   │   ├── register/page.tsx
+│   │   ├── settings/page.tsx
+│   │   ├── AppShell.tsx
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── navigation.ts
+│   │   └── page.tsx
+│   ├── components/
+│   │   └── ui/
+│   │       ├── Button.tsx
+│   │       └── Card.tsx
+│   ├── features/
+│   │   ├── auth/
+│   │   │   ├── AuthFormFields.tsx
+│   │   │   ├── AuthShell.tsx
+│   │   │   ├── authValidation.ts
+│   │   │   ├── LoginPage.tsx
+│   │   │   └── RegisterPage.tsx
+│   │   └── foundation/
+│   │       ├── FoundationPreview.tsx
+│   │       └── PlaceholderPage.tsx
+│   ├── lib/
+│   │   └── cn.ts
+│   └── test/
+│       └── setup.ts
+├── next.config.ts
+├── tailwind.config.ts
+├── tsconfig.json
+└── vitest.config.ts
+```
+
+## 5. Architecture Summary
+
+The current frontend follows a feature-oriented structure inside `src/features` and keeps route entry points thin inside `src/app`.
+
+### App Layer
+
+`src/app` contains App Router routes, app layout, global CSS, navigation config, and shell-level tests.
+
+Responsibilities:
+
+- Define public routes
+- Compose route pages from feature components
+- Own global shell/navigation
+- Configure global styles
+
+### Feature Layer
+
+`src/features` contains business-facing UI modules.
+
+Current feature modules:
+
+- `features/foundation`: foundation dashboard and placeholder route content
+- `features/auth`: login/register UI, auth form helpers, and auth validation
+
+### Shared UI Layer
+
+`src/components/ui` contains reusable atomic components used across feature modules.
+
+Current shared components:
+
+- `Button`
+- `Card`
+
+### Utility Layer
+
+`src/lib` contains shared utilities.
+
+Current utilities:
+
+- `cn`: safe class name join helper
+
+## 6. Auth Module Specification
+
+### Auth Routes
+
+| Route | Component | Behavior |
+| --- | --- | --- |
+| `/login` | `LoginPage` | Collect email/password, validate locally, show mock success |
+| `/register` | `RegisterPage` | Collect role/account fields, validate locally, show mock success |
+
+### Validation Rules
+
+Validation lives in `src/features/auth/authValidation.ts` and uses Zod.
+
+Login fields:
+
+- `email`: required, trimmed, lowercased, valid email format
+- `password`: required, minimum 8 characters
+
+Register fields:
+
+- `role`: required, must be `student` or `teacher`
+- `fullName`: required, trimmed
+- `email`: required, trimmed, lowercased, valid email format
+- `password`: required, minimum 8 characters
+- `confirmPassword`: required, must match password
+- `acceptedTerms`: must be true
+
+### Auth Security Rules
+
+Current auth is mock-only and intentionally does not:
+
+- call Backend APIs
+- store access tokens
+- store refresh tokens
+- use `localStorage`
+- use `sessionStorage`
+- read/write cookies
+- log credentials
+
+Future backend integration must use HttpOnly Secure cookies for auth session/token handling.
+
+## 7. Visual Design Summary
+
+### Foundation UI
+
+Foundation screens use a calm learning-platform design with:
+
+- persistent app shell
+- left sidebar on desktop
+- mobile navigation dialog
+- top bar with search and utility actions
+- consistent card radius, spacing, and tokens
+
+### Auth UI
+
+Auth screens use a split layout on desktop:
+
+- left visual panel
+- right form panel
+- local WebP image slideshow
+- fade transition between 3 images
+- dark overlay and reduced brightness for better text contrast
+- mobile layout hides the visual panel and prioritizes the form
+
+Auth visual assets:
+
+```text
+public/auth/login-slide-1.webp
+public/auth/login-slide-2.webp
+public/auth/login-slide-3.webp
+```
+
+## 8. Security Configuration
+
+Security headers are configured in `next.config.ts`.
+
+Configured headers:
+
+- `Content-Security-Policy`
+- `Strict-Transport-Security`
+- `X-Frame-Options`
+- `X-Content-Type-Options`
+- `Referrer-Policy`
+
+Environment protection:
+
+- `.env`
+- `.env.local`
+- `.env.*.local`
+
+are ignored in `.gitignore`.
+
+### Security Notes
+
+Current CSP still includes development-friendly allowances for Next.js runtime:
+
+- `'unsafe-inline'`
+- `'unsafe-eval'`
+
+Before production hardening, this should be revisited with nonce/hash strategy when deployment requirements are clear.
+
+## 9. Testing Coverage
+
+Current test files:
+
+```text
+src/app/AppShell.test.tsx
+src/app/auth-routes.test.tsx
+src/app/page.test.tsx
+src/app/routes.test.tsx
+src/app/security-headers.test.ts
+src/features/auth/AuthShell.test.tsx
+src/features/auth/LoginPage.test.tsx
+src/features/auth/RegisterPage.test.tsx
+src/features/auth/authValidation.test.ts
+```
+
+Current coverage focus:
+
+- foundation page rendering
+- app shell navigation
+- route rendering
+- auth route links
+- auth form rendering
+- login validation
+- register validation
+- Zod schema behavior
+- auth slideshow assets
+- security header config
+
+Current latest verification:
+
+- `npm test`: 9 test files, 23 tests
+- `npm run lint`: passing
+- `npm run build`: passing
+- `npm audit --audit-level=high`: 0 vulnerabilities
+
+## 10. Known Deferred Work
+
+The following items should wait until Backend/API contracts are available:
+
+- Auth API client
+- Login/register use cases that call repositories
+- Session cookie handling
+- Auth callback/refresh handling
+- Route protection
+- Role-based dashboard routing
+- Backend validation error mapping
+- Playwright E2E for real auth flow
+- Logout behavior
+- Real social login providers
+
+The following items can be done before Backend if needed:
+
+- Production CSP hardening plan
+- `.env.example` once required public environment variables are known
+- Better image generation/asset pipeline
+- shadcn/Radix component expansion for forms and dialogs
+
+## 11. Commit Scope Recommendation
+
+For the current Auth phase commit, include:
+
+```text
+.gitignore
+frontend/next.config.ts
+frontend/package.json
+frontend/package-lock.json
+frontend/src/app/globals.css
+frontend/public/auth/
+frontend/src/app/auth-routes.test.tsx
+frontend/src/app/login/
+frontend/src/app/register/
+frontend/src/app/security-headers.test.ts
+frontend/src/features/auth/
+frontend/SRS.md
+```
+
+Decide separately whether to include:
+
+```text
+AGENTS_FRONTEND.md
+frontend/DESIGN.md
+```
