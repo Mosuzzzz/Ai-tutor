@@ -3,3 +3,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 dev-server*.log
+.stitch-preview/
+.env
+.env.local
+.env.*.local
