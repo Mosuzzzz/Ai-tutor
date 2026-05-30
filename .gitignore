@@ -8,3 +8,4 @@ dev-server*.log
 .env.local
 .env.*.local
 .venv/
+bun.lock
