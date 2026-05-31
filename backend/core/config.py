@@ -7,7 +7,11 @@ local_env = os.path.join(backend_root, ".env")
 load_dotenv(dotenv_path=local_env)
 
 class Config:
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./enterprise_platform.db")
+    # Default to the project's Docker Postgres. Override with env var if needed.
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL",
+        "postgresql+psycopg2://postgres:mysecretpassword@localhost:5432/enterprise_platform",
+    )
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "").strip()
     if not JWT_SECRET_KEY:
         raise ValueError("JWT_SECRET_KEY must be set in the environment")
