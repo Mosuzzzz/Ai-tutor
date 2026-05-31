@@ -19,7 +19,7 @@ describe("AppShell navigation", () => {
       "aria-current",
       "page"
     );
-    expect(screen.getByRole("link", { name: /แดชบอร์ด/ })).not.toHaveAttribute(
+    expect(screen.getByRole("link", { name: /^แดชบอร์ด$/ })).not.toHaveAttribute(
       "aria-current"
     );
   });

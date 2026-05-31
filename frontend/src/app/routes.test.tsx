@@ -7,6 +7,7 @@ import CoursesPage from "./courses/page";
 import DocumentsPage from "./documents/page";
 import QuizPage from "./quiz/page";
 import SettingsPage from "./settings/page";
+import TeacherPage from "./teacher/page";
 
 const routePages = [
   { Component: CoursesPage, title: "คอร์สเรียน" },
@@ -14,6 +15,7 @@ const routePages = [
   { Component: ChatPage, title: "แชท AI" },
   { Component: QuizPage, title: "สร้างควิซ" },
   { Component: AnalyticsPage, title: "สถิติการเรียน" },
+  { Component: TeacherPage, title: "แดชบอร์ดครู" },
   { Component: SettingsPage, title: "การตั้งค่า" }
 ];
 
