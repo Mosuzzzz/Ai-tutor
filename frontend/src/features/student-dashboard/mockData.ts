@@ -1,60 +1,12 @@
-export type LearnerDashboardApiResponse = {
-  completed_quizzes: number;
-  average_score: number;
-  streak_days: number;
-  read_documents_count: number;
-  recent_scores: RecentScore[];
-  score_trend: ScoreTrendPoint[];
-};
+import type { StudentDashboardViewModel } from "./types";
 
-export type RecentScore = {
-  id: string;
-  exam_id: string;
-  filename: string;
-  score: number;
-  submitted_at: string;
-};
-
-export type ScoreTrendPoint = {
-  id: string;
-  date: string;
-  average_score: number;
-};
-
-export type ContinueLearningItem = {
-  id: string;
-  title: string;
-  source: string;
-  progressPercent: number;
-  minutesRemaining: number;
-  href: string;
-  type: "lesson" | "document" | "quiz";
-};
-
-export type AssistantPrompt = {
-  id: string;
-  title: string;
-  description: string;
-  href: string;
-};
-
-export type StudentDashboardViewModel = {
-  learnerName: string;
-  roleLabel: string;
-  generatedAtLabel: string;
-  nextMilestone: string;
-  apiEndpoint: string;
-  apiResponse: LearnerDashboardApiResponse;
-  continueLearning: ContinueLearningItem[];
-  assistantPrompts: AssistantPrompt[];
-};
+export const STUDENT_DASHBOARD_API_PATH = "/api/analytics/dashboard";
 
 export const studentDashboardMock = {
   learnerName: "ศิวกร",
   roleLabel: "ผู้เรียน",
   generatedAtLabel: "วันนี้ 17:00",
   nextMilestone: "รักษาสตรีก 7 วัน และทบทวนเวกเตอร์แคลคูลัสให้จบในวันนี้",
-  apiEndpoint: "/api/analytics/dashboard",
   apiResponse: {
     completed_quizzes: 24,
     average_score: 85,
@@ -66,21 +18,21 @@ export const studentDashboardMock = {
         exam_id: "exam-vector-recap",
         filename: "สรุปเวกเตอร์แคลคูลัส.pdf",
         score: 92,
-        submitted_at: "31 พ.ค. 2026"
+        submitted_at: "2026-05-31T10:00:00.000Z"
       },
       {
         id: "score-robotics",
         exam_id: "exam-robotics-joint",
         filename: "การประกอบข้อต่อหุ่นยนต์.pdf",
         score: 84,
-        submitted_at: "30 พ.ค. 2026"
+        submitted_at: "2026-05-30T10:00:00.000Z"
       },
       {
         id: "score-ai-foundation",
         exam_id: "exam-ai-foundation",
         filename: "โน้ตพื้นฐาน AI.pdf",
         score: 79,
-        submitted_at: "29 พ.ค. 2026"
+        submitted_at: "2026-05-29T10:00:00.000Z"
       }
     ],
     score_trend: [
@@ -137,3 +89,7 @@ export const studentDashboardMock = {
     }
   ]
 } satisfies StudentDashboardViewModel;
+
+export const fetchStudentDashboard = async () => {
+  return studentDashboardMock;
+};

@@ -13,11 +13,22 @@ import {
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
-import { studentDashboardMock } from "./studentDashboardData";
-import type { ContinueLearningItem, StudentDashboardViewModel } from "./studentDashboardData";
+import {
+  formatScore,
+  getHeroSummary,
+  getProgressPercentValue,
+  getRelativeTimeLabel,
+  getStudentGreeting,
+  getTopScores,
+  scoreToGrade
+} from "./dashboardHelpers";
+import { studentDashboardMock } from "./mockData";
+import type { ContinueLearningItem, StudentDashboardStatus, StudentDashboardViewModel } from "./types";
 
 type StudentDashboardPageProps = {
   dashboard?: StudentDashboardViewModel;
+  errorMessage?: string;
+  status?: StudentDashboardStatus;
 };
 
 type MetricCard = {
@@ -35,7 +46,33 @@ const progressTypeIcon: Record<ContinueLearningItem["type"], LucideIcon> = {
   quiz: Bot
 };
 
-export const StudentDashboardPage = ({ dashboard = studentDashboardMock }: StudentDashboardPageProps) => {
+export const StudentDashboardPage = ({
+  dashboard = studentDashboardMock,
+  errorMessage = "ไม่สามารถโหลดข้อมูลผู้เรียนได้",
+  status = "ready"
+}: StudentDashboardPageProps) => {
+  if (status === "loading") {
+    return (
+      <div
+        className="rounded border border-outline-variant/40 bg-surface-container-lowest p-6 text-body-md text-on-surface-variant shadow-ambient"
+        role="status"
+      >
+        กำลังโหลดแดชบอร์ดผู้เรียน
+      </div>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <div
+        className="rounded border border-[#f2b8b5] bg-[#fff8f7] p-6 text-body-md font-semibold text-[#8c1d18] shadow-ambient"
+        role="alert"
+      >
+        {errorMessage}
+      </div>
+    );
+  }
+
   const metrics: MetricCard[] = [
     {
       id: "completed-quizzes",
@@ -48,7 +85,7 @@ export const StudentDashboardPage = ({ dashboard = studentDashboardMock }: Stude
     {
       id: "average-score",
       label: "คะแนนเฉลี่ย",
-      value: `${dashboard.apiResponse.average_score}%`,
+      value: formatScore(dashboard.apiResponse.average_score),
       helper: "จากการทำแบบทดสอบล่าสุด",
       icon: Target,
       tone: "bg-[#fff3d8] text-[#8a5a00]"
@@ -70,14 +107,10 @@ export const StudentDashboardPage = ({ dashboard = studentDashboardMock }: Stude
       tone: "bg-[#e6f6ee] text-[#216148]"
     }
   ];
+  const topScores = getTopScores(dashboard.apiResponse.recent_scores);
 
   return (
-    <div
-      data-api-endpoint={dashboard.apiEndpoint}
-      data-source="api-ready-mock"
-      data-testid="student-dashboard"
-      className="space-y-6"
-    >
+    <div data-source="api-ready-mock" data-testid="student-dashboard" className="space-y-6">
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.55fr)]">
         <div className="overflow-hidden rounded border border-[#0e2d4f]/10 bg-[#10233f] text-white shadow-ambient">
           <div className="grid gap-6 p-5 md:p-7 lg:grid-cols-[minmax(0,1fr)_260px]">
@@ -90,8 +123,8 @@ export const StudentDashboardPage = ({ dashboard = studentDashboardMock }: Stude
                 แดชบอร์ดผู้เรียน
               </h2>
               <p className="mt-3 max-w-2xl text-body-md text-white/80 md:text-body-lg">
-                ยินดีต้อนรับกลับมา {dashboard.learnerName} พื้นที่นี้รวมบทเรียน เอกสาร และความคืบหน้าควิซ
-                ไว้ให้ติดตามได้ในหน้าเดียว
+                <span className="block font-semibold text-white">{getStudentGreeting(dashboard.learnerName)}</span>
+                <span className="mt-1 block">{getHeroSummary(dashboard.learnerName).replace(`${getStudentGreeting(dashboard.learnerName)} `, "")}</span>
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link
@@ -147,7 +180,7 @@ export const StudentDashboardPage = ({ dashboard = studentDashboardMock }: Stude
         </section>
       </section>
 
-      <section aria-label="Learning metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section aria-label="สรุปตัวเลขผู้เรียน" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => {
           const Icon = metric.icon;
 
@@ -172,7 +205,10 @@ export const StudentDashboardPage = ({ dashboard = studentDashboardMock }: Stude
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="rounded border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-ambient md:p-6">
+        <section
+          aria-label="เรียนต่อจากเดิม"
+          className="rounded border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-ambient md:p-6"
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="text-headline-md text-on-surface">เรียนต่อจากเดิม</h3>
@@ -186,6 +222,7 @@ export const StudentDashboardPage = ({ dashboard = studentDashboardMock }: Stude
           <div className="mt-5 grid gap-3">
             {dashboard.continueLearning.map((item) => {
               const Icon = progressTypeIcon[item.type];
+              const progressPercent = getProgressPercentValue(item.progressPercent);
 
               return (
                 <Link
@@ -208,10 +245,17 @@ export const StudentDashboardPage = ({ dashboard = studentDashboardMock }: Stude
                     <div className="min-w-36">
                       <div className="flex items-center justify-between text-label-sm text-on-surface-variant">
                         <span>ความคืบหน้า</span>
-                        <span>{item.progressPercent}%</span>
+                        <span>{progressPercent}%</span>
                       </div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-container">
-                        <div className="h-full rounded-full bg-[#2f7c57]" style={{ width: `${item.progressPercent}%` }} />
+                      <div
+                        aria-label={`${item.title} ความคืบหน้า ${progressPercent}%`}
+                        aria-valuemax={100}
+                        aria-valuemin={0}
+                        aria-valuenow={progressPercent}
+                        className="mt-2 h-2 overflow-hidden rounded-full bg-surface-container"
+                        role="progressbar"
+                      >
+                        <div className="h-full rounded-full bg-[#2f7c57]" style={{ width: `${progressPercent}%` }} />
                       </div>
                     </div>
                   </div>
@@ -219,9 +263,12 @@ export const StudentDashboardPage = ({ dashboard = studentDashboardMock }: Stude
               );
             })}
           </div>
-        </div>
+        </section>
 
-        <div className="rounded border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-ambient md:p-6">
+        <section
+          aria-label="คะแนนล่าสุด"
+          className="rounded border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-ambient md:p-6"
+        >
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-headline-md text-on-surface">คะแนนล่าสุด</h3>
@@ -231,14 +278,17 @@ export const StudentDashboardPage = ({ dashboard = studentDashboardMock }: Stude
           </div>
 
           <div className="mt-5 space-y-4">
-            {dashboard.apiResponse.recent_scores.map((score) => (
+            {topScores.map((score) => (
               <div className="flex items-center justify-between gap-4" key={score.id}>
                 <div className="min-w-0">
                   <p className="truncate text-body-md font-bold text-on-surface">{score.filename}</p>
-                  <p className="mt-1 text-label-sm text-on-surface-variant">{score.submitted_at}</p>
+                  <p className="mt-1 text-label-sm text-on-surface-variant">{getRelativeTimeLabel(score.submitted_at)}</p>
                 </div>
-                <div className="rounded bg-[#e6f6ee] px-3 py-1.5 text-label-md font-bold text-[#216148]">
-                  {score.score}%
+                <div className="text-right">
+                  <div className="rounded bg-[#e6f6ee] px-3 py-1.5 text-label-md font-bold text-[#216148]">
+                    {formatScore(score.score)}
+                  </div>
+                  <p className="mt-1 text-label-sm text-on-surface-variant">{scoreToGrade(score.score)}</p>
                 </div>
               </div>
             ))}
@@ -246,20 +296,24 @@ export const StudentDashboardPage = ({ dashboard = studentDashboardMock }: Stude
 
           <div className="mt-6">
             <p className="text-label-sm font-semibold uppercase text-on-surface-variant">แนวโน้มคะแนน</p>
-            <div className="mt-3 flex h-28 items-end gap-2 rounded bg-surface-container-low p-3">
+            <div
+              aria-label="แนวโน้มคะแนนเฉลี่ย 7 วันล่าสุด"
+              className="mt-3 flex h-28 items-end gap-2 rounded bg-surface-container-low p-3"
+              role="img"
+            >
               {dashboard.apiResponse.score_trend.map((point) => (
                 <div className="flex min-w-0 flex-1 flex-col items-center gap-2" key={point.id}>
                   <div
-                    aria-label={`${point.date} คะแนนเฉลี่ย ${point.average_score}%`}
+                    aria-hidden="true"
                     className="w-full rounded-t bg-[#2f7c57]"
-                    style={{ height: `${point.average_score}%` }}
+                    style={{ height: formatScore(point.average_score) }}
                   />
                   <span className="text-label-sm text-on-surface-variant">{point.date}</span>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        </section>
       </section>
     </div>
   );
