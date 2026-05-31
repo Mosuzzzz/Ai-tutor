@@ -3,6 +3,7 @@ import {
   BookOpen,
   Bot,
   FileText,
+  GraduationCap,
   LayoutDashboard,
   MessageSquareText,
   Settings,
@@ -18,6 +19,7 @@ export type NavigationItem = {
 
 export const primaryNavigation: NavigationItem[] = [
   { href: "/", icon: LayoutDashboard, label: "แดชบอร์ด" },
+  { href: "/teacher", icon: GraduationCap, label: "แดชบอร์ดครู" },
   { href: "/courses", icon: BookOpen, label: "คอร์สเรียน" },
   { href: "/documents", icon: FileText, label: "สรุปเอกสาร" },
   { href: "/chat", icon: MessageSquareText, label: "แชท AI" },
