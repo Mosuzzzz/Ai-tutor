@@ -1,10 +1,13 @@
 import { AppShell } from "./AppShell";
 import { StudentDashboardPage } from "../features/student-dashboard/StudentDashboardPage";
+import { fetchStudentDashboard } from "../features/student-dashboard/mockData";
 
-const HomePage = () => {
+const HomePage = async () => {
+  const dashboard = await fetchStudentDashboard();
+
   return (
     <AppShell>
-      <StudentDashboardPage />
+      <StudentDashboardPage dashboard={dashboard} />
     </AppShell>
   );
 };
