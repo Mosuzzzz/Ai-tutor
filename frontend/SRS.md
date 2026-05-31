@@ -4,7 +4,7 @@
 
 ## 1. Project Overview
 
-AI Tutor Frontend เป็น Next.js 16 App Router application สำหรับแพลตฟอร์มผู้ช่วยเรียนรู้ด้วย AI โดยช่วงปัจจุบันเน้นการสร้างฐาน UI และหน้า Auth แบบ mock ก่อนเชื่อมต่อ Backend จริง
+AI Tutor Frontend เป็น Next.js 16 App Router application สำหรับแพลตฟอร์มผู้ช่วยเรียนรู้ด้วย AI โดยช่วงปัจจุบันมีฐาน UI, หน้า Auth แบบ mock และหน้า Student Dashboard แบบ mock/API-ready ก่อนเชื่อมต่อ Backend จริง
 
 ### Technology Stack
 
@@ -74,11 +74,37 @@ Out of scope until Backend is ready:
 - Role/permission checks from real user session
 - Backend error mapping
 
+### Completed Phase 3: App Shell + Student Dashboard
+
+หน้าแรกของแอป (`/`) ถูกเปลี่ยนจาก Foundation Preview เป็น Student Dashboard สำหรับผู้เรียนแล้ว โดยยังใช้ mock data ที่แยก type และ data shape ให้ใกล้กับ Backend analytics endpoint เพื่อให้เชื่อมต่อ API จริงภายหลังได้ง่าย
+
+Included:
+
+- `/` route render ผ่าน shared `AppShell`
+- Student Dashboard UI ภาษาไทย
+- Hero summary สำหรับผู้เรียน
+- Metric cards: แบบทดสอบที่ทำแล้ว, คะแนนเฉลี่ย, สตรีกการเรียน, เอกสารที่อ่านแล้ว
+- Continue learning list
+- AI action prompt cards
+- Recent scores list
+- Score trend chart แบบ lightweight CSS
+- Mock/API-ready data module พร้อม type สำหรับ learner dashboard response
+- Test coverage สำหรับ route `/` ที่ยืนยัน shell, dashboard, metric และ `data-source="api-ready-mock"`
+
+Out of scope until Backend is ready:
+
+- Real analytics API fetch
+- Zod validation สำหรับ response จาก API จริง
+- Authenticated user/session binding
+- Role-based redirect ระหว่าง student/teacher dashboard
+- Backend error/loading/empty states
+- Permission checks จาก session จริง
+
 ## 3. Route Map
 
 | Route | File | Status | Purpose |
 | --- | --- | --- | --- |
-| `/` | `src/app/page.tsx` | Foundation ready | Dashboard/foundation preview |
+| `/` | `src/app/page.tsx` | Student Dashboard mock/API-ready | Main learner dashboard |
 | `/courses` | `src/app/courses/page.tsx` | Placeholder | Courses module shell |
 | `/documents` | `src/app/documents/page.tsx` | Placeholder | AI document summary module shell |
 | `/chat` | `src/app/chat/page.tsx` | Placeholder | AI chat module shell |
@@ -123,9 +149,12 @@ frontend/
 │   │   │   ├── authValidation.ts
 │   │   │   ├── LoginPage.tsx
 │   │   │   └── RegisterPage.tsx
-│   │   └── foundation/
-│   │       ├── FoundationPreview.tsx
-│   │       └── PlaceholderPage.tsx
+│   │   ├── foundation/
+│   │   │   ├── FoundationPreview.tsx
+│   │   │   └── PlaceholderPage.tsx
+│   │   └── student-dashboard/
+│   │       ├── StudentDashboardPage.tsx
+│   │       └── studentDashboardData.ts
 │   ├── lib/
 │   │   └── cn.ts
 │   └── test/
@@ -159,6 +188,7 @@ Current feature modules:
 
 - `features/foundation`: foundation dashboard and placeholder route content
 - `features/auth`: login/register UI, auth form helpers, and auth validation
+- `features/student-dashboard`: learner dashboard UI and mock/API-ready dashboard data
 
 ### Shared UI Layer
 
@@ -249,6 +279,20 @@ public/auth/login-slide-2.webp
 public/auth/login-slide-3.webp
 ```
 
+### Student Dashboard UI
+
+Student Dashboard ใช้หน้าจอแบบ dashboard จริง ไม่ใช่ landing page โดยเน้นข้อมูลที่ผู้เรียนต้อง scan ซ้ำได้เร็ว:
+
+- Hero summary สี navy + amber
+- Metric cards สำหรับความคืบหน้าหลัก
+- Action prompts สำหรับ AI Tutor
+- Continue learning list
+- Recent scores panel
+- Score trend visualization
+- Copy บนหน้าจอเป็นภาษาไทยเพื่อให้ตรงกับผู้ใช้หลักของโปรเจกต์
+
+Dashboard ยังไม่มี API call และยังไม่เก็บข้อมูลผู้ใช้จริงใน client storage
+
 ## 8. Security Configuration
 
 Security headers are configured in `next.config.ts`.
@@ -296,7 +340,7 @@ src/features/auth/authValidation.test.ts
 
 Current coverage focus:
 
-- foundation page rendering
+- student dashboard page rendering
 - app shell navigation
 - route rendering
 - auth route links
@@ -306,6 +350,7 @@ Current coverage focus:
 - Zod schema behavior
 - auth slideshow assets
 - security header config
+- mock/API-ready dashboard marker
 
 Current latest verification:
 
@@ -324,6 +369,10 @@ The following items should wait until Backend/API contracts are available:
 - Auth callback/refresh handling
 - Route protection
 - Role-based dashboard routing
+- Student dashboard analytics API client
+- Dashboard response validation with Zod
+- Student dashboard loading/error/empty states
+- Teacher dashboard route and role split
 - Backend validation error mapping
 - Playwright E2E for real auth flow
 - Logout behavior
@@ -338,26 +387,20 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current Auth phase commit, include:
+For the current Student Dashboard phase commit, include:
 
 ```text
-.gitignore
-frontend/next.config.ts
-frontend/package.json
-frontend/package-lock.json
-frontend/src/app/globals.css
-frontend/public/auth/
-frontend/src/app/auth-routes.test.tsx
-frontend/src/app/login/
-frontend/src/app/register/
-frontend/src/app/security-headers.test.ts
-frontend/src/features/auth/
+frontend/src/app/page.tsx
+frontend/src/app/page.test.tsx
+frontend/src/features/student-dashboard/
 frontend/SRS.md
 ```
 
-Decide separately whether to include:
+Do not include unrelated local/backend files in this commit unless intentionally requested:
 
 ```text
 AGENTS_FRONTEND.md
-frontend/DESIGN.md
+DESIGN.md
+frontend/next-env.d.ts
+backend/docker-compose.yml
 ```
