@@ -3,18 +3,14 @@ import { describe, expect, it } from "vitest";
 
 import HomePage from "./page";
 
-describe("Next.js foundation page", () => {
-  it("renders the AI Tutor shell with core navigation and preview content", () => {
+describe("Student dashboard page", () => {
+  it("renders the AI Tutor shell with the API-ready student dashboard", () => {
     render(<HomePage />);
 
     expect(screen.getByRole("banner")).toHaveTextContent("AI Tutor");
-    expect(screen.getByRole("navigation", { name: "เมนูหลัก" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /แดชบอร์ด/ })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: /สรุปเอกสาร/ })).toHaveAttribute(
-      "href",
-      "/documents"
-    );
-    expect(screen.getByRole("main")).toHaveTextContent("Frontend Foundation");
-    expect(screen.getAllByRole("button", { name: /เริ่มเรียนเลย/ })).not.toHaveLength(0);
+    expect(screen.getByRole("main")).toHaveTextContent("แดชบอร์ดผู้เรียน");
+    expect(screen.getByRole("main")).toHaveTextContent("24");
+    expect(screen.getByRole("main")).toHaveTextContent("85%");
+    expect(screen.getByTestId("student-dashboard")).toHaveAttribute("data-source", "api-ready-mock");
   });
 });

@@ -1,10 +1,12 @@
 import { AppShell } from "./AppShell";
-import { FoundationPreview } from "../features/foundation/FoundationPreview";
+import { StudentDashboardPage } from "../features/student-dashboard/StudentDashboardPage";
 
-export default function HomePage() {
+const HomePage = () => {
   return (
     <AppShell>
-      <FoundationPreview />
+      <StudentDashboardPage />
     </AppShell>
   );
-}
+};
+
+export default HomePage;
