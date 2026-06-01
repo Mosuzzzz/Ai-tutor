@@ -45,6 +45,9 @@ Included:
 - Placeholder pages for upcoming modules
 - Shared UI primitives: `Button`, `Card`
 - Base design tokens in Tailwind config and global CSS
+- Shared App Shell module in `src/features/app-shell`
+- Compatibility exports from `src/app/AppShell.tsx` and `src/app/navigation.ts`
+- App shell helper/data tests for active route behavior and navigation contract
 
 ### Completed Phase 2: Auth: Login + Register
 
@@ -211,19 +214,40 @@ frontend/
 └── vitest.config.ts
 ```
 
+App Shell feature module:
+
+```text
+src/features/app-shell/
+├── AppShell.tsx
+├── AppShell.test.tsx
+├── AppShellBrand.tsx
+├── AppShellIconButton.tsx
+├── AppShellNavigationGroup.tsx
+├── AppShellLogoutButton.tsx
+├── AppShellTopBar.tsx
+├── DesktopSidebar.tsx
+├── MobileNavigationDialog.tsx
+├── NavigationLink.tsx
+├── appShellHelpers.ts
+├── appShellHelpers.test.ts
+├── navigationData.ts
+├── navigationData.test.ts
+└── types.ts
+```
+
 ## 5. Architecture Summary
 
 The current frontend follows a feature-oriented structure inside `src/features` and keeps route entry points thin inside `src/app`.
 
 ### App Layer
 
-`src/app` contains App Router routes, app layout, global CSS, navigation config, and shell-level tests.
+`src/app` contains App Router routes, app layout, global CSS, and thin compatibility exports for shared shell/navigation modules.
 
 Responsibilities:
 
 - Define public routes
 - Compose route pages from feature components
-- Own global shell/navigation
+- Re-export shared shell/navigation modules for existing route imports
 - Configure global styles
 
 ### Feature Layer
@@ -233,6 +257,7 @@ Responsibilities:
 Current feature modules:
 
 - `features/foundation`: foundation dashboard and placeholder route content
+- `features/app-shell`: shared responsive app shell, navigation data, shell sub-components, and active route helpers
 - `features/auth`: login/register UI, auth form helpers, auth validation, centralized copy/types, and API-ready mock auth client
 - `features/student-dashboard`: learner dashboard UI, mock/API-ready wrapper, types, and pure helpers
 - `features/teacher-dashboard`: teacher dashboard UI, mock/API-ready data, types, and pure helpers
@@ -393,12 +418,14 @@ Before production hardening, this should be revisited with nonce/hash strategy w
 Current test files:
 
 ```text
-src/app/AppShell.test.tsx
 src/app/auth-routes.test.tsx
 src/app/page.test.tsx
 src/app/routes.test.tsx
 src/app/security-headers.test.ts
 src/app/teacher/page.test.tsx
+src/features/app-shell/AppShell.test.tsx
+src/features/app-shell/appShellHelpers.test.ts
+src/features/app-shell/navigationData.test.ts
 src/features/auth/AuthShell.test.tsx
 src/features/auth/LoginPage.test.tsx
 src/features/auth/RegisterPage.test.tsx
@@ -414,6 +441,8 @@ Current coverage focus:
 
 - student dashboard page rendering
 - app shell navigation
+- app shell active route helper
+- app shell navigation data contract
 - route rendering
 - auth route links
 - auth form rendering
@@ -433,7 +462,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 15 test files, 50 tests
+- `npm test`: 17 test files, 54 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -466,12 +495,16 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current Auth refactor commit, include:
+For the current AppShell refactor commit, include:
 
 ```text
-frontend/src/features/auth/
+frontend/src/app/AppShell.tsx
+frontend/src/app/navigation.ts
+frontend/src/features/app-shell/
 frontend/SRS.md
 ```
+
+`frontend/src/app/AppShell.test.tsx` was moved into `frontend/src/features/app-shell/AppShell.test.tsx`, so the deletion should be staged with this refactor.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 
