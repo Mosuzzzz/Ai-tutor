@@ -1,13 +1,7 @@
-import { BarChart3 } from "lucide-react";
+import { PlaceholderRoute } from "../PlaceholderRoute";
 
-import { PlaceholderPage } from "../../features/foundation/PlaceholderPage";
+const AnalyticsPage = () => {
+  return <PlaceholderRoute moduleKey="analytics" />;
+};
 
-export default function AnalyticsPage() {
-  return (
-    <PlaceholderPage
-      description="พื้นที่สำหรับดูสถิติการเรียน คะแนน ความถี่ในการทบทวน และ insight เพื่อปรับแผนเรียน"
-      icon={BarChart3}
-      title="สถิติการเรียน"
-    />
-  );
-}
+export default AnalyticsPage;

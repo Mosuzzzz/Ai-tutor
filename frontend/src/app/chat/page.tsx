@@ -1,13 +1,7 @@
-import { MessageSquareText } from "lucide-react";
+import { PlaceholderRoute } from "../PlaceholderRoute";
 
-import { PlaceholderPage } from "../../features/foundation/PlaceholderPage";
+const ChatPage = () => {
+  return <PlaceholderRoute moduleKey="chat" />;
+};
 
-export default function ChatPage() {
-  return (
-    <PlaceholderPage
-      description="พื้นที่สำหรับแชทกับ AI Tutor ถามตอบเนื้อหา และต่อยอดเป็น session การเรียน"
-      icon={MessageSquareText}
-      title="แชท AI"
-    />
-  );
-}
+export default ChatPage;

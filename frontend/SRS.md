@@ -43,6 +43,9 @@ Included:
 - Sticky top bar with search, notification, help, and profile controls
 - Foundation dashboard preview
 - Placeholder pages for upcoming modules
+- Centralized placeholder route content in `src/features/foundation/placeholderContent.ts`
+- App-level `PlaceholderRoute` wrapper for placeholder shell composition
+- UI-only `PlaceholderPage` that can be replaced by real feature pages later
 - Shared UI primitives: `Button`, `Card`
 - Base design tokens in Tailwind config and global CSS
 - Shared App Shell module in `src/features/app-shell`
@@ -174,6 +177,7 @@ frontend/
 │   │   ├── globals.css
 │   │   ├── layout.tsx
 │   │   ├── navigation.ts
+│   │   ├── PlaceholderRoute.tsx
 │   │   └── page.tsx
 │   ├── components/
 │   │   └── ui/
@@ -190,8 +194,11 @@ frontend/
 │   │   │   ├── RegisterPage.tsx
 │   │   │   └── types.ts
 │   │   ├── foundation/
-│   │   │   ├── FoundationPreview.tsx
-│   │   │   └── PlaceholderPage.tsx
+│   │   │   ├── PlaceholderPage.tsx
+│   │   │   ├── PlaceholderPage.test.tsx
+│   │   │   ├── placeholderContent.ts
+│   │   │   ├── placeholderContent.test.ts
+│   │   │   └── types.ts
 │   │   ├── student-dashboard/
 │   │   │   ├── StudentDashboardPage.tsx
 │   │   │   ├── StudentDashboardPage.test.tsx
@@ -248,6 +255,7 @@ Responsibilities:
 - Define public routes
 - Compose route pages from feature components
 - Re-export shared shell/navigation modules for existing route imports
+- Compose placeholder routes through `PlaceholderRoute`
 - Configure global styles
 
 ### Feature Layer
@@ -256,7 +264,7 @@ Responsibilities:
 
 Current feature modules:
 
-- `features/foundation`: foundation dashboard and placeholder route content
+- `features/foundation`: placeholder route content, UI-only placeholder surface, and tests for deferred modules
 - `features/app-shell`: shared responsive app shell, navigation data, shell sub-components, and active route helpers
 - `features/auth`: login/register UI, auth form helpers, auth validation, centralized copy/types, and API-ready mock auth client
 - `features/student-dashboard`: learner dashboard UI, mock/API-ready wrapper, types, and pure helpers
@@ -431,6 +439,8 @@ src/features/auth/LoginPage.test.tsx
 src/features/auth/RegisterPage.test.tsx
 src/features/auth/authValidation.test.ts
 src/features/auth/mockAuthClient.test.ts
+src/features/foundation/PlaceholderPage.test.tsx
+src/features/foundation/placeholderContent.test.ts
 src/features/student-dashboard/StudentDashboardPage.test.tsx
 src/features/student-dashboard/dashboardHelpers.test.ts
 src/features/teacher-dashboard/TeacherDashboardPage.test.tsx
@@ -443,6 +453,8 @@ Current coverage focus:
 - app shell navigation
 - app shell active route helper
 - app shell navigation data contract
+- centralized placeholder route content
+- UI-only placeholder page rendering
 - route rendering
 - auth route links
 - auth form rendering
@@ -462,7 +474,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 17 test files, 54 tests
+- `npm test`: 19 test files, 58 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -495,16 +507,22 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current AppShell refactor commit, include:
+For the current Foundation / Placeholder cleanup commit, include:
 
 ```text
-frontend/src/app/AppShell.tsx
-frontend/src/app/navigation.ts
-frontend/src/features/app-shell/
+frontend/src/app/PlaceholderRoute.tsx
+frontend/src/app/analytics/page.tsx
+frontend/src/app/chat/page.tsx
+frontend/src/app/courses/page.tsx
+frontend/src/app/documents/page.tsx
+frontend/src/app/quiz/page.tsx
+frontend/src/app/routes.test.tsx
+frontend/src/app/settings/page.tsx
+frontend/src/features/foundation/
 frontend/SRS.md
 ```
 
-`frontend/src/app/AppShell.test.tsx` was moved into `frontend/src/features/app-shell/AppShell.test.tsx`, so the deletion should be staged with this refactor.
+`frontend/src/features/foundation/FoundationPreview.tsx` was unused after the Student Dashboard replaced the foundation preview, so its deletion should be staged with this cleanup.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 
