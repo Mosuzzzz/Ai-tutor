@@ -3,19 +3,16 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { AUTH_COPY, AUTH_VISUAL_SLIDES } from "./authContent";
+
 type AuthShellProps = {
   children: ReactNode;
   mode: "login" | "register";
 };
 
-const authVisualSlides = [
-  "/auth/login-slide-1.webp",
-  "/auth/login-slide-2.webp",
-  "/auth/login-slide-3.webp"
-] as const;
-
 export const AuthShell = ({ children, mode }: AuthShellProps) => {
   const isRegister = mode === "register";
+  const shellCopy = isRegister ? AUTH_COPY.register : AUTH_COPY.login;
 
   return (
     <main className="auth-body min-h-screen bg-[#f4f7fb] px-4 py-6 text-[#132238] md:px-8 md:py-10">
@@ -26,14 +23,14 @@ export const AuthShell = ({ children, mode }: AuthShellProps) => {
             className="animate-auth-carousel absolute inset-0"
             data-testid="auth-visual-carousel"
           >
-            {authVisualSlides.map((slide) => (
+            {AUTH_VISUAL_SLIDES.map((slide) => (
               <Image
                 alt=""
                 className="auth-carousel-slide absolute inset-0 h-full w-full object-cover brightness-[0.52] contrast-[0.92] saturate-[0.85]"
                 data-testid="auth-visual-slide"
                 fill
                 key={slide}
-                priority={slide === authVisualSlides[0]}
+                priority={slide === AUTH_VISUAL_SLIDES[0]}
                 sizes="(min-width: 1024px) 50vw, 100vw"
                 src={slide}
               />
@@ -59,12 +56,10 @@ export const AuthShell = ({ children, mode }: AuthShellProps) => {
               )}
             </div>
             <p className="auth-display text-[44px] font-bold leading-tight text-white">
-              {isRegister ? "Empower Your Learning" : "Learn with clarity, safely."}
+              {shellCopy.shellHeadline}
             </p>
             <p className="mt-5 text-body-lg text-[#d9e5f6]">
-              {isRegister
-                ? "เลือกเส้นทางของคุณ แล้วเริ่มสร้างพื้นที่เรียนรู้ที่ AI ช่วยจัดระเบียบทุกบทเรียน"
-                : "พื้นที่เข้าสู่ระบบที่เรียบง่าย ปลอดภัย และพร้อมเชื่อม backend เมื่อทีม API เปิดใช้งาน"}
+              {shellCopy.shellDescription}
             </p>
           </div>
 

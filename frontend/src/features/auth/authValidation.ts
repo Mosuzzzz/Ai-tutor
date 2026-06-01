@@ -1,37 +1,17 @@
 import { z } from "zod";
 
-export type AuthRole = "student" | "teacher";
+import type {
+  AuthRole,
+  LoginFields,
+  LoginInput,
+  RegisterFields,
+  RegisterInput,
+  RegisterValues,
+  ValidationFailure,
+  ValidationSuccess
+} from "./types";
 
-type LoginInput = {
-  email: string;
-  password: string;
-};
-
-type RegisterInput = {
-  acceptedTerms: boolean;
-  confirmPassword: string;
-  email: string;
-  fullName: string;
-  password: string;
-  role: AuthRole | "";
-};
-
-type RegisterValues = Omit<RegisterInput, "confirmPassword"> & {
-  role: AuthRole;
-};
-
-type ValidationSuccess<TValues> = {
-  ok: true;
-  values: TValues;
-};
-
-type ValidationFailure<TFields extends string> = {
-  fieldErrors: Partial<Record<TFields, string>>;
-  ok: false;
-};
-
-type LoginFields = keyof LoginInput;
-type RegisterFields = keyof RegisterInput;
+export type { AuthRole, LoginInput, RegisterInput, RegisterValues } from "./types";
 
 const authRoleSchema = z
   .string()

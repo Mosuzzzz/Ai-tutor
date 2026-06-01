@@ -39,7 +39,7 @@ describe("RegisterPage", () => {
     expect(screen.getByText("กรุณายอมรับเงื่อนไขการใช้งาน")).toBeInTheDocument();
   });
 
-  it("submits a valid teacher registration in mock mode", () => {
+  it("submits a valid teacher registration in mock mode", async () => {
     render(<RegisterPage />);
 
     fireEvent.click(screen.getByRole("radio", { name: "ผู้สอน" }));
@@ -58,7 +58,7 @@ describe("RegisterPage", () => {
     fireEvent.click(screen.getByLabelText("ฉันยอมรับข้อตกลงและเงื่อนไขการใช้งาน"));
     fireEvent.click(screen.getByRole("button", { name: "สมัครสมาชิก" }));
 
-    expect(screen.getByRole("status")).toHaveTextContent("สมัครสมาชิกสำเร็จในโหมด mock");
+    expect(await screen.findByText("สมัครสมาชิกสำเร็จในโหมด mock")).toBeInTheDocument();
     expect(screen.getByText("เส้นทางผู้สอน")).toBeInTheDocument();
   });
 });

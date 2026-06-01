@@ -57,11 +57,13 @@ Included:
 - Login form with email/password validation
 - Register form with role selection, profile fields, password confirmation, and terms acceptance
 - Zod validation schemas
-- Mock success states
+- API-ready mock auth client with async submit wrappers
+- Centralized auth types and display copy
+- Mock submitting/success/error states
 - Disabled mock social auth buttons
 - Local WebP slideshow visual panel on auth pages
 - Security headers configured in Next.js
-- Tests for validation, routes, components, and security headers
+- Tests for validation, mock auth client, routes, components, and security headers
 
 Out of scope until Backend is ready:
 
@@ -178,9 +180,12 @@ frontend/
 │   │   ├── auth/
 │   │   │   ├── AuthFormFields.tsx
 │   │   │   ├── AuthShell.tsx
+│   │   │   ├── authContent.ts
 │   │   │   ├── authValidation.ts
 │   │   │   ├── LoginPage.tsx
-│   │   │   └── RegisterPage.tsx
+│   │   │   ├── mockAuthClient.ts
+│   │   │   ├── RegisterPage.tsx
+│   │   │   └── types.ts
 │   │   ├── foundation/
 │   │   │   ├── FoundationPreview.tsx
 │   │   │   └── PlaceholderPage.tsx
@@ -228,7 +233,7 @@ Responsibilities:
 Current feature modules:
 
 - `features/foundation`: foundation dashboard and placeholder route content
-- `features/auth`: login/register UI, auth form helpers, and auth validation
+- `features/auth`: login/register UI, auth form helpers, auth validation, centralized copy/types, and API-ready mock auth client
 - `features/student-dashboard`: learner dashboard UI, mock/API-ready wrapper, types, and pure helpers
 - `features/teacher-dashboard`: teacher dashboard UI, mock/API-ready data, types, and pure helpers
 
@@ -261,6 +266,9 @@ Current utilities:
 ### Validation Rules
 
 Validation lives in `src/features/auth/authValidation.ts` and uses Zod.
+Shared auth input/result types live in `src/features/auth/types.ts`.
+Display copy and initial mock form state live in `src/features/auth/authContent.ts`.
+Mock API-ready submission wrappers live in `src/features/auth/mockAuthClient.ts`.
 
 Login fields:
 
@@ -289,6 +297,7 @@ Current auth is mock-only and intentionally does not:
 - log credentials
 
 Future backend integration must use HttpOnly Secure cookies for auth session/token handling.
+The current mock client returns a session-shaped result marked as `mode: "http-only-cookie"` and `storesTokenInClient: false` to keep the future integration direction explicit without storing real tokens in browser storage.
 
 ## 7. Visual Design Summary
 
@@ -394,6 +403,7 @@ src/features/auth/AuthShell.test.tsx
 src/features/auth/LoginPage.test.tsx
 src/features/auth/RegisterPage.test.tsx
 src/features/auth/authValidation.test.ts
+src/features/auth/mockAuthClient.test.ts
 src/features/student-dashboard/StudentDashboardPage.test.tsx
 src/features/student-dashboard/dashboardHelpers.test.ts
 src/features/teacher-dashboard/TeacherDashboardPage.test.tsx
@@ -409,6 +419,7 @@ Current coverage focus:
 - auth form rendering
 - login validation
 - register validation
+- mock auth client session shape and no token/password exposure
 - Zod schema behavior
 - auth slideshow assets
 - security header config
@@ -422,7 +433,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 14 test files, 48 tests
+- `npm test`: 15 test files, 50 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -455,11 +466,10 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current Student Dashboard cleanup commit, include:
+For the current Auth refactor commit, include:
 
 ```text
-frontend/src/app/page.test.tsx
-frontend/src/features/student-dashboard/
+frontend/src/features/auth/
 frontend/SRS.md
 ```
 

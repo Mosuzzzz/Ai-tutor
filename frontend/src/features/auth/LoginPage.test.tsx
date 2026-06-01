@@ -16,7 +16,7 @@ describe("LoginPage", () => {
     expect(screen.getByRole("link", { name: "สมัครสมาชิก" })).toHaveAttribute("href", "/register");
   });
 
-  it("shows validation errors before mock login succeeds", () => {
+  it("shows validation errors before mock login succeeds", async () => {
     render(<LoginPage />);
 
     fireEvent.click(screen.getByRole("button", { name: "เข้าสู่ระบบ" }));
@@ -32,6 +32,6 @@ describe("LoginPage", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "เข้าสู่ระบบ" }));
 
-    expect(screen.getByRole("status")).toHaveTextContent("เข้าสู่ระบบสำเร็จในโหมด mock");
+    expect(await screen.findByText("เข้าสู่ระบบสำเร็จในโหมด mock")).toBeInTheDocument();
   });
 });
