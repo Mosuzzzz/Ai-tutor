@@ -124,6 +124,21 @@ def test_integration_flow():
     assert file_entry["status"] == "ready"
     print(f"Ingestion pipeline completed. File status: {file_entry['status']}.")
 
+    documents_dashboard = client.get("/api/files/dashboard", headers=trainer_headers)
+    assert documents_dashboard.status_code == 200
+    documents_data = documents_dashboard.json()
+    assert documents_data["total_documents"] >= 1
+    assert documents_data["status_counts"]["ready"] >= 1
+    assert documents_data["documents"][0]["filename"] == "fire_safety_manual.pdf"
+    assert documents_data["documents"][0]["summary_available"] is True
+
+    document_detail = client.get(f"/api/files/{file_id}/detail", headers=trainer_headers)
+    assert document_detail.status_code == 200
+    document_detail_data = document_detail.json()
+    assert document_detail_data["filename"] == "fire_safety_manual.pdf"
+    assert document_detail_data["summary_available"] is True
+    assert "Overview" in document_detail_data["summary_markdown"]
+
     print_banner("5. Testing Customizable Document Summarization (AI Recap)")
     # Request executive summary (FR-RECAP-03)
     recap_exec = client.post(f"/api/recap/{file_id}", json={"detail_level": "executive"}, headers=learner_headers)
@@ -232,6 +247,9 @@ def test_integration_flow():
     assert stats["completed_quizzes"] == 1
     assert stats["average_score"] == 100.0
     assert stats["streak_days"] == 1
+    assert stats["read_documents_count"] >= 1
+    assert len(stats["recent_scores"]) == 1
+    assert stats["recent_scores"][0]["filename"] == "fire_safety_manual.pdf"
     print("Learner Dashboard metrics calculated correctly:")
     print(f"Completed quizzes: {stats['completed_quizzes']}, Average: {stats['average_score']}%, Active streak: {stats['streak_days']} day(s).")
 
@@ -239,6 +257,9 @@ def test_integration_flow():
     trainer_dash = client.get("/api/analytics/trainer", headers=trainer_headers)
     assert trainer_dash.status_code == 200
     trainer_stats = trainer_dash.json()
+    assert trainer_stats["total_employees"] >= 1
+    assert trainer_stats["total_quizzes_taken"] >= 1
+    assert len(trainer_stats["department_stats"]) >= 1
     print("Trainer Diagnostics Dashboard metrics calculated correctly:")
     print(f"Total employees: {trainer_stats['total_employees']}, Average Tenant Score: {trainer_stats['average_tenant_score']}%")
     print(f"Identified Skill Gaps count: {len(trainer_stats['skill_gaps'])}")
