@@ -12,6 +12,7 @@ import schemas
 from auth import get_current_user, require_role
 from config import settings
 from services.document_processor import extract_text_from_file, chunk_text
+from services.ai_service import generate_recap
 from services.embedding_service import generate_embedding
 
 router = APIRouter(prefix="/files", tags=["Enterprise Classroom - Document Library"])
@@ -61,6 +62,20 @@ def process_document_pipeline(file_id: str):
             db.commit()
     finally:
         db.close()
+
+
+def _serialize_related_exams(file_record: DBFile) -> list[dict[str, object]]:
+    exams = sorted(file_record.exams, key=lambda exam: exam.created_at, reverse=True)
+    return [
+        {
+            "id": exam.id,
+            "status": exam.status,
+            "score": exam.score,
+            "taken_at": exam.taken_at.isoformat() if exam.taken_at else None,
+            "created_at": exam.created_at.isoformat(),
+        }
+        for exam in exams
+    ]
 
 
 
@@ -141,6 +156,80 @@ def list_files(
     """Lists files for the user's corporate tenant workspace (Enforces RLS FR-AUTH-02, FR-FILE-05)."""
     files = db.query(DBFile).filter(DBFile.tenant_id == current_user.tenant_id).all()
     return files
+
+
+@router.get("/dashboard")
+def documents_dashboard(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Returns a document-library summary for the documents page."""
+    files = (
+        db.query(DBFile)
+        .filter(DBFile.tenant_id == current_user.tenant_id)
+        .order_by(DBFile.created_at.desc())
+        .all()
+    )
+
+    status_counts = {"pending": 0, "processing": 0, "ready": 0, "error": 0}
+    documents = []
+    for file_record in files:
+        status_counts[file_record.status] = status_counts.get(file_record.status, 0) + 1
+        summary_markdown = (
+            generate_recap(file_record.extracted_text or "", file_record.filename)
+            if file_record.status == "ready" and file_record.extracted_text
+            else None
+        )
+        documents.append(
+            {
+                "id": file_record.id,
+                "filename": file_record.filename,
+                "status": file_record.status,
+                "created_at": file_record.created_at.isoformat(),
+                "uploaded_by": file_record.uploader.full_name or file_record.uploader.email,
+                "summary_available": summary_markdown is not None,
+                "summary_markdown": summary_markdown,
+                "related_exams_count": len(file_record.exams),
+            }
+        )
+
+    return {
+        "total_documents": len(files),
+        "status_counts": status_counts,
+        "documents": documents,
+    }
+
+
+@router.get("/{file_id}/detail")
+def document_detail(
+    file_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Returns a single document detail payload including recap and related exams."""
+    file_record = db.query(DBFile).filter(DBFile.id == file_id, DBFile.tenant_id == current_user.tenant_id).first()
+    if not file_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found in your tenant workspace.")
+
+    summary_markdown = (
+        generate_recap(file_record.extracted_text or "", file_record.filename)
+        if file_record.status == "ready" and file_record.extracted_text
+        else None
+    )
+
+    return {
+        "id": file_record.id,
+        "tenant_id": file_record.tenant_id,
+        "uploaded_by": file_record.uploaded_by,
+        "filename": file_record.filename,
+        "storage_url": file_record.storage_url,
+        "status": file_record.status,
+        "created_at": file_record.created_at.isoformat(),
+        "extracted_text_preview": (file_record.extracted_text or "")[:1200],
+        "summary_available": summary_markdown is not None,
+        "summary_markdown": summary_markdown,
+        "related_exams": _serialize_related_exams(file_record),
+    }
 
 
 @router.get("/{file_id}/download")

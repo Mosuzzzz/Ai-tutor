@@ -10,12 +10,13 @@ from auth import (
     generate_secure_token,
     hash_password,
     hash_secure_token,
+    get_current_user,
     verify_password,
     create_refresh_token_record,
     resolve_refresh_token,
 )
 from database import get_db
-from models import Tenant, User, AuditLog
+from models import Tenant, User, AuditLog, RefreshToken
 import schemas
 
 import services.email_service as email_service
@@ -26,6 +27,33 @@ router = APIRouter(prefix="/auth", tags=["Authentication & SSO"])
 VERIFICATION_TOKEN_EXPIRES_MINUTES = 60 * 24
 RESET_TOKEN_EXPIRES_MINUTES = 60
 MAGIC_LINK_TOKEN_EXPIRES_MINUTES = 15
+
+ROLE_ACCESS = {
+    "learner": {
+        "accessible_route_groups": ["dashboard", "documents", "chat", "quiz"],
+        "protected_routes": ["/api/files/upload", "/api/files/{file_id}", "/api/exams/generate", "/api/analytics/usage", "/api/analytics/trainer"],
+        "can_manage_users": False,
+        "can_view_admin_analytics": False,
+    },
+    "trainer": {
+        "accessible_route_groups": ["dashboard", "documents", "chat", "quiz", "trainer-analytics"],
+        "protected_routes": ["/api/analytics/usage", "/api/analytics/audit-logs"],
+        "can_manage_users": False,
+        "can_view_admin_analytics": False,
+    },
+    "tenant_admin": {
+        "accessible_route_groups": ["dashboard", "documents", "chat", "quiz", "trainer-analytics", "admin"],
+        "protected_routes": ["/api/analytics/usage", "/api/analytics/audit-logs", "/api/files/upload", "/api/exams/generate"],
+        "can_manage_users": True,
+        "can_view_admin_analytics": False,
+    },
+    "global_admin": {
+        "accessible_route_groups": ["dashboard", "documents", "chat", "quiz", "trainer-analytics", "admin"],
+        "protected_routes": ["/api/analytics/usage", "/api/analytics/audit-logs", "/api/files/upload", "/api/exams/generate"],
+        "can_manage_users": True,
+        "can_view_admin_analytics": True,
+    },
+}
 
 
 def normalize_native_role(role: str) -> str:
@@ -57,6 +85,30 @@ def build_user_payload(user: User) -> Dict[str, Any]:
         "email": user.email,
         "role": user.role,
     }
+
+
+def serialize_user(user: User) -> schemas.UserResponse:
+    return schemas.UserResponse(
+        id=user.id,
+        tenant_id=user.tenant_id,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role,
+        created_at=user.created_at,
+        last_active_at=user.last_active_at,
+    )
+
+
+def build_session_response(user: User) -> schemas.SessionResponse:
+    access = ROLE_ACCESS.get(user.role, ROLE_ACCESS["learner"])
+    return schemas.SessionResponse(
+        authenticated=True,
+        user=serialize_user(user),
+        accessible_route_groups=access["accessible_route_groups"],
+        protected_routes=access["protected_routes"],
+        can_manage_users=access["can_manage_users"],
+        can_view_admin_analytics=access["can_view_admin_analytics"],
+    )
 
 
 def create_and_store_token(user: User, token_field: str, expiry_field: str, minutes: int) -> str:
@@ -181,6 +233,43 @@ def login_password(request: schemas.LoginRequest, req_meta: Request, db: Session
     db.commit()
 
     return schemas.Token(access_token=token_str, token_type="bearer", expires_in=expires_in, refresh_token=refresh_token, refresh_expires_in=refresh_expires_in)
+
+
+@router.get("/me", response_model=schemas.UserResponse)
+def read_current_user(current_user: User = Depends(get_current_user)):
+    """Returns the authenticated user profile for session-aware clients."""
+    return serialize_user(current_user)
+
+
+@router.get("/session", response_model=schemas.SessionResponse)
+def read_session(current_user: User = Depends(get_current_user)):
+    """Returns the current authenticated session together with role-based route access."""
+    return build_session_response(current_user)
+
+
+@router.post("/logout", response_model=schemas.AuthActionResponse)
+def logout_current_user(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Revokes all active refresh tokens for the current user session."""
+    active_tokens = db.query(RefreshToken).filter(
+        RefreshToken.user_id == current_user.id,
+        RefreshToken.revoked_at.is_(None),
+    ).all()
+
+    for token in active_tokens:
+        token.revoked_at = datetime.utcnow()
+
+    db.add(
+        AuditLog(
+            tenant_id=current_user.tenant_id,
+            user_id=current_user.id,
+            action="LOGOUT",
+            details=f"User logged out; revoked {len(active_tokens)} refresh token(s).",
+            ip_address="127.0.0.1",
+        )
+    )
+    db.commit()
+
+    return schemas.AuthActionResponse(message="Logged out successfully.")
 
 
 @router.post("/forgot-password", response_model=schemas.AuthActionResponse)

@@ -77,6 +77,15 @@ class Token(BaseModel):
     refresh_token: Optional[str] = None
     refresh_expires_in: Optional[int] = None
 
+
+class SessionResponse(BaseModel):
+    authenticated: bool
+    user: "UserResponse"
+    accessible_route_groups: List[str]
+    protected_routes: List[str]
+    can_manage_users: bool
+    can_view_admin_analytics: bool
+
 class TokenData(BaseModel):
     user_id: str
     tenant_id: str
