@@ -2,47 +2,56 @@
 
 import { ArrowRight, GraduationCap } from "lucide-react";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 
 import { Button } from "../../components/ui/Button";
 import { AuthDivider, AuthField, MockSocialButton, MockStatus } from "./AuthFormFields";
 import { AuthShell } from "./AuthShell";
+import { AUTH_COPY, AUTH_MESSAGES, INITIAL_LOGIN_FORM } from "./authContent";
 import { validateLogin } from "./authValidation";
-
-type LoginFormState = {
-  email: string;
-  password: string;
-};
-
-const initialLoginForm: LoginFormState = {
-  email: "",
-  password: ""
-};
+import { submitMockLogin } from "./mockAuthClient";
+import type { AuthSubmissionStatus, LoginInput } from "./types";
 
 export const LoginPage = () => {
-  const [form, setForm] = useState<LoginFormState>(initialLoginForm);
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof LoginFormState, string>>>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [form, setForm] = useState<LoginInput>(INITIAL_LOGIN_FORM);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof LoginInput, string>>>({});
+  const [submissionStatus, setSubmissionStatus] = useState<AuthSubmissionStatus>("idle");
+  const [submissionMessage, setSubmissionMessage] = useState("");
+  const isSubmitting = submissionStatus === "submitting";
 
-  function updateField(field: keyof LoginFormState, value: string) {
+  const updateField = (field: keyof LoginInput, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
-    setSubmitted(false);
-  }
+    setSubmissionStatus("idle");
+    setSubmissionMessage("");
+  };
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const result = validateLogin(form);
 
     if (!result.ok) {
       setFieldErrors(result.fieldErrors);
-      setSubmitted(false);
+      setSubmissionStatus("idle");
+      setSubmissionMessage("");
       return;
     }
 
     setFieldErrors({});
-    setSubmitted(true);
-  }
+    setSubmissionStatus("submitting");
+    setSubmissionMessage(AUTH_MESSAGES.loginSubmitting);
+
+    try {
+      const submission = await submitMockLogin(result.values);
+
+      setSubmissionStatus(submission.ok ? "success" : "error");
+      setSubmissionMessage(submission.message);
+    } catch {
+      setSubmissionStatus("error");
+      setSubmissionMessage(AUTH_MESSAGES.genericError);
+    }
+  };
 
   return (
     <AuthShell mode="login">
@@ -50,12 +59,16 @@ export const LoginPage = () => {
         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-[#10253f] text-[#f4b35b] shadow-[0_18px_44px_rgba(16,37,63,0.18)]">
           <GraduationCap aria-hidden="true" className="h-8 w-8" />
         </div>
-        <h1 className="auth-display text-[44px] font-bold leading-tight text-[#10253f]">AI Tutor</h1>
-        <p className="mt-3 text-body-lg text-[#596273]">เข้าสู่ระบบเพื่อดำเนินการต่อ</p>
+        <h1 className="auth-display text-[44px] font-bold leading-tight text-[#10253f]">
+          {AUTH_COPY.login.heading}
+        </h1>
+        <p className="mt-3 text-body-lg text-[#596273]">{AUTH_COPY.login.intro}</p>
       </div>
 
       <form className="space-y-5" noValidate onSubmit={handleSubmit}>
-        {submitted && <MockStatus>เข้าสู่ระบบสำเร็จในโหมด mock</MockStatus>}
+        {submissionStatus !== "idle" && (
+          <MockStatus tone={submissionStatus === "error" ? "error" : "success"}>{submissionMessage}</MockStatus>
+        )}
         <AuthField
           autoComplete="email"
           error={fieldErrors.email}
@@ -69,7 +82,7 @@ export const LoginPage = () => {
         <AuthField
           action={
             <button className="text-label-sm font-bold text-[#a9660a]" type="button">
-              ลืมรหัสผ่าน?
+              {AUTH_COPY.login.forgotPassword}
             </button>
           }
           autoComplete="current-password"
@@ -82,13 +95,13 @@ export const LoginPage = () => {
           value={form.password}
         />
 
-        <Button className="w-full bg-[#10253f] text-white hover:bg-[#18395e]" type="submit">
-          เข้าสู่ระบบ
+        <Button className="w-full bg-[#10253f] text-white hover:bg-[#18395e]" disabled={isSubmitting} type="submit">
+          {AUTH_COPY.login.submitLabel}
           <ArrowRight aria-hidden="true" className="h-5 w-5" />
         </Button>
       </form>
 
-      <AuthDivider>หรือเข้าสู่ระบบด้วย</AuthDivider>
+      <AuthDivider>{AUTH_COPY.login.divider}</AuthDivider>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <MockSocialButton provider="Google" />
@@ -96,9 +109,9 @@ export const LoginPage = () => {
       </div>
 
       <p className="mt-8 text-center text-body-md text-[#596273]">
-        ยังไม่มีบัญชี?{" "}
+        {AUTH_COPY.login.footerPrompt}{" "}
         <Link className="font-bold text-[#a9660a] hover:text-[#704512]" href="/register">
-          สมัครสมาชิก
+          {AUTH_COPY.login.footerLink}
         </Link>
       </p>
     </AuthShell>

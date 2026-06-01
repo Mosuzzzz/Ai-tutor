@@ -2,81 +2,87 @@
 
 import { ArrowRight, GraduationCap, Presentation, UserRound } from "lucide-react";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent, ReactNode } from "react";
 
 import { Button } from "../../components/ui/Button";
 import { AuthDivider, AuthField, MockSocialButton, MockStatus } from "./AuthFormFields";
 import { AuthShell } from "./AuthShell";
-import { AuthRole, validateRegister } from "./authValidation";
-
-type RegisterFormState = {
-  acceptedTerms: boolean;
-  confirmPassword: string;
-  email: string;
-  fullName: string;
-  password: string;
-  role: AuthRole | "";
-};
-
-const initialRegisterForm: RegisterFormState = {
-  acceptedTerms: false,
-  confirmPassword: "",
-  email: "",
-  fullName: "",
-  password: "",
-  role: "student"
-};
-
-const roleLabels: Record<AuthRole, string> = {
-  student: "เส้นทางนักเรียน",
-  teacher: "เส้นทางผู้สอน"
-};
+import {
+  AUTH_COPY,
+  AUTH_MESSAGES,
+  AUTH_ROLE_DESCRIPTIONS,
+  AUTH_ROLE_LABELS,
+  INITIAL_REGISTER_FORM
+} from "./authContent";
+import { validateRegister } from "./authValidation";
+import { submitMockRegister } from "./mockAuthClient";
+import type { AuthRole, AuthSubmissionStatus, RegisterInput } from "./types";
 
 export const RegisterPage = () => {
-  const [form, setForm] = useState<RegisterFormState>(initialRegisterForm);
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof RegisterFormState, string>>>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [form, setForm] = useState<RegisterInput>(INITIAL_REGISTER_FORM);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof RegisterInput, string>>>({});
+  const [submissionStatus, setSubmissionStatus] = useState<AuthSubmissionStatus>("idle");
+  const [submissionMessage, setSubmissionMessage] = useState("");
+  const isSubmitting = submissionStatus === "submitting";
 
-  function updateField<TField extends keyof RegisterFormState>(
+  const updateField = <TField extends keyof RegisterInput>(
     field: TField,
-    value: RegisterFormState[TField]
-  ) {
+    value: RegisterInput[TField]
+  ) => {
     setForm((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
-    setSubmitted(false);
-  }
+    setSubmissionStatus("idle");
+    setSubmissionMessage("");
+  };
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const result = validateRegister(form);
 
     if (!result.ok) {
       setFieldErrors(result.fieldErrors);
-      setSubmitted(false);
+      setSubmissionStatus("idle");
+      setSubmissionMessage("");
       return;
     }
 
     setFieldErrors({});
-    setSubmitted(true);
-  }
+    setSubmissionStatus("submitting");
+    setSubmissionMessage(AUTH_MESSAGES.registerSubmitting);
+
+    try {
+      const submission = await submitMockRegister(result.values);
+
+      setSubmissionStatus(submission.ok ? "success" : "error");
+      setSubmissionMessage(submission.message);
+    } catch {
+      setSubmissionStatus("error");
+      setSubmissionMessage(AUTH_MESSAGES.genericError);
+    }
+  };
 
   return (
     <AuthShell mode="register">
       <div className="mb-8">
         <p className="text-label-md font-bold uppercase tracking-[0.12em] text-[#a9660a]">
-          AI Tutor onboarding
+          {AUTH_COPY.register.eyebrow}
         </p>
         <h1 className="auth-display mt-2 text-[42px] font-bold leading-tight text-[#10253f]">
-          สร้างบัญชีใหม่
+          {AUTH_COPY.register.heading}
         </h1>
-        <p className="mt-3 text-body-lg text-[#596273]">เริ่มต้นการเรียนรู้ด้วยพลังของ AI ไปกับเรา</p>
+        <p className="mt-3 text-body-lg text-[#596273]">{AUTH_COPY.register.intro}</p>
       </div>
 
       <form className="space-y-5" noValidate onSubmit={handleSubmit}>
-        {submitted && <MockStatus>สมัครสมาชิกสำเร็จในโหมด mock</MockStatus>}
+        {submissionStatus !== "idle" && (
+          <MockStatus tone={submissionStatus === "error" ? "error" : "success"}>{submissionMessage}</MockStatus>
+        )}
 
         <fieldset>
-          <legend className="mb-3 text-label-md font-bold text-[#132238]">เลือกบทบาทของคุณ</legend>
+          <legend className="mb-3 text-label-md font-bold text-[#132238]">
+            {AUTH_COPY.register.roleLegend}
+          </legend>
           <div className="grid gap-3 sm:grid-cols-2">
             <RoleOption
               checked={form.role === "student"}
@@ -103,12 +109,10 @@ export const RegisterPage = () => {
             </div>
             <div>
               <p className="text-label-md font-bold text-[#10253f]">
-                {form.role ? roleLabels[form.role] : "เลือกเส้นทางของคุณ"}
+                {form.role ? AUTH_ROLE_LABELS[form.role] : AUTH_COPY.register.roleFallback}
               </p>
               <p className="text-label-sm text-[#596273]">
-                {form.role === "teacher"
-                  ? "เตรียมพื้นที่สำหรับสร้างบทเรียนและดูแลผู้เรียน"
-                  : "เตรียมพื้นที่สำหรับเรียน ทบทวน และถาม AI Tutor"}
+                {form.role ? AUTH_ROLE_DESCRIPTIONS[form.role] : AUTH_ROLE_DESCRIPTIONS.student}
               </p>
             </div>
           </div>
@@ -164,20 +168,20 @@ export const RegisterPage = () => {
               onChange={(event) => updateField("acceptedTerms", event.target.checked)}
               type="checkbox"
             />
-            <span>ฉันยอมรับข้อตกลงและเงื่อนไขการใช้งาน</span>
+            <span>{AUTH_COPY.register.termsLabel}</span>
           </label>
           {fieldErrors.acceptedTerms && (
             <p className="mt-2 text-label-sm text-error">{fieldErrors.acceptedTerms}</p>
           )}
         </div>
 
-        <Button className="w-full bg-[#10253f] text-white hover:bg-[#18395e]" type="submit">
-          สมัครสมาชิก
+        <Button className="w-full bg-[#10253f] text-white hover:bg-[#18395e]" disabled={isSubmitting} type="submit">
+          {AUTH_COPY.register.submitLabel}
           <ArrowRight aria-hidden="true" className="h-5 w-5" />
         </Button>
       </form>
 
-      <AuthDivider>หรือสมัครสมาชิกด้วย</AuthDivider>
+      <AuthDivider>{AUTH_COPY.register.divider}</AuthDivider>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <MockSocialButton provider="Google" />
@@ -185,9 +189,9 @@ export const RegisterPage = () => {
       </div>
 
       <p className="mt-8 text-center text-body-md text-[#596273]">
-        มีบัญชีอยู่แล้ว?{" "}
+        {AUTH_COPY.register.footerPrompt}{" "}
         <Link className="font-bold text-[#a9660a] hover:text-[#704512]" href="/login">
-          เข้าสู่ระบบ
+          {AUTH_COPY.register.footerLink}
         </Link>
       </p>
     </AuthShell>
@@ -202,7 +206,7 @@ const RoleOption = ({
   value
 }: {
   checked: boolean;
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   onChange: () => void;
   value: AuthRole;

@@ -1,5 +1,7 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 
+import { AUTH_COPY } from "./authContent";
+
 type AuthFieldProps = InputHTMLAttributes<HTMLInputElement> & {
   action?: ReactNode;
   error?: string;
@@ -46,7 +48,7 @@ export const AuthDivider = ({ children }: { children: ReactNode }) => {
 export const MockSocialButton = ({ provider }: { provider: "Facebook" | "Google" }) => {
   return (
     <button
-      aria-label={`${provider} ยังไม่เปิดใช้งาน`}
+      aria-label={`${provider} ${AUTH_COPY.socialUnavailableSuffix}`}
       className="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg border border-[#c7cfdd] bg-[#f8f9ff] px-4 text-label-md font-bold text-[#132238] opacity-70"
       disabled
       type="button"
@@ -62,9 +64,22 @@ export const MockSocialButton = ({ provider }: { provider: "Facebook" | "Google"
   );
 };
 
-export const MockStatus = ({ children }: { children: ReactNode }) => {
+export const MockStatus = ({
+  children,
+  tone = "success"
+}: {
+  children: ReactNode;
+  tone?: "error" | "success";
+}) => {
   return (
-    <p className="rounded-lg border border-[#f4b35b]/40 bg-[#fff7e8] px-4 py-3 text-label-md font-bold text-[#704512]" role="status">
+    <p
+      className={
+        tone === "error"
+          ? "rounded-lg border border-[#f2b8b5] bg-[#fff8f7] px-4 py-3 text-label-md font-bold text-[#8c1d18]"
+          : "rounded-lg border border-[#f4b35b]/40 bg-[#fff7e8] px-4 py-3 text-label-md font-bold text-[#704512]"
+      }
+      role="status"
+    >
       {children}
     </p>
   );
