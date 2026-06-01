@@ -1,13 +1,7 @@
-import { FileText } from "lucide-react";
+import { PlaceholderRoute } from "../PlaceholderRoute";
 
-import { PlaceholderPage } from "../../features/foundation/PlaceholderPage";
+const DocumentsPage = () => {
+  return <PlaceholderRoute moduleKey="documents" />;
+};
 
-export default function DocumentsPage() {
-  return (
-    <PlaceholderPage
-      description="ฐานหน้าสำหรับอัปโหลดเอกสาร สร้างสรุป และแยกประเด็นสำคัญจากไฟล์เรียน"
-      icon={FileText}
-      title="สรุปเอกสาร"
-    />
-  );
-}
+export default DocumentsPage;

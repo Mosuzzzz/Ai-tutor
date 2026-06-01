@@ -1,13 +1,7 @@
-import { Settings } from "lucide-react";
+import { PlaceholderRoute } from "../PlaceholderRoute";
 
-import { PlaceholderPage } from "../../features/foundation/PlaceholderPage";
+const SettingsPage = () => {
+  return <PlaceholderRoute moduleKey="settings" />;
+};
 
-export default function SettingsPage() {
-  return (
-    <PlaceholderPage
-      description="ฐานหน้าสำหรับจัดการโปรไฟล์ การแจ้งเตือน บัญชี และตัวเลือกของแพลตฟอร์ม"
-      icon={Settings}
-      title="การตั้งค่า"
-    />
-  );
-}
+export default SettingsPage;

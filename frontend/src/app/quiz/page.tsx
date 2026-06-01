@@ -1,13 +1,7 @@
-import { Bot } from "lucide-react";
+import { PlaceholderRoute } from "../PlaceholderRoute";
 
-import { PlaceholderPage } from "../../features/foundation/PlaceholderPage";
+const QuizPage = () => {
+  return <PlaceholderRoute moduleKey="quiz" />;
+};
 
-export default function QuizPage() {
-  return (
-    <PlaceholderPage
-      description="ฐานหน้าสำหรับสร้างแบบทดสอบจากบทเรียน เอกสาร หรือหัวข้อที่ผู้เรียนกำลังทบทวน"
-      icon={Bot}
-      title="สร้างควิซ"
-    />
-  );
-}
+export default QuizPage;
