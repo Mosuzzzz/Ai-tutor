@@ -6,7 +6,7 @@ import { getPlaceholderModule } from "./placeholderContent";
 
 describe("PlaceholderPage", () => {
   it("renders centralized placeholder content without owning the app shell", () => {
-    const placeholder = getPlaceholderModule("chat");
+    const placeholder = getPlaceholderModule("courses");
 
     render(<PlaceholderPage module={placeholder} />);
 
@@ -18,7 +18,7 @@ describe("PlaceholderPage", () => {
   });
 
   it("renders every readiness item from the selected module", () => {
-    const placeholder = getPlaceholderModule("analytics");
+    const placeholder = getPlaceholderModule("settings");
 
     render(<PlaceholderPage module={placeholder} />);
 

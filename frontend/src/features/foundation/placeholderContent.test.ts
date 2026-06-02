@@ -8,14 +8,7 @@ import {
 
 describe("placeholder content", () => {
   it("keeps placeholder modules limited to routes that are still waiting for real features", () => {
-    expect(placeholderModuleKeys).toEqual([
-      "courses",
-      "documents",
-      "chat",
-      "quiz",
-      "analytics",
-      "settings"
-    ]);
+    expect(placeholderModuleKeys).toEqual(["courses", "settings"]);
   });
 
   it("defines route metadata, display copy, and readiness notes for each placeholder module", () => {
@@ -34,10 +27,10 @@ describe("placeholder content", () => {
   });
 
   it("returns the requested module with a stable API-ready shape", () => {
-    expect(getPlaceholderModule("documents")).toMatchObject({
-      key: "documents",
-      href: "/documents",
-      title: "สรุปเอกสาร"
+    expect(getPlaceholderModule("courses")).toMatchObject({
+      href: "/courses",
+      key: "courses",
+      title: "คอร์สเรียน"
     });
   });
 });
