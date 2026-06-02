@@ -3,13 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import AnalyticsPage from "./analytics/page";
 import CoursesPage from "./courses/page";
-import QuizPage from "./quiz/page";
 import SettingsPage from "./settings/page";
 import { placeholderModules } from "../features/foundation/placeholderContent";
 
 const routePages = [
   { Component: CoursesPage, placeholder: placeholderModules.courses },
-  { Component: QuizPage, placeholder: placeholderModules.quiz },
   { Component: AnalyticsPage, placeholder: placeholderModules.analytics },
   { Component: SettingsPage, placeholder: placeholderModules.settings }
 ];
