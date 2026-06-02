@@ -6,7 +6,7 @@ type CardProps = HTMLAttributes<HTMLDivElement> & {
   children: ReactNode;
 };
 
-export function Card({ children, className, ...props }: CardProps) {
+export const Card = ({ children, className, ...props }: CardProps) => {
   return (
     <div
       className={cn(
@@ -18,4 +18,4 @@ export function Card({ children, className, ...props }: CardProps) {
       {children}
     </div>
   );
-}
+};
