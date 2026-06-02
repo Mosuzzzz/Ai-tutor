@@ -67,8 +67,9 @@ def ask_ai_chatbot(
     # 5. Log chat session to Audit Logs for tracking (FR-CHAT-04, FR-AUTH-05)
     log_details = {
         "query": request.prompt,
+        "file_id": request.file_id,
         "response": response_text,
-        "citations": [{"filename": c["filename"], "chunk": c["chunk_index"]} for c in citations_list]
+        "citations": [{"filename": c["filename"], "chunk": c["chunk_index"]} for c in citations_list],
     }
     
     audit = AuditLog(
@@ -101,35 +102,42 @@ def ask_ai_chatbot(
 
 @router.get("/history", response_model=List[Dict[str, Any]])
 def get_chat_history(
+    file_id: str = None,
+    skip: int = 0,
+    limit: int = 30,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """Retrieves personal chatbot interaction history logs (FR-CHAT-04)."""
-    logs = db.query(AuditLog).filter(
-        AuditLog.tenant_id == current_user.tenant_id,
-        AuditLog.user_id == current_user.id,
-        AuditLog.action == "CHAT_QUERY"
-    ).order_by(AuditLog.created_at.desc()).all()
-    
+    """Retrieves personal chatbot interaction history logs (FR-CHAT-04). Optionally filter by file_id."""
+    limit = min(limit, 100)
+    logs = (
+        db.query(AuditLog)
+        .filter(
+            AuditLog.tenant_id == current_user.tenant_id,
+            AuditLog.user_id == current_user.id,
+            AuditLog.action == "CHAT_QUERY",
+        )
+        .order_by(AuditLog.created_at.desc())
+        .all()
+    )
+
     history = []
     for log in logs:
         try:
             details = json.loads(log.details)
-            history.append({
-                "id": log.id,
-                "query": details.get("query"),
-                "response": details.get("response"),
-                "citations": details.get("citations", []),
-                "timestamp": log.created_at
-            })
         except Exception:
-            # Fallback if parsing fails
-            history.append({
-                "id": log.id,
-                "query": "Unknown query",
-                "response": log.details,
-                "citations": [],
-                "timestamp": log.created_at
-            })
-            
-    return history
+            details = {"query": "Unknown query", "response": log.details, "citations": [], "file_id": None}
+
+        if file_id and details.get("file_id") != file_id:
+            continue
+
+        history.append({
+            "id": log.id,
+            "query": details.get("query"),
+            "file_id": details.get("file_id"),
+            "response": details.get("response"),
+            "citations": details.get("citations", []),
+            "timestamp": log.created_at,
+        })
+
+    return history[skip: skip + limit]

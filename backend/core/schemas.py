@@ -131,6 +131,7 @@ class RecapResponse(BaseModel):
     filename: str
     summary_markdown: str
     generated_at: datetime
+    cached: bool = False
 
 # --- Exam Schemas ---
 class ExamQuestion(BaseModel):
@@ -152,6 +153,7 @@ class ExamCreateRequest(BaseModel):
     file_id: str
     num_questions: int = Field(5, ge=5, le=20)
     difficulty: str = "medium" # "easy", "medium", "hard"
+    instructions: Optional[str] = None
 
 class ExamResponse(BaseModel):
     id: str
@@ -217,6 +219,34 @@ class ScoreTrendItem(BaseModel):
     date: str
     average_score: float
 
+class ActivityItem(BaseModel):
+    action: str
+    details_summary: str
+    created_at: datetime
+
+class SkillScore(BaseModel):
+    filename: str
+    file_id: str
+    average_score: float
+    attempts: int
+
+class FileStatusResponse(BaseModel):
+    file_id: str
+    filename: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class StudentStat(BaseModel):
+    user_id: str
+    full_name: Optional[str]
+    email: str
+    completed_quizzes: int
+    average_score: float
+    last_active_at: Optional[datetime]
+
 class LearnerDashboardResponse(BaseModel):
     completed_quizzes: int
     average_score: float
@@ -224,6 +254,8 @@ class LearnerDashboardResponse(BaseModel):
     read_documents_count: int
     recent_scores: List[Dict[str, Any]]
     score_trend: List[ScoreTrendItem]
+    recent_activity: List[ActivityItem] = []
+    skill_breakdown: List[SkillScore] = []
 
 class TrainerDashboardResponse(BaseModel):
     total_employees: int

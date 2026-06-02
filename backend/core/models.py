@@ -74,6 +74,7 @@ class File(Base):
     filename = Column(String(255), nullable=False)
     storage_url = Column(Text, nullable=False)
     extracted_text = Column(Text, nullable=True)
+    summary_markdown = Column(Text, nullable=True)
     status = Column(String(50), default="pending", nullable=False) # 'pending', 'processing', 'ready', 'error'
     created_at = Column(DateTime, default=datetime.utcnow)
 

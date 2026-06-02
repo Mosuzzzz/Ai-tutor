@@ -54,6 +54,15 @@ def process_document_pipeline(file_id: str):
             
         file_record.status = "ready"
         db.commit()
+
+        # Auto-generate and cache executive summary so detail/dashboard pages are instant
+        try:
+            if extracted_text:
+                summary = generate_recap(extracted_text, file_record.filename, detail_level="executive")
+                file_record.summary_markdown = summary
+                db.commit()
+        except Exception:
+            pass
     except Exception as e:
         db.rollback()
         file_record = db.query(DBFile).filter(DBFile.id == file_id).first()
@@ -150,11 +159,21 @@ async def upload_file(
 
 @router.get("/", response_model=List[schemas.FileResponse])
 def list_files(
+    skip: int = 0,
+    limit: int = 20,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Lists files for the user's corporate tenant workspace (Enforces RLS FR-AUTH-02, FR-FILE-05)."""
-    files = db.query(DBFile).filter(DBFile.tenant_id == current_user.tenant_id).all()
+    limit = min(limit, 100)
+    files = (
+        db.query(DBFile)
+        .filter(DBFile.tenant_id == current_user.tenant_id)
+        .order_by(DBFile.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     return files
 
 
@@ -175,11 +194,6 @@ def documents_dashboard(
     documents = []
     for file_record in files:
         status_counts[file_record.status] = status_counts.get(file_record.status, 0) + 1
-        summary_markdown = (
-            generate_recap(file_record.extracted_text or "", file_record.filename)
-            if file_record.status == "ready" and file_record.extracted_text
-            else None
-        )
         documents.append(
             {
                 "id": file_record.id,
@@ -187,8 +201,8 @@ def documents_dashboard(
                 "status": file_record.status,
                 "created_at": file_record.created_at.isoformat(),
                 "uploaded_by": file_record.uploader.full_name or file_record.uploader.email,
-                "summary_available": summary_markdown is not None,
-                "summary_markdown": summary_markdown,
+                "summary_available": bool(file_record.summary_markdown),
+                "summary_markdown": file_record.summary_markdown,
                 "related_exams_count": len(file_record.exams),
             }
         )
@@ -211,12 +225,6 @@ def document_detail(
     if not file_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found in your tenant workspace.")
 
-    summary_markdown = (
-        generate_recap(file_record.extracted_text or "", file_record.filename)
-        if file_record.status == "ready" and file_record.extracted_text
-        else None
-    )
-
     return {
         "id": file_record.id,
         "tenant_id": file_record.tenant_id,
@@ -226,10 +234,31 @@ def document_detail(
         "status": file_record.status,
         "created_at": file_record.created_at.isoformat(),
         "extracted_text_preview": (file_record.extracted_text or "")[:1200],
-        "summary_available": summary_markdown is not None,
-        "summary_markdown": summary_markdown,
+        "summary_available": bool(file_record.summary_markdown),
+        "summary_markdown": file_record.summary_markdown,
         "related_exams": _serialize_related_exams(file_record),
     }
+
+
+@router.get("/{file_id}/status", response_model=schemas.FileStatusResponse)
+def file_status(
+    file_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Lightweight endpoint for polling document processing status."""
+    file_record = db.query(DBFile).filter(
+        DBFile.id == file_id,
+        DBFile.tenant_id == current_user.tenant_id,
+    ).first()
+    if not file_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found in your tenant workspace.")
+    return schemas.FileStatusResponse(
+        file_id=file_record.id,
+        filename=file_record.filename,
+        status=file_record.status,
+        created_at=file_record.created_at,
+    )
 
 
 @router.get("/{file_id}/download")

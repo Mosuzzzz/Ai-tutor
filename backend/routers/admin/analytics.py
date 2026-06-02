@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -5,6 +6,7 @@ from database import get_db
 from auth import require_role, get_current_user
 from models import AuditLog, Exam, File, User
 from datetime import datetime, timedelta
+import schemas
 
 router = APIRouter(prefix="/analytics", tags=["Admin Analytics"])
 
@@ -98,6 +100,54 @@ def _build_department_stats(db: Session, tenant_id: str) -> list[dict[str, objec
     ]
 
 
+def _build_recent_activity(db: Session, user_id: str, tenant_id: str) -> list[schemas.ActivityItem]:
+    ACTIVITY_ACTIONS = ("FILE_UPLOAD", "CHAT_QUERY", "EXAM_SUBMIT", "EXAM_GENERATED")
+    logs = (
+        db.query(AuditLog)
+        .filter(
+            AuditLog.tenant_id == tenant_id,
+            AuditLog.user_id == user_id,
+            AuditLog.action.in_(ACTIVITY_ACTIONS),
+        )
+        .order_by(AuditLog.created_at.desc())
+        .limit(10)
+        .all()
+    )
+    items = []
+    for log in logs:
+        try:
+            details_obj = json.loads(log.details) if log.details else {}
+            summary = details_obj.get("query") or str(log.details or "")[:80]
+        except Exception:
+            summary = str(log.details or "")[:80]
+        items.append(schemas.ActivityItem(action=log.action, details_summary=summary, created_at=log.created_at))
+    return items
+
+
+def _build_skill_breakdown(db: Session, user_id: str, tenant_id: str) -> list[schemas.SkillScore]:
+    user_exams = (
+        db.query(Exam)
+        .filter(Exam.tenant_id == tenant_id, Exam.user_id == user_id, Exam.taken_at.isnot(None))
+        .all()
+    )
+    by_file: dict[str, list[int]] = defaultdict(list)
+    file_names: dict[str, str] = {}
+    for exam in user_exams:
+        by_file[exam.file_id].append(_score_percentage(exam))
+        if exam.file_id not in file_names:
+            file_names[exam.file_id] = exam.file.filename if exam.file else exam.file_id
+
+    result = []
+    for file_id, scores in list(by_file.items())[:8]:
+        result.append(schemas.SkillScore(
+            filename=file_names[file_id],
+            file_id=file_id,
+            average_score=round(sum(scores) / len(scores), 1),
+            attempts=len(scores),
+        ))
+    return result
+
+
 @router.get("/usage")
 def usage_overview(days: int = 30, db: Session = Depends(get_db), _=Depends(require_role(["global_admin"]))):
     """Simple usage metrics for admin dashboards (FR-ANALYTICS-01)."""
@@ -108,7 +158,7 @@ def usage_overview(days: int = 30, db: Session = Depends(get_db), _=Depends(requ
 
 
 @router.get("/dashboard")
-def learner_dashboard(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+def learner_dashboard(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     """Learner-facing dashboard metrics (FR-DASH-01)."""
     tenant_id = current_user.tenant_id
     tenant_exams = (
@@ -128,11 +178,13 @@ def learner_dashboard(db: Session = Depends(get_db), current_user = Depends(get_
         "read_documents_count": read_documents_count,
         "recent_scores": _build_recent_scores(tenant_exams),
         "score_trend": _build_score_trend(tenant_exams),
+        "recent_activity": _build_recent_activity(db, current_user.id, tenant_id),
+        "skill_breakdown": _build_skill_breakdown(db, current_user.id, tenant_id),
     }
 
 
 @router.get("/trainer")
-def trainer_dashboard(db: Session = Depends(get_db), current_user = Depends(require_role(["trainer", "tenant_admin"]))):
+def trainer_dashboard(db: Session = Depends(get_db), current_user=Depends(require_role(["trainer", "tenant_admin"]))):
     """Trainer diagnostics (FR-DASH-02)."""
     tenant_id = current_user.tenant_id
     total_employees = db.query(User).filter(User.tenant_id == tenant_id, User.role == "learner").count()
@@ -150,10 +202,38 @@ def trainer_dashboard(db: Session = Depends(get_db), current_user = Depends(requ
     }
 
 
+@router.get("/trainer/students")
+def trainer_students(db: Session = Depends(get_db), current_user=Depends(require_role(["trainer", "tenant_admin"]))):
+    """Per-learner stats for trainer view."""
+    tenant_id = current_user.tenant_id
+    learners = db.query(User).filter(User.tenant_id == tenant_id, User.role == "learner").all()
+    result = []
+    for learner in learners:
+        completed = [e for e in learner.exams if e.taken_at is not None]
+        scores = [_score_percentage(e) for e in completed]
+        result.append(schemas.StudentStat(
+            user_id=learner.id,
+            full_name=learner.full_name,
+            email=learner.email,
+            completed_quizzes=len(completed),
+            average_score=round(sum(scores) / len(scores), 1) if scores else 0.0,
+            last_active_at=learner.last_active_at,
+        ))
+    return result
+
+
 @router.get("/audit-logs")
 def audit_logs(db: Session = Depends(get_db), _=Depends(require_role(["tenant_admin", "global_admin"]))):
     logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(100).all()
-    out = []
-    for l in logs:
-        out.append({"id": l.id, "user_id": l.user_id, "email": getattr(l, 'email', None), "action": l.action, "details": l.details, "ip_address": l.ip_address, "created_at": l.created_at})
-    return out
+    return [
+        {
+            "id": log.id,
+            "user_id": log.user_id,
+            "email": log.user.email if log.user else None,
+            "action": log.action,
+            "details": log.details,
+            "ip_address": log.ip_address,
+            "created_at": log.created_at,
+        }
+        for log in logs
+    ]

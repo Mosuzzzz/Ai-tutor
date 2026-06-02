@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from config import settings
 
@@ -73,15 +73,17 @@ def generate_quiz(
     filename: str,
     num_questions: int = 5,
     difficulty: str = "medium",
+    instructions: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Generates a multiple-choice quiz from the document text."""
     if not text:
         return []
 
+    extra = f"\nAdditional instructions: {instructions}" if instructions else ""
     prompt = (
         f"You are a Corporate Compliance & Training Examiner AI. "
         f"Generate a multiple-choice quiz of {num_questions} questions "
-        f"based ONLY on the provided document. Difficulty: {difficulty}.\n"
+        f"based ONLY on the provided document. Difficulty: {difficulty}.{extra}\n"
         "Each question must have exactly 4 options; only one is correct.\n"
         "Return a valid JSON array of objects with these fields:\n"
         "  id (string), question_text (string), options (array of 4 strings),\n"
@@ -115,7 +117,7 @@ def generate_quiz(
         except Exception:
             pass
 
-    return _sandbox_quiz(filename, num_questions)
+    return _sandbox_quiz(filename, num_questions, instructions)
 
 
 def generate_grounded_chat(
@@ -210,7 +212,7 @@ def _sandbox_recap(text: str, filename: str, detail_level: str) -> str:
     )
 
 
-def _sandbox_quiz(filename: str, num_questions: int) -> List[Dict[str, Any]]:
+def _sandbox_quiz(filename: str, num_questions: int, instructions: Optional[str] = None) -> List[Dict[str, Any]]:
     pool = [
         {
             "id": "q1",

@@ -1,34 +1,49 @@
+import copy
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session
 from database import get_db
 from auth import get_current_user, require_role
-from models import Exam, User, AuditLog
+from models import Exam, File, User, AuditLog
 import schemas
 import uuid
+from services import ai_service
 
 router = APIRouter(prefix="/exams", tags=["Tenant Exam Management"])
 
 
-def _generate_dummy_questions(file_id: str, num_questions: int):
-    questions = []
-    for i in range(num_questions):
-        qid = str(uuid.uuid4())
-        questions.append({
-            "id": qid,
-            "question_text": f"Question {i+1} (from file {file_id})",
-            "options": [f"Option {j+1}" for j in range(4)],
-            "correct_index": 0,
-            "explanation": f"Explanation for question {i+1}",
-            "citation": {"filename": f"file_{file_id}.pdf", "file_id": file_id, "chunk_index": 0, "matched_text": "relevant passage"}
-        })
-    return questions
-
-
 @router.post("/generate")
-def generate_exam(request: schemas.ExamCreateRequest, current_user: User = Depends(require_role(["trainer", "tenant_admin"])), db: Session = Depends(get_db)):
-    """Generate an exam blueprint from a file (trainer only)."""
-    questions = _generate_dummy_questions(request.file_id, request.num_questions)
+def generate_exam(
+    request: schemas.ExamCreateRequest,
+    current_user: User = Depends(require_role(["trainer", "tenant_admin"])),
+    db: Session = Depends(get_db),
+):
+    """Generate an exam from a document using AI (trainer only)."""
+    file_record = db.query(File).filter(
+        File.id == request.file_id,
+        File.tenant_id == current_user.tenant_id,
+    ).first()
+    if not file_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found in your tenant workspace.")
+    if file_record.status != "ready":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File is not ready for quiz generation (status: {file_record.status}).",
+        )
+    if not file_record.extracted_text:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="File has no extracted text. Cannot generate quiz.",
+        )
+
+    questions = ai_service.generate_quiz(
+        text=file_record.extracted_text,
+        filename=file_record.filename,
+        num_questions=request.num_questions,
+        difficulty=request.difficulty,
+        instructions=request.instructions,
+    )
+
     exam = Exam(
         file_id=request.file_id,
         tenant_id=current_user.tenant_id,
@@ -40,7 +55,12 @@ def generate_exam(request: schemas.ExamCreateRequest, current_user: User = Depen
     db.commit()
     db.refresh(exam)
 
-    db.add(AuditLog(tenant_id=current_user.tenant_id, user_id=current_user.id, action="EXAM_GENERATED", details=f"Generated exam {exam.id} from file {request.file_id}"))
+    db.add(AuditLog(
+        tenant_id=current_user.tenant_id,
+        user_id=current_user.id,
+        action="EXAM_GENERATED",
+        details=f"Generated exam {exam.id} from file {request.file_id} ({len(questions)} questions, difficulty={request.difficulty})",
+    ))
     db.commit()
 
     return {
@@ -58,16 +78,17 @@ def get_exam(exam_id: str, current_user: User = Depends(get_current_user), db: S
     if not exam:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exam not found")
 
-    # If draft and requester is not the creator/trainer/admin => forbid
     if exam.status == "draft" and current_user.role == "learner":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Exam is draft and not visible to learners")
 
-    # If learner viewing a published exam, hide correct answers/explanations
     questions = exam.questions
     if current_user.role == "learner":
         masked = []
         for q in questions:
-            q_copy = {k: v for k, v in q.items() if k not in ("correct_index", "explanation", "citation")}
+            q_copy = copy.deepcopy(q)
+            q_copy.pop("correct_index", None)
+            q_copy.pop("explanation", None)
+            q_copy.pop("citation", None)
             masked.append(q_copy)
         questions = masked
 
@@ -114,7 +135,6 @@ def submit_exam(exam_id: str, payload: schemas.ExamSubmitRequest, current_user: 
     if exam.status != "published":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Exam not published")
 
-    # Score calculation
     answers = payload.answers
     total = len(exam.questions)
     correct = 0
@@ -142,6 +162,14 @@ def submit_exam(exam_id: str, payload: schemas.ExamSubmitRequest, current_user: 
     exam.taken_at = datetime.utcnow()
     db.commit()
     db.refresh(exam)
+
+    db.add(AuditLog(
+        tenant_id=current_user.tenant_id,
+        user_id=current_user.id,
+        action="EXAM_SUBMIT",
+        details=f"Submitted exam {exam.id}, score={score}%, passed={passed}",
+    ))
+    db.commit()
 
     return {
         "exam_id": exam.id,
