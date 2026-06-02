@@ -2,10 +2,6 @@ import type { LucideIcon } from "lucide-react";
 
 export const placeholderModuleKeys = [
   "courses",
-  "documents",
-  "chat",
-  "quiz",
-  "analytics",
   "settings"
 ] as const;
 

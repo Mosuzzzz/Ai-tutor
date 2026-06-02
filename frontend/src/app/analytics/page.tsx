@@ -1,7 +1,12 @@
-import { PlaceholderRoute } from "../PlaceholderRoute";
+import { AppShell } from "../AppShell";
+import { LearningAnalyticsPage } from "../../features/learning-analytics/LearningAnalyticsPage";
 
 const AnalyticsPage = () => {
-  return <PlaceholderRoute moduleKey="analytics" />;
+  return (
+    <AppShell>
+      <LearningAnalyticsPage />
+    </AppShell>
+  );
 };
 
 export default AnalyticsPage;

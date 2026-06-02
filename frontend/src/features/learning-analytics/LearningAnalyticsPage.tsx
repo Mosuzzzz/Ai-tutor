@@ -1,0 +1,381 @@
+import {
+  ArrowRight,
+  BarChart3,
+  BookOpenCheck,
+  FileText,
+  MessageSquareText,
+  Sparkles,
+  Target,
+  TriangleAlert
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
+
+import { Card } from "../../components/ui/Card";
+import {
+  buildAnalyticsMetricCards,
+  formatAnalyticsPercent,
+  formatDepartmentLabel,
+  formatRiskLevel,
+  getLowestScoringSkill,
+  getStrongestSkill,
+  normalizeAnalyticsPercent,
+  sortDepartmentStats,
+  sortSkillGapsByRisk
+} from "./learningAnalyticsHelpers";
+import { learningAnalyticsMock } from "./learningAnalyticsData";
+import type {
+  LearningActivity,
+  LearningActivityType,
+  LearningAnalyticsMetric,
+  LearningAnalyticsStatus,
+  LearningAnalyticsViewModel,
+  LearningSkillGap,
+  LearningTrendPoint
+} from "./types";
+
+type LearningAnalyticsPageProps = {
+  analytics?: LearningAnalyticsViewModel;
+  errorMessage?: string;
+  status?: LearningAnalyticsStatus;
+};
+
+const metricToneClassNames: Record<LearningAnalyticsMetric["tone"], string> = {
+  amber: "bg-[#fff3d8] text-[#8a5a00]",
+  blue: "bg-[#eaf3ff] text-[#24527a]",
+  green: "bg-[#e6f6ee] text-[#216148]",
+  rose: "bg-[#ffe9df] text-[#9a3b18]"
+};
+
+const activityIconMap: Record<LearningActivityType, LucideIcon> = {
+  chat: MessageSquareText,
+  document: FileText,
+  quiz: BookOpenCheck
+};
+
+const actionLinkClassName =
+  "inline-flex min-h-12 max-w-full items-center justify-center gap-2 rounded border border-[#234c5c]/15 bg-white px-4 py-2 text-left text-label-md font-bold text-[#234c5c] transition-colors hover:bg-[#eaf7f8] focus:outline-none focus:ring-2 focus:ring-[#72b7bf] focus:ring-offset-2";
+
+const formatTrendDateLabel = (date: string) => {
+  return new Intl.DateTimeFormat("th-TH", {
+    day: "numeric",
+    month: "short"
+  }).format(new Date(date));
+};
+
+const MetricCard = ({ metric }: { metric: LearningAnalyticsMetric }) => {
+  return (
+    <Card className="min-w-0 overflow-hidden">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="break-words text-label-sm font-semibold uppercase text-on-surface-variant">
+            {metric.label}
+          </p>
+          <p className="mt-2 text-display-lg font-bold text-on-surface">{metric.value}</p>
+        </div>
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded ${metricToneClassNames[metric.tone]}`}>
+          <BarChart3 aria-hidden="true" className="h-5 w-5" />
+        </div>
+      </div>
+      <p className="mt-3 break-words text-body-md text-on-surface-variant">{metric.helper}</p>
+    </Card>
+  );
+};
+
+const ScoreTrendChart = ({ trend }: { trend: LearningTrendPoint[] }) => {
+  return (
+    <Card className="min-w-0 overflow-hidden p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-label-sm font-semibold text-[#234c5c]">Score Trend</p>
+          <h3 className="mt-1 break-words text-headline-md text-on-surface">แนวโน้มคะแนนเฉลี่ย</h3>
+        </div>
+        <span className="rounded bg-[#e6f6ee] px-3 py-1 text-label-sm font-bold text-[#216148]">
+          {trend.length} จุดข้อมูล
+        </span>
+      </div>
+      <div
+        aria-label="แนวโน้มคะแนนเฉลี่ย 7 วันล่าสุด"
+        className="mt-5 flex h-56 min-w-0 items-end gap-3 overflow-hidden rounded border border-outline-variant/40 bg-[#fbfcff] px-4 py-5"
+        role="img"
+      >
+        {trend.map((point) => {
+          const percent = normalizeAnalyticsPercent(point.average_score);
+
+          return (
+            <div className="flex min-w-0 flex-1 flex-col items-center gap-2" key={point.date}>
+              <div className="flex h-36 w-full items-end rounded bg-surface-container-low">
+                <div
+                  aria-hidden="true"
+                  className="w-full rounded bg-[#2f7b84]"
+                  style={{ height: `${percent}%` }}
+                />
+              </div>
+              <span className="text-label-sm font-bold text-on-surface">{percent}%</span>
+              <span className="max-w-full truncate text-label-sm text-on-surface-variant">
+                {formatTrendDateLabel(point.date)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+};
+
+const SkillGapCard = ({ gap }: { gap: LearningSkillGap }) => {
+  const riskPercent = normalizeAnalyticsPercent(gap.error_rate);
+
+  return (
+    <article
+      aria-label={`ทักษะ ${gap.topic}`}
+      className="min-w-0 overflow-hidden rounded border border-outline-variant/40 bg-[#fbfcff] p-4"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h4 className="break-words text-body-lg font-bold text-on-surface">{gap.topic}</h4>
+          <p className="mt-1 break-words text-body-md text-on-surface-variant">{gap.description}</p>
+        </div>
+        <span className="rounded bg-[#ffe9df] px-3 py-1 text-label-sm font-bold text-[#9a3b18]">
+          {formatRiskLevel(gap.error_rate)}
+        </span>
+      </div>
+      <div className="mt-4">
+        <div className="flex items-center justify-between gap-3 text-label-sm">
+          <span className="font-semibold text-on-surface-variant">อัตราตอบผิด</span>
+          <span className="font-bold text-on-surface">{formatAnalyticsPercent(gap.error_rate)}</span>
+        </div>
+        <div
+          aria-label={`${gap.topic} ความเสี่ยง ${riskPercent}%`}
+          aria-valuemax={100}
+          aria-valuemin={0}
+          aria-valuenow={riskPercent}
+          className="mt-2 h-2 overflow-hidden rounded-full bg-surface-container"
+          role="progressbar"
+        >
+          <div
+            aria-hidden="true"
+            className="h-full rounded-full bg-[#b65f3b]"
+            style={{ width: `${riskPercent}%` }}
+          />
+        </div>
+        <p className="mt-3 text-label-sm text-on-surface-variant">
+          ผิด {gap.incorrect_count} จาก {gap.total_attempts} ครั้ง
+        </p>
+      </div>
+    </article>
+  );
+};
+
+const SkillRadarPanel = ({ skillGaps }: { skillGaps: LearningSkillGap[] }) => {
+  const sortedSkillGaps = sortSkillGapsByRisk(skillGaps);
+
+  return (
+    <Card
+      aria-label="เรดาร์ทักษะที่ควรทบทวน"
+      className="min-w-0 overflow-hidden p-5"
+      role="region"
+    >
+      <div className="flex items-center gap-2 text-label-sm font-semibold text-[#234c5c]">
+        <Target aria-hidden="true" className="h-4 w-4" />
+        วิเคราะห์จุดอ่อน
+      </div>
+      <h3 className="mt-2 text-headline-md text-on-surface">เรดาร์ทักษะที่ควรทบทวน</h3>
+      <div className="mt-5 grid gap-3">
+        {sortedSkillGaps.map((gap) => (
+          <SkillGapCard gap={gap} key={gap.topic} />
+        ))}
+      </div>
+    </Card>
+  );
+};
+
+const DepartmentStatsPanel = ({ analytics }: { analytics: LearningAnalyticsViewModel }) => {
+  const sortedStats = sortDepartmentStats(analytics.apiResponse.department_stats);
+
+  return (
+    <Card className="min-w-0 overflow-hidden p-5">
+      <h3 className="text-headline-md text-on-surface">สถานะเอกสารประกอบการเรียน</h3>
+      <div className="mt-4 grid gap-3">
+        {sortedStats.map((stat) => (
+          <div
+            className="flex min-w-0 items-center justify-between gap-3 rounded border border-outline-variant/40 bg-[#fbfcff] p-3"
+            key={stat.label}
+          >
+            <span className="break-words text-body-md font-semibold text-on-surface-variant">
+              {formatDepartmentLabel(stat.label)}
+            </span>
+            <span className="text-headline-sm font-bold text-on-surface">{stat.value}</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+};
+
+const LearningActivityTable = ({ activities }: { activities: LearningActivity[] }) => {
+  return (
+    <Card className="min-w-0 overflow-hidden p-5">
+      <h3 className="text-headline-md text-on-surface">กิจกรรมการเรียนล่าสุด</h3>
+      <div className="mt-4 overflow-x-auto">
+        <table aria-label="กิจกรรมการเรียนล่าสุด" className="min-w-full border-separate border-spacing-y-2 text-left">
+          <thead>
+            <tr className="text-label-sm text-on-surface-variant">
+              <th className="px-3 py-2" scope="col">กิจกรรม</th>
+              <th className="px-3 py-2" scope="col">ผู้เกี่ยวข้อง</th>
+              <th className="px-3 py-2" scope="col">เวลา</th>
+              <th className="px-3 py-2" scope="col">ผลลัพธ์</th>
+            </tr>
+          </thead>
+          <tbody>
+            {activities.map((activity) => {
+              const Icon = activityIconMap[activity.type];
+
+              return (
+                <tr className="rounded bg-[#fbfcff] text-body-md text-on-surface" key={activity.id}>
+                  <td className="min-w-64 rounded-l border-y border-l border-outline-variant/40 px-3 py-3">
+                    <div className="flex min-w-0 gap-3">
+                      <Icon aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-[#2f7b84]" />
+                      <div className="min-w-0">
+                        <p className="break-words font-bold">{activity.title}</p>
+                        <p className="mt-1 break-words text-label-sm text-on-surface-variant">
+                          {activity.description}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="border-y border-outline-variant/40 px-3 py-3 text-on-surface-variant">
+                    {activity.actorLabel}
+                  </td>
+                  <td className="border-y border-outline-variant/40 px-3 py-3 text-on-surface-variant">
+                    {activity.occurredAtLabel}
+                  </td>
+                  <td className="rounded-r border-y border-r border-outline-variant/40 px-3 py-3 font-bold text-on-surface">
+                    {activity.scorePercent === undefined ? "พร้อมวิเคราะห์" : formatAnalyticsPercent(activity.scorePercent)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+};
+
+export const LearningAnalyticsPage = ({
+  analytics = learningAnalyticsMock,
+  errorMessage = "ไม่สามารถโหลดสถิติการเรียนได้",
+  status = "ready"
+}: LearningAnalyticsPageProps) => {
+  if (status === "loading") {
+    return (
+      <Card className="text-body-md text-on-surface-variant" role="status">
+        กำลังโหลดสถิติการเรียน
+      </Card>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <div
+        className="rounded border border-[#f2b8b5] bg-[#fff8f7] p-6 text-body-md font-semibold text-[#8c1d18] shadow-ambient"
+        role="alert"
+      >
+        {errorMessage}
+      </div>
+    );
+  }
+
+  const hasAnalyticsData =
+    analytics.apiResponse.score_trend.length > 0 ||
+    analytics.apiResponse.skill_gaps.length > 0 ||
+    analytics.activities.length > 0;
+
+  if (!hasAnalyticsData) {
+    return (
+      <div className="space-y-6" data-source="api-ready-mock" data-testid="learning-analytics">
+        <Card className="text-center" role="status">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded bg-surface-container text-primary">
+            <TriangleAlert aria-hidden="true" className="h-6 w-6" />
+          </div>
+          <h2 className="mt-4 text-headline-md text-on-surface">ยังไม่มีข้อมูลสถิติจากควิซ</h2>
+          <p className="mt-2 text-body-md text-on-surface-variant">
+            เมื่อผู้เรียนทำควิซหรือใช้เอกสารแล้ว ระบบจะแสดงแนวโน้มคะแนนและจุดที่ควรทบทวน
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
+  const metrics = buildAnalyticsMetricCards(analytics.apiResponse);
+  const strongestSkill = getStrongestSkill(analytics.apiResponse.skill_gaps);
+  const lowestScoringSkill = getLowestScoringSkill(analytics.apiResponse.skill_gaps);
+
+  return (
+    <div className="space-y-6" data-source="api-ready-mock" data-testid="learning-analytics">
+      <section className="overflow-hidden rounded border border-[#234c5c]/15 bg-[#153642] text-white shadow-ambient">
+        <div className="p-5 md:p-7">
+          <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#ffd37a]">
+            <Sparkles aria-hidden="true" className="h-4 w-4" />
+            {analytics.workspaceName}
+          </div>
+          <h2 className="mt-5 text-headline-lg-mobile font-bold md:text-headline-lg">สถิติการเรียน</h2>
+          <p className="mt-3 max-w-3xl break-words text-body-md text-white/80 md:text-body-lg">
+            ดูแนวโน้มคะแนน จุดอ่อนรายทักษะ และกิจกรรมล่าสุด เพื่อวางแผนทบทวนจากข้อมูลควิซและเอกสาร
+          </p>
+          <p className="mt-4 text-label-sm font-semibold text-white/70">{analytics.generatedAtLabel}</p>
+        </div>
+      </section>
+
+      <section aria-label="ตัวชี้วัดสถิติการเรียน" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {metrics.map((metric) => (
+          <MetricCard key={metric.id} metric={metric} />
+        ))}
+      </section>
+
+      <section
+        className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,380px)]"
+        data-testid="learning-analytics-grid"
+      >
+        <div className="grid min-w-0 gap-4 overflow-hidden" data-testid="learning-analytics-main-panel">
+          <ScoreTrendChart trend={analytics.apiResponse.score_trend} />
+          <SkillRadarPanel skillGaps={analytics.apiResponse.skill_gaps} />
+          <LearningActivityTable activities={analytics.activities} />
+        </div>
+
+        <aside className="grid min-w-0 gap-4 overflow-hidden" data-testid="learning-analytics-side-panel">
+          <Card className="min-w-0 overflow-hidden p-5">
+            <h3 className="text-headline-md text-on-surface">Insight ถัดไป</h3>
+            <div className="mt-4 grid gap-3">
+              <div className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4">
+                <p className="text-label-sm font-bold text-[#216148]">แข็งแรงที่สุด</p>
+                <p className="mt-2 break-words text-body-lg font-bold text-on-surface">
+                  {strongestSkill?.topic ?? "ยังไม่มีข้อมูล"}
+                </p>
+              </div>
+              <div className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4">
+                <p className="text-label-sm font-bold text-[#9a3b18]">ควรทบทวนก่อน</p>
+                <p className="mt-2 break-words text-body-lg font-bold text-on-surface">
+                  {lowestScoringSkill?.topic ?? "ยังไม่มีข้อมูล"}
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-3">
+              <Link className={actionLinkClassName} href="/quiz">
+                สร้างควิซจากจุดอ่อน
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              </Link>
+              <Link className={actionLinkClassName} href="/documents">
+                ดูเอกสารที่เกี่ยวข้อง
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              </Link>
+            </div>
+          </Card>
+
+          <DepartmentStatsPanel analytics={analytics} />
+        </aside>
+      </section>
+    </div>
+  );
+};
