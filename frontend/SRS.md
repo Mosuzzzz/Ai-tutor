@@ -4,7 +4,7 @@
 
 ## 1. Project Overview
 
-AI Tutor Frontend เป็น Next.js 16 App Router application สำหรับแพลตฟอร์มผู้ช่วยเรียนรู้ด้วย AI โดยช่วงปัจจุบันมีฐาน UI, หน้า Auth แบบ mock, หน้า Student Dashboard และ Teacher Dashboard แบบ mock/API-ready ก่อนเชื่อมต่อ Backend จริง
+AI Tutor Frontend เป็น Next.js 16 App Router application สำหรับแพลตฟอร์มผู้ช่วยเรียนรู้ด้วย AI โดยช่วงปัจจุบันมีฐาน UI, หน้า Auth แบบ mock, หน้า Student Dashboard, Teacher Dashboard และ Document Summary แบบ mock/API-ready ก่อนเชื่อมต่อ Backend จริง
 
 ### Technology Stack
 
@@ -42,7 +42,7 @@ Included:
 - Mobile navigation dialog
 - Sticky top bar with search, notification, help, and profile controls
 - Student Dashboard replacing the original foundation preview
-- Placeholder pages for upcoming modules
+- Placeholder pages for remaining upcoming modules
 - Centralized placeholder route content in `src/features/foundation/placeholderContent.ts`
 - App-level `PlaceholderRoute` wrapper for placeholder shell composition
 - UI-only `PlaceholderPage` that can be replaced by real feature pages later
@@ -140,6 +140,38 @@ Out of scope until Backend/Auth is ready:
 - Loading/error/empty states จาก network จริง
 - Backend error mapping
 
+### Completed Phase 5: Document Summary
+
+หน้า `/documents` ถูกเปลี่ยนจาก placeholder เป็นหน้า Document Summary แบบ mock/API-ready สำหรับ core AI flow แรกของ Phase 2 โดยวาง data shape ให้ใกล้กับ Backend route ที่มีอยู่ เช่น `/api/files/dashboard`, `/api/files/{file_id}/detail` และ `/api/recap/{file_id}`
+
+Included:
+
+- `/documents` route render ผ่าน shared `AppShell`
+- Document Summary UI ภาษาไทย
+- Hero summary สำหรับคลังเอกสาร AI Tutor
+- Metric cards: เอกสารทั้งหมด, พร้อมสรุป, กำลังประมวลผล, เอกสารมีปัญหา
+- Selected document summary พร้อม action ไปยัง Quiz และ Chat
+- Disabled export/share buttons เพื่อกัน user เข้าใจผิดว่าส่งออกจริงแล้ว
+- Empty state guard สำหรับกรณี API-ready payload ยังไม่มีเอกสารหรือไม่มี detail ที่พร้อมสรุป
+- Document library list พร้อม status label จาก backend-like status (`ready`, `processing`, `pending`, `error`)
+- Key topics พร้อม accessible `progressbar`
+- Detailed breakdown และ related documents
+- Markdown summary parser ที่ render เป็น text ผ่าน React เท่านั้น ไม่ใช้ `dangerouslySetInnerHTML`
+- Mock/API-ready data module ที่ map shape ใกล้กับ Backend document dashboard/detail/recap response
+- Pure helper functions สำหรับ status label, summary count, readiness sorting, selected document fallback และ markdown parsing
+- Test coverage สำหรับ helper, component, route `/documents`, loading/error/empty state และการไม่ expose backend endpoint ลง DOM
+
+Out of scope until Backend/Auth is ready:
+
+- Real `/api/files/dashboard` fetch
+- Real `/api/files/{file_id}/detail` fetch
+- Real `/api/recap/{file_id}` generation request
+- Upload document flow
+- Export/share implementation
+- Zod validation สำหรับ response จาก API จริง
+- Tenant/session permission checks ก่อน render document data
+- Backend error mapping และ empty states จาก API จริง
+
 ## 3. Route Map
 
 | Route | File | Status | Purpose |
@@ -147,7 +179,7 @@ Out of scope until Backend/Auth is ready:
 | `/` | `src/app/page.tsx` | Student Dashboard mock/API-ready | Main learner dashboard |
 | `/teacher` | `src/app/teacher/page.tsx` | Teacher Dashboard mock/API-ready | Main teacher dashboard |
 | `/courses` | `src/app/courses/page.tsx` | Placeholder | Courses module shell |
-| `/documents` | `src/app/documents/page.tsx` | Placeholder | AI document summary module shell |
+| `/documents` | `src/app/documents/page.tsx` | Document Summary mock/API-ready | AI document summary workspace |
 | `/chat` | `src/app/chat/page.tsx` | Placeholder | AI chat module shell |
 | `/quiz` | `src/app/quiz/page.tsx` | Placeholder | AI quiz generator module shell |
 | `/analytics` | `src/app/analytics/page.tsx` | Placeholder | Learning analytics module shell |
@@ -169,6 +201,7 @@ frontend/
 │   │   ├── analytics/page.tsx
 │   │   ├── chat/page.tsx
 │   │   ├── courses/page.tsx
+│   │   ├── documents/page.test.tsx
 │   │   ├── documents/page.tsx
 │   │   ├── login/page.tsx
 │   │   ├── quiz/page.tsx
@@ -203,6 +236,13 @@ frontend/
 │   │   │   ├── PlaceholderPage.test.tsx
 │   │   │   ├── placeholderContent.ts
 │   │   │   ├── placeholderContent.test.ts
+│   │   │   └── types.ts
+│   │   ├── document-summary/
+│   │   │   ├── DocumentSummaryPage.tsx
+│   │   │   ├── DocumentSummaryPage.test.tsx
+│   │   │   ├── documentSummaryData.ts
+│   │   │   ├── documentSummaryHelpers.ts
+│   │   │   ├── documentSummaryHelpers.test.ts
 │   │   │   └── types.ts
 │   │   ├── student-dashboard/
 │   │   │   ├── StudentDashboardPage.tsx
@@ -273,6 +313,7 @@ Current feature modules:
 - `features/foundation`: placeholder route content, UI-only placeholder surface, and tests for deferred modules
 - `features/app-shell`: shared responsive app shell, navigation data, shell sub-components, and active route helpers
 - `features/auth`: login/register UI, auth form helpers, auth validation, centralized copy/types, and API-ready mock auth client
+- `features/document-summary`: document summary UI, backend-like mock data, types, and pure helpers
 - `features/student-dashboard`: learner dashboard UI, mock/API-ready wrapper, types, and pure helpers
 - `features/teacher-dashboard`: teacher dashboard UI, mock/API-ready data, types, and pure helpers
 
@@ -398,6 +439,20 @@ Teacher Dashboard ใช้รูปแบบ operational dashboard สำหร
 
 Dashboard ยังไม่มี API call, role guard หรือ permission check จริงจนกว่า Auth/Backend contract จะพร้อม
 
+### Document Summary UI
+
+Document Summary ใช้ layout แบบ workspace สำหรับอ่านและต่อยอดเอกสาร ไม่ใช่หน้า landing:
+
+- Hero สี navy เพื่อเชื่อมกับ AI Tutor platform
+- Metric cards สำหรับสถานะเอกสาร
+- Selected document panel สำหรับสรุปหลักและ action ต่อไปยัง Quiz/Chat
+- Summary sections จาก Markdown ที่ render เป็น text อย่างปลอดภัย
+- Key topics พร้อม confidence progressbar
+- Detailed breakdown และ related documents สำหรับทบทวนต่อ
+- Copy บนหน้าจอเป็นภาษาไทย
+
+หน้านี้ยังไม่มี API call, upload จริง, export/share จริง หรือ permission check จริงจนกว่า Auth/Backend contract จะพร้อม
+
 ## 8. Security Configuration
 
 Security headers are configured in `next.config.ts`.
@@ -433,6 +488,7 @@ Current test files:
 
 ```text
 src/app/auth-routes.test.tsx
+src/app/documents/page.test.tsx
 src/app/page.test.tsx
 src/app/routes.test.tsx
 src/app/security-headers.test.ts
@@ -450,6 +506,8 @@ src/features/auth/authValidation.test.ts
 src/features/auth/mockAuthClient.test.ts
 src/features/foundation/PlaceholderPage.test.tsx
 src/features/foundation/placeholderContent.test.ts
+src/features/document-summary/DocumentSummaryPage.test.tsx
+src/features/document-summary/documentSummaryHelpers.test.ts
 src/features/student-dashboard/StudentDashboardPage.test.tsx
 src/features/student-dashboard/dashboardHelpers.test.ts
 src/features/teacher-dashboard/TeacherDashboardPage.test.tsx
@@ -484,10 +542,14 @@ Current coverage focus:
 - teacher dashboard route and API-ready mock marker
 - teacher dashboard helper formatting/sorting/status labels
 - teacher dashboard action links and accessible progressbar
+- document summary route and API-ready mock marker
+- document summary helper status/sorting/markdown parsing
+- document summary loading/error/empty states
+- document summary action links, disabled export/share, and backend endpoint hiding
 
 Current latest verification:
 
-- `npm test`: 23 test files, 66 tests
+- `npm test`: 26 test files, 77 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -506,6 +568,7 @@ The following items should wait until Backend/API contracts are available:
 - Dashboard response validation with Zod
 - Student dashboard empty states from real API
 - Teacher dashboard real API integration, role guard, loading/error/empty states
+- Document Summary real API integration, upload, recap generation, export/share, and response validation
 - Backend validation error mapping
 - Playwright E2E for real auth flow
 - Logout behavior
@@ -520,22 +583,17 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current Shared UI cleanup commit, include:
+For the current Document Summary commit, include:
 
 ```text
-frontend/src/components/ui/Button.tsx
-frontend/src/components/ui/Button.test.tsx
-frontend/src/components/ui/Card.tsx
-frontend/src/components/ui/Card.test.tsx
-frontend/src/components/ui/sharedUiConventions.test.ts
-frontend/src/lib/cn.ts
-frontend/src/lib/cn.test.ts
-frontend/package.json
-frontend/package-lock.json
+frontend/src/app/documents/page.tsx
+frontend/src/app/documents/page.test.tsx
+frontend/src/app/routes.test.tsx
+frontend/src/features/document-summary/
 frontend/SRS.md
 ```
 
-This cleanup keeps shared UI behavior stable while aligning `Button`, `Card`, and `cn` with the arrow-function convention in `AGENTS_FRONTEND.md`. The package files are included only to clear the critical Vitest audit finding without using `npm audit fix --force`.
+This feature replaces the `/documents` placeholder with a mock/API-ready Document Summary workspace while keeping Backend/Auth integration deferred.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 
