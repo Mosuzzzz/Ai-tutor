@@ -1,7 +1,12 @@
-import { PlaceholderRoute } from "../PlaceholderRoute";
+import { AiChatSummaryPage } from "../../features/ai-chat/AiChatSummaryPage";
+import { AppShell } from "../AppShell";
 
 const ChatPage = () => {
-  return <PlaceholderRoute moduleKey="chat" />;
+  return (
+    <AppShell>
+      <AiChatSummaryPage />
+    </AppShell>
+  );
 };
 
 export default ChatPage;
