@@ -4,14 +4,12 @@ import { describe, expect, it } from "vitest";
 import AnalyticsPage from "./analytics/page";
 import ChatPage from "./chat/page";
 import CoursesPage from "./courses/page";
-import DocumentsPage from "./documents/page";
 import QuizPage from "./quiz/page";
 import SettingsPage from "./settings/page";
 import { placeholderModules } from "../features/foundation/placeholderContent";
 
 const routePages = [
   { Component: CoursesPage, placeholder: placeholderModules.courses },
-  { Component: DocumentsPage, placeholder: placeholderModules.documents },
   { Component: ChatPage, placeholder: placeholderModules.chat },
   { Component: QuizPage, placeholder: placeholderModules.quiz },
   { Component: AnalyticsPage, placeholder: placeholderModules.analytics },

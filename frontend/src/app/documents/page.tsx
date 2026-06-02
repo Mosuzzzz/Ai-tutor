@@ -1,7 +1,12 @@
-import { PlaceholderRoute } from "../PlaceholderRoute";
+import { AppShell } from "../AppShell";
+import { DocumentSummaryPage } from "../../features/document-summary/DocumentSummaryPage";
 
 const DocumentsPage = () => {
-  return <PlaceholderRoute moduleKey="documents" />;
+  return (
+    <AppShell>
+      <DocumentSummaryPage />
+    </AppShell>
+  );
 };
 
 export default DocumentsPage;
