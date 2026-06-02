@@ -41,12 +41,14 @@ Included:
 - Sidebar navigation for desktop
 - Mobile navigation dialog
 - Sticky top bar with search, notification, help, and profile controls
-- Foundation dashboard preview
+- Student Dashboard replacing the original foundation preview
 - Placeholder pages for upcoming modules
 - Centralized placeholder route content in `src/features/foundation/placeholderContent.ts`
 - App-level `PlaceholderRoute` wrapper for placeholder shell composition
 - UI-only `PlaceholderPage` that can be replaced by real feature pages later
 - Shared UI primitives: `Button`, `Card`
+- Shared UI primitive tests for `Button`, `Card`, `cn`, and arrow-function conventions
+- Frontend dependency security fix: Vitest upgraded to patched `4.1.8`, with PostCSS pinned/overridden to `8.5.15`
 - Base design tokens in Tailwind config and global CSS
 - Shared App Shell module in `src/features/app-shell`
 - Compatibility exports from `src/app/AppShell.tsx` and `src/app/navigation.ts`
@@ -181,8 +183,11 @@ frontend/
 │   │   └── page.tsx
 │   ├── components/
 │   │   └── ui/
+│   │       ├── Button.test.tsx
 │   │       ├── Button.tsx
-│   │       └── Card.tsx
+│   │       ├── Card.test.tsx
+│   │       ├── Card.tsx
+│   │       └── sharedUiConventions.test.ts
 │   ├── features/
 │   │   ├── auth/
 │   │   │   ├── AuthFormFields.tsx
@@ -212,6 +217,7 @@ frontend/
 │   │       ├── teacherDashboardHelpers.ts
 │   │       └── types.ts
 │   ├── lib/
+│   │   ├── cn.test.ts
 │   │   └── cn.ts
 │   └── test/
 │       └── setup.ts
@@ -276,8 +282,8 @@ Current feature modules:
 
 Current shared components:
 
-- `Button`
-- `Card`
+- `Button`: arrow-export primitive with default `type="button"`, variant classes, native button attributes, and tests
+- `Card`: arrow-export surface primitive with class merge/attribute forwarding tests
 
 ### Utility Layer
 
@@ -285,7 +291,7 @@ Current shared components:
 
 Current utilities:
 
-- `cn`: safe class name join helper
+- `cn`: arrow-export safe class name join helper that preserves class order and filters falsey values
 
 ## 6. Auth Module Specification
 
@@ -431,6 +437,9 @@ src/app/page.test.tsx
 src/app/routes.test.tsx
 src/app/security-headers.test.ts
 src/app/teacher/page.test.tsx
+src/components/ui/Button.test.tsx
+src/components/ui/Card.test.tsx
+src/components/ui/sharedUiConventions.test.ts
 src/features/app-shell/AppShell.test.tsx
 src/features/app-shell/appShellHelpers.test.ts
 src/features/app-shell/navigationData.test.ts
@@ -445,6 +454,7 @@ src/features/student-dashboard/StudentDashboardPage.test.tsx
 src/features/student-dashboard/dashboardHelpers.test.ts
 src/features/teacher-dashboard/TeacherDashboardPage.test.tsx
 src/features/teacher-dashboard/teacherDashboardHelpers.test.ts
+src/lib/cn.test.ts
 ```
 
 Current coverage focus:
@@ -455,6 +465,9 @@ Current coverage focus:
 - app shell navigation data contract
 - centralized placeholder route content
 - UI-only placeholder page rendering
+- shared UI primitive behavior
+- shared UI arrow-function convention
+- class name merge utility behavior
 - route rendering
 - auth route links
 - auth form rendering
@@ -474,7 +487,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 19 test files, 58 tests
+- `npm test`: 23 test files, 66 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -507,22 +520,22 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current Foundation / Placeholder cleanup commit, include:
+For the current Shared UI cleanup commit, include:
 
 ```text
-frontend/src/app/PlaceholderRoute.tsx
-frontend/src/app/analytics/page.tsx
-frontend/src/app/chat/page.tsx
-frontend/src/app/courses/page.tsx
-frontend/src/app/documents/page.tsx
-frontend/src/app/quiz/page.tsx
-frontend/src/app/routes.test.tsx
-frontend/src/app/settings/page.tsx
-frontend/src/features/foundation/
+frontend/src/components/ui/Button.tsx
+frontend/src/components/ui/Button.test.tsx
+frontend/src/components/ui/Card.tsx
+frontend/src/components/ui/Card.test.tsx
+frontend/src/components/ui/sharedUiConventions.test.ts
+frontend/src/lib/cn.ts
+frontend/src/lib/cn.test.ts
+frontend/package.json
+frontend/package-lock.json
 frontend/SRS.md
 ```
 
-`frontend/src/features/foundation/FoundationPreview.tsx` was unused after the Student Dashboard replaced the foundation preview, so its deletion should be staged with this cleanup.
+This cleanup keeps shared UI behavior stable while aligning `Button`, `Card`, and `cn` with the arrow-function convention in `AGENTS_FRONTEND.md`. The package files are included only to clear the critical Vitest audit finding without using `npm audit fix --force`.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 
