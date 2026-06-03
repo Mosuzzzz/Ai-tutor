@@ -456,6 +456,11 @@ Current shared components:
 Current utilities:
 
 - `cn`: arrow-export safe class name join helper that preserves class order and filters falsey values
+- `lib/api/backendConfig`: server-only Backend base URL normalization and relative path URL builder for BFF route handlers
+- `lib/api/backendClient`: typed JSON request helper with timeout, backend error mapping, Bearer forwarding from server cookies, and Zod response validation
+- `lib/api/authContract`: Backend auth/session/token schemas and `student -> learner`, `teacher -> trainer` role mapping helpers
+- `lib/api/authCookies`: HttpOnly Secure SameSite=Strict cookie descriptors for access/refresh tokens
+- `lib/api/csrf`: Origin header guard helpers for state-changing BFF routes
 
 ## 6. Auth Module Specification
 
@@ -501,6 +506,26 @@ Current auth is mock-only and intentionally does not:
 
 Future backend integration must use HttpOnly Secure cookies for auth session/token handling.
 The current mock client returns a session-shaped result marked as `mode: "http-only-cookie"` and `storesTokenInClient: false` to keep the future integration direction explicit without storing real tokens in browser storage.
+
+### API Client Foundation
+
+Phase 4 starts with a server-side BFF contract:
+
+- Browser calls same-origin Next.js route handlers.
+- Next.js BFF calls FastAPI using `AI_TUTOR_BACKEND_URL`.
+- FastAPI returns token JSON only to the BFF.
+- BFF stores access/refresh tokens with HttpOnly Secure SameSite=Strict cookies.
+- Browser code must not read tokens, store tokens, or call FastAPI directly with credentials.
+
+Current foundation files:
+
+- `src/lib/api/backendConfig.ts`
+- `src/lib/api/backendClient.ts`
+- `src/lib/api/authContract.ts`
+- `src/lib/api/authCookies.ts`
+- `src/lib/api/csrf.ts`
+
+The first CSRF layer for BFF mutation routes is Origin header validation. Double-submit CSRF tokens can be added later if the team decides the extra friction is worth it.
 
 ## 7. Visual Design Summary
 
@@ -742,18 +767,18 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 35 test files, 117 tests
+- `npm test`: 40 test files, 135 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
 
 ## 10. Known Deferred Work
 
-The following items should wait until Backend/API contracts are available:
+The following items should wait until Backend/API integration branches:
 
-- Auth API client
-- Login/register use cases that call repositories
-- Session cookie handling
+- Auth BFF route handlers for login/register/session/logout/refresh
+- Login/register use cases that call BFF repositories
+- Session cookie read/write inside Next.js route handlers
 - Auth callback/refresh handling
 - Route protection
 - Role-based dashboard routing
