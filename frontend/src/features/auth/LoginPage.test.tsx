@@ -1,9 +1,30 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { AUTH_MESSAGES } from "./authContent";
 import { LoginPage } from "./LoginPage";
 
+const jsonResponse = (body: unknown, init: ResponseInit = {}) => {
+  return new Response(JSON.stringify(body), {
+    headers: { "content-type": "application/json" },
+    status: init.status ?? 200
+  });
+};
+
+const fillValidLogin = () => {
+  fireEvent.change(screen.getByLabelText("อีเมล"), {
+    target: { value: "student@example.com" }
+  });
+  fireEvent.change(screen.getByLabelText("รหัสผ่าน"), {
+    target: { value: "learning123" }
+  });
+};
+
 describe("LoginPage", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("renders the Stitch-inspired login form with safe mock social actions", () => {
     render(<LoginPage />);
 
@@ -16,7 +37,21 @@ describe("LoginPage", () => {
     expect(screen.getByRole("link", { name: "สมัครสมาชิก" })).toHaveAttribute("href", "/register");
   });
 
-  it("shows validation errors before mock login succeeds", async () => {
+  it("shows validation errors before submitting login through the BFF", async () => {
+    const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      jsonResponse({
+        message: AUTH_MESSAGES.loginSuccess,
+        ok: true,
+        session: {
+          mode: "http-only-cookie",
+          storesTokenInClient: false,
+          user: {
+            email: "student@example.com",
+            role: "student"
+          }
+        }
+      })
+    );
     render(<LoginPage />);
 
     fireEvent.click(screen.getByRole("button", { name: "เข้าสู่ระบบ" }));
@@ -24,14 +59,53 @@ describe("LoginPage", () => {
     expect(screen.getByText("กรุณากรอกอีเมล")).toBeInTheDocument();
     expect(screen.getByText("กรุณากรอกรหัสผ่าน")).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("อีเมล"), {
-      target: { value: "student@example.com" }
-    });
-    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), {
-      target: { value: "learning123" }
-    });
+    fillValidLogin();
     fireEvent.click(screen.getByRole("button", { name: "เข้าสู่ระบบ" }));
 
-    expect(await screen.findByText("เข้าสู่ระบบสำเร็จในโหมด mock")).toBeInTheDocument();
+    expect(await screen.findByText(AUTH_MESSAGES.loginSuccess)).toBeInTheDocument();
+    expect(fetcher).toHaveBeenCalledWith(
+      "/api/auth/login",
+      expect.objectContaining({
+        credentials: "same-origin",
+        method: "POST"
+      })
+    );
+  });
+
+  it("uses an info status tone while login is submitting instead of a success tone", async () => {
+    let resolveLogin: (response: Response) => void = () => undefined;
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveLogin = resolve;
+        })
+    );
+    render(<LoginPage />);
+
+    fillValidLogin();
+    fireEvent.click(screen.getByRole("button", { name: "เข้าสู่ระบบ" }));
+
+    const pendingStatus = await screen.findByRole("status");
+    expect(pendingStatus).toHaveTextContent(AUTH_MESSAGES.loginSubmitting);
+    expect(pendingStatus).toHaveAttribute("data-tone", "info");
+
+    resolveLogin(
+      jsonResponse({
+        message: AUTH_MESSAGES.loginSuccess,
+        ok: true,
+        session: {
+          mode: "http-only-cookie",
+          storesTokenInClient: false,
+          user: {
+            email: "student@example.com",
+            role: "student"
+          }
+        }
+      })
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveAttribute("data-tone", "success");
+    });
   });
 });

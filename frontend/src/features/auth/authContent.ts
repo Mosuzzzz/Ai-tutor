@@ -23,9 +23,9 @@ export const INITIAL_REGISTER_FORM: RegisterInput = {
 export const AUTH_MESSAGES = {
   genericError: "ไม่สามารถดำเนินการได้ในขณะนี้",
   loginSubmitting: "กำลังตรวจสอบข้อมูลเข้าสู่ระบบ",
-  loginSuccess: "เข้าสู่ระบบสำเร็จในโหมด mock",
+  loginSuccess: "เข้าสู่ระบบสำเร็จ",
   registerSubmitting: "กำลังตรวจสอบข้อมูลสมัครสมาชิก",
-  registerSuccess: "สมัครสมาชิกสำเร็จในโหมด mock"
+  registerSuccess: "สมัครสมาชิกสำเร็จ กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ"
 } as const;
 
 export const AUTH_COPY = {

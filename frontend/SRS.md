@@ -296,6 +296,12 @@ frontend/
 │   ├── app/
 │   │   ├── analytics/page.test.tsx
 │   │   ├── analytics/page.tsx
+│   │   ├── api/auth/_lib/authBffHandlers.ts
+│   │   ├── api/auth/login/route.ts
+│   │   ├── api/auth/logout/route.ts
+│   │   ├── api/auth/refresh/route.ts
+│   │   ├── api/auth/register/route.ts
+│   │   ├── api/auth/session/route.ts
 │   │   ├── chat/page.test.tsx
 │   │   ├── chat/page.tsx
 │   │   ├── courses/page.tsx
@@ -345,10 +351,10 @@ frontend/
 │   │   ├── auth/
 │   │   │   ├── AuthFormFields.tsx
 │   │   │   ├── AuthShell.tsx
+│   │   │   ├── authApiClient.ts
 │   │   │   ├── authContent.ts
 │   │   │   ├── authValidation.ts
 │   │   │   ├── LoginPage.tsx
-│   │   │   ├── mockAuthClient.ts
 │   │   │   ├── RegisterPage.tsx
 │   │   │   └── types.ts
 │   │   ├── foundation/
@@ -468,15 +474,15 @@ Current utilities:
 
 | Route | Component | Behavior |
 | --- | --- | --- |
-| `/login` | `LoginPage` | Collect email/password, validate locally, show mock success |
-| `/register` | `RegisterPage` | Collect role/account fields, validate locally, show mock success |
+| `/login` | `LoginPage` | Collect email/password, validate locally, submit to same-origin BFF |
+| `/register` | `RegisterPage` | Collect role/account fields, validate locally, submit to same-origin BFF |
 
 ### Validation Rules
 
 Validation lives in `src/features/auth/authValidation.ts` and uses Zod.
 Shared auth input/result types live in `src/features/auth/types.ts`.
 Display copy and initial mock form state live in `src/features/auth/authContent.ts`.
-Mock API-ready submission wrappers live in `src/features/auth/mockAuthClient.ts`.
+Browser-side BFF wrappers live in `src/features/auth/authApiClient.ts`.
 
 Login fields:
 
@@ -494,18 +500,15 @@ Register fields:
 
 ### Auth Security Rules
 
-Current auth is mock-only and intentionally does not:
+Current auth uses a Next.js BFF cookie-session boundary:
 
-- call Backend APIs
-- store access tokens
-- store refresh tokens
-- use `localStorage`
-- use `sessionStorage`
-- read/write cookies
-- log credentials
-
-Future backend integration must use HttpOnly Secure cookies for auth session/token handling.
-The current mock client returns a session-shaped result marked as `mode: "http-only-cookie"` and `storesTokenInClient: false` to keep the future integration direction explicit without storing real tokens in browser storage.
+- Browser calls only same-origin `/api/auth/*` route handlers.
+- Next.js BFF calls FastAPI using `AI_TUTOR_BACKEND_URL`.
+- FastAPI token JSON is consumed by the BFF only.
+- BFF sets `HttpOnly; Secure; SameSite=Strict` access/refresh cookies.
+- Browser responses are sanitized and do not include `access_token` or `refresh_token`.
+- Browser code must not use `localStorage` or `sessionStorage` for auth tokens.
+- Login/Register submit tone separates pending `submitting` from final `success`.
 
 ### API Client Foundation
 
@@ -526,6 +529,25 @@ Current foundation files:
 - `src/lib/api/csrf.ts`
 
 The first CSRF layer for BFF mutation routes is Origin header validation. Double-submit CSRF tokens can be added later if the team decides the extra friction is worth it.
+
+### Auth Integration Cookie Session
+
+Implemented BFF routes:
+
+- `POST /api/auth/login`
+- `POST /api/auth/register`
+- `GET /api/auth/session`
+- `POST /api/auth/refresh`
+- `POST /api/auth/logout`
+
+Integration details:
+
+- `POST /api/auth/login` calls FastAPI `/api/auth/login`, then `/api/auth/session`, sets auth cookies, and returns sanitized session metadata.
+- `POST /api/auth/register` maps frontend roles to backend roles: `student -> learner`, `teacher -> trainer`.
+- `GET /api/auth/session` reads the access token cookie server-side and returns sanitized session metadata.
+- `POST /api/auth/refresh` reads the refresh token cookie server-side, rotates both cookies, and returns sanitized session metadata.
+- `POST /api/auth/logout` forwards the access token server-side when available and always clears auth cookies.
+- Auth mutation routes apply same-origin Origin checks before reaching FastAPI.
 
 ## 7. Visual Design Summary
 
@@ -701,10 +723,10 @@ src/features/ai-chat/aiChatHelpers.test.ts
 src/features/ai-quiz-generator/AiQuizGeneratorPage.test.tsx
 src/features/ai-quiz-generator/quizGeneratorHelpers.test.ts
 src/features/auth/AuthShell.test.tsx
+src/features/auth/authApiClient.test.ts
 src/features/auth/LoginPage.test.tsx
 src/features/auth/RegisterPage.test.tsx
 src/features/auth/authValidation.test.ts
-src/features/auth/mockAuthClient.test.ts
 src/features/foundation/PlaceholderPage.test.tsx
 src/features/foundation/placeholderContent.test.ts
 src/features/learning-analytics/LearningAnalyticsPage.test.tsx
@@ -767,7 +789,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 40 test files, 135 tests
+- `npm test`: 41 test files, 146 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -776,9 +798,6 @@ Current latest verification:
 
 The following items should wait until Backend/API integration branches:
 
-- Auth BFF route handlers for login/register/session/logout/refresh
-- Login/register use cases that call BFF repositories
-- Session cookie read/write inside Next.js route handlers
 - Auth callback/refresh handling
 - Route protection
 - Role-based dashboard routing
