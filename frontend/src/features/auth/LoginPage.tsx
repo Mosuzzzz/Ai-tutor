@@ -2,6 +2,7 @@
 
 import { ArrowRight, GraduationCap } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { FormEvent } from "react";
 
@@ -10,10 +11,12 @@ import { AuthDivider, AuthField, MockSocialButton, MockStatus } from "./AuthForm
 import { AuthShell } from "./AuthShell";
 import { submitLogin } from "./authApiClient";
 import { AUTH_COPY, AUTH_MESSAGES, INITIAL_LOGIN_FORM } from "./authContent";
+import { getDefaultRouteForRole } from "./authRoutePolicy";
 import { validateLogin } from "./authValidation";
 import type { AuthSubmissionStatus, LoginInput } from "./types";
 
 export const LoginPage = () => {
+  const router = useRouter();
   const [form, setForm] = useState<LoginInput>(INITIAL_LOGIN_FORM);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof LoginInput, string>>>({});
   const [submissionStatus, setSubmissionStatus] = useState<AuthSubmissionStatus>("idle");
@@ -47,6 +50,10 @@ export const LoginPage = () => {
 
       setSubmissionStatus(submission.ok ? "success" : "error");
       setSubmissionMessage(submission.message);
+
+      if (submission.ok && submission.session) {
+        router.replace(getDefaultRouteForRole(submission.session.user.role));
+      }
     } catch {
       setSubmissionStatus("error");
       setSubmissionMessage(AUTH_MESSAGES.genericError);

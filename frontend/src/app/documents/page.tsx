@@ -1,9 +1,14 @@
 import { AppShell } from "../AppShell";
+import { requirePageSession } from "@/features/auth/authGuard";
 import { DocumentSummaryPage } from "../../features/document-summary/DocumentSummaryPage";
 
-const DocumentsPage = () => {
+export const dynamic = "force-dynamic";
+
+const DocumentsPage = async () => {
+  const session = await requirePageSession("/documents");
+
   return (
-    <AppShell>
+    <AppShell session={session}>
       <DocumentSummaryPage />
     </AppShell>
   );

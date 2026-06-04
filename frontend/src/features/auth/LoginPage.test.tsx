@@ -4,6 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AUTH_MESSAGES } from "./authContent";
 import { LoginPage } from "./LoginPage";
 
+const replace = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    replace
+  })
+}));
+
 const jsonResponse = (body: unknown, init: ResponseInit = {}) => {
   return new Response(JSON.stringify(body), {
     headers: { "content-type": "application/json" },
@@ -23,6 +31,7 @@ const fillValidLogin = () => {
 describe("LoginPage", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    replace.mockClear();
   });
 
   it("renders the Stitch-inspired login form with safe mock social actions", () => {
@@ -106,6 +115,31 @@ describe("LoginPage", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("status")).toHaveAttribute("data-tone", "success");
+    });
+  });
+
+  it("redirects a successful teacher login to the teacher dashboard from the sanitized session role", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      jsonResponse({
+        message: AUTH_MESSAGES.loginSuccess,
+        ok: true,
+        session: {
+          mode: "http-only-cookie",
+          storesTokenInClient: false,
+          user: {
+            email: "teacher@example.com",
+            role: "teacher"
+          }
+        }
+      })
+    );
+    render(<LoginPage />);
+
+    fillValidLogin();
+    fireEvent.click(screen.getByRole("button", { name: "เข้าสู่ระบบ" }));
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith("/teacher");
     });
   });
 });

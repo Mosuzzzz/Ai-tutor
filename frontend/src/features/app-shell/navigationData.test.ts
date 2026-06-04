@@ -1,11 +1,34 @@
 import { describe, expect, it } from "vitest";
 
-import { aiAction, primaryNavigation, secondaryNavigation } from "./navigationData";
+import {
+  aiAction,
+  getPrimaryNavigationForRole,
+  primaryNavigation,
+  secondaryNavigation
+} from "./navigationData";
 
 describe("app shell navigation data", () => {
   it("keeps primary navigation hrefs stable for the app shell", () => {
     expect(primaryNavigation.map((item) => item.href)).toEqual([
       "/",
+      "/teacher",
+      "/courses",
+      "/documents",
+      "/chat",
+      "/quiz",
+      "/analytics"
+    ]);
+  });
+
+  it("filters primary navigation for learner and teacher sessions", () => {
+    expect(getPrimaryNavigationForRole("student").map((item) => item.href)).toEqual([
+      "/",
+      "/courses",
+      "/documents",
+      "/chat",
+      "/analytics"
+    ]);
+    expect(getPrimaryNavigationForRole("teacher").map((item) => item.href)).toEqual([
       "/teacher",
       "/courses",
       "/documents",

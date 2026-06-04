@@ -2,16 +2,22 @@ import { Bell, HelpCircle, Menu, Search } from "lucide-react";
 
 import { AppShellBrand } from "./AppShellBrand";
 import { AppShellIconButton } from "./AppShellIconButton";
+import type { AuthSession } from "../auth/types";
 
 type AppShellTopBarProps = {
   mobileNavigationOpen: boolean;
   onOpenMobileNavigation: () => void;
+  session: AuthSession;
 };
 
 export const AppShellTopBar = ({
   mobileNavigationOpen,
-  onOpenMobileNavigation
+  onOpenMobileNavigation,
+  session
 }: AppShellTopBarProps) => {
+  const displayName = session.user.displayName?.trim() || session.user.email;
+  const initial = displayName.charAt(0).toUpperCase();
+
   return (
     <header className="sticky top-0 z-20 flex h-topbar items-center gap-3 border-b border-outline-variant/40 bg-surface-container-lowest/95 px-4 backdrop-blur md:px-8">
       <button
@@ -48,8 +54,11 @@ export const AppShellTopBar = ({
         <AppShellIconButton label="ช่วยเหลือ">
           <HelpCircle aria-hidden="true" className="h-5 w-5" />
         </AppShellIconButton>
-        <div className="ml-1 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-label-md font-bold text-on-primary">
-          S
+        <div
+          aria-label={`บัญชีผู้ใช้ ${displayName}`}
+          className="ml-1 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-label-md font-bold text-on-primary"
+        >
+          {initial}
         </div>
       </div>
     </header>

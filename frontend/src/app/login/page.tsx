@@ -1,6 +1,11 @@
 import { LoginPage } from "../../features/auth/LoginPage";
+import { redirectAuthenticatedRoute } from "@/features/auth/authGuard";
 
-const LoginRoute = () => {
+export const dynamic = "force-dynamic";
+
+const LoginRoute = async () => {
+  await redirectAuthenticatedRoute();
+
   return <LoginPage />;
 };
 
