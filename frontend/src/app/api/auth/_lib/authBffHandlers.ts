@@ -2,10 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { AUTH_MESSAGES } from "../../../../features/auth/authContent";
-import type { AuthSession } from "../../../../features/auth/types";
+import { toAuthSession } from "../../../../features/auth/sessionMapping";
 import {
   authActionResponseSchema,
-  mapBackendRoleToFrontendRole,
   mapFrontendRoleToBackendRole,
   sessionResponseSchema,
   tokenResponseSchema,
@@ -242,18 +241,6 @@ const createSessionResponse = (message: string, session: SessionResponse) => {
     },
     { status: 200 }
   );
-};
-
-const toAuthSession = (session: SessionResponse): AuthSession => {
-  return {
-    mode: "http-only-cookie",
-    storesTokenInClient: false,
-    user: {
-      displayName: session.user.full_name,
-      email: session.user.email,
-      role: mapBackendRoleToFrontendRole(session.user.role)
-    }
-  };
 };
 
 const setTokenCookies = (response: NextResponse, token: TokenResponse) => {

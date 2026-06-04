@@ -56,7 +56,7 @@ Included:
 
 ### Completed Phase 2: Auth: Login + Register
 
-Auth is currently frontend-only mock UI while waiting for Backend APIs.
+Auth started as frontend-only mock UI and has since been connected through the Next.js BFF cookie-session boundary.
 
 Included:
 
@@ -65,24 +65,19 @@ Included:
 - Login form with email/password validation
 - Register form with role selection, profile fields, password confirmation, and terms acceptance
 - Zod validation schemas
-- API-ready mock auth client with async submit wrappers
+- API-ready auth client with async submit wrappers
 - Centralized auth types and display copy
-- Mock submitting/success/error states
+- Submitting/success/error states with pending tone separated from final success
 - Disabled mock social auth buttons
 - Local WebP slideshow visual panel on auth pages
 - Security headers configured in Next.js
-- Tests for validation, mock auth client, routes, components, and security headers
+- Tests for validation, auth client, routes, components, and security headers
 
-Out of scope until Backend is ready:
+Out of scope until Backend/Auth follow-up branches:
 
-- Real login/register API calls
-- Session creation
-- HttpOnly Secure cookie handling
-- Refresh token rotation
-- Auth redirect after successful login
-- Protected route enforcement
-- Role/permission checks from real user session
 - Backend error mapping
+- OAuth/social provider integration
+- End-to-end Playwright tests for real deployed auth
 
 ### Completed Phase 3: App Shell + Student Dashboard
 
@@ -549,6 +544,20 @@ Integration details:
 - `POST /api/auth/logout` forwards the access token server-side when available and always clears auth cookies.
 - Auth mutation routes apply same-origin Origin checks before reaching FastAPI.
 
+### AuthGuard Role Routing
+
+Implemented server-side route protection and role-aware shell routing:
+
+- `src/features/auth/authGuard.ts` reads HttpOnly auth cookies only on the server and never exposes tokens to client components.
+- `src/features/auth/sessionMapping.ts` converts Backend session responses into sanitized frontend sessions.
+- `src/features/auth/authRoutePolicy.ts` centralizes protected route rules, default role redirects, and navigation filtering.
+- Protected app routes call `requirePageSession()` before rendering sensitive UI.
+- `/login` and `/register` call `redirectAuthenticatedRoute()` so an authenticated user is sent to the correct dashboard.
+- Student users can access `/`, `/courses`, `/documents`, `/chat`, `/analytics`, and `/settings`.
+- Teacher/admin users can access `/teacher`, `/courses`, `/documents`, `/chat`, `/quiz`, `/analytics`, and `/settings`.
+- App shell navigation is filtered by the current session role before rendering.
+- The shell profile initial/display label comes from sanitized session metadata, not from URL or client storage.
+
 ## 7. Visual Design Summary
 
 ### Foundation UI
@@ -708,6 +717,7 @@ src/app/auth-routes.test.tsx
 src/app/chat/page.test.tsx
 src/app/documents/page.test.tsx
 src/app/page.test.tsx
+src/app/protected-routes.test.tsx
 src/app/quiz/page.test.tsx
 src/app/routes.test.tsx
 src/app/security-headers.test.ts
@@ -724,6 +734,8 @@ src/features/ai-quiz-generator/AiQuizGeneratorPage.test.tsx
 src/features/ai-quiz-generator/quizGeneratorHelpers.test.ts
 src/features/auth/AuthShell.test.tsx
 src/features/auth/authApiClient.test.ts
+src/features/auth/authGuard.test.ts
+src/features/auth/authRoutePolicy.test.ts
 src/features/auth/LoginPage.test.tsx
 src/features/auth/RegisterPage.test.tsx
 src/features/auth/authValidation.test.ts
@@ -754,6 +766,10 @@ Current coverage focus:
 - route rendering
 - auth route links
 - auth form rendering
+- server-side auth guard and sanitized session bootstrap
+- protected route decision policy and role redirect rules
+- auth-route redirect away from login/register for authenticated users
+- role-filtered app shell navigation
 - login validation
 - register validation
 - mock auth client session shape and no token/password exposure
@@ -789,7 +805,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 41 test files, 146 tests
+- `npm test`: 44 test files, 163 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -798,21 +814,20 @@ Current latest verification:
 
 The following items should wait until Backend/API integration branches:
 
-- Auth callback/refresh handling
-- Route protection
-- Role-based dashboard routing
+- OAuth callback handling
 - Student dashboard analytics API client
 - Dashboard response validation with Zod
 - Student dashboard empty states from real API
-- Teacher dashboard real API integration, role guard, loading/error/empty states
+- Teacher dashboard real API integration and loading/error/empty states
 - Document Summary real API integration, upload, recap generation, export/share, and response validation
 - AI Chat real API integration, history fetch, streaming response, rate-limit handling, and response validation
-- AI Quiz real API integration, role guard, publish flow, learner-safe exam view, submit flow, and response validation
-- Learning Analytics real API integration, role guard, learner/trainer view split, event stream mapping, and response validation
+- AI Quiz real API integration, publish flow, learner-safe exam view, submit flow, and response validation
+- Learning Analytics real API integration, learner/trainer view split, event stream mapping, and response validation
 - Backend validation error mapping
 - Playwright E2E for real auth flow
 - Logout behavior
 - Real social login providers
+- Optional double-submit CSRF token if the team requires more than Origin guard
 
 The following items can be done before Backend if needed:
 
@@ -823,21 +838,29 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current Learning Analytics commit, include:
+For the current AuthGuardRoleRouting commit, include:
 
 ```text
-frontend/src/app/analytics/page.tsx
-frontend/src/app/analytics/page.test.tsx
+frontend/src/app/PlaceholderRoute.tsx
+frontend/src/app/*/page.tsx
+frontend/src/app/*/page.test.tsx
+frontend/src/app/auth-routes.test.tsx
+frontend/src/app/protected-routes.test.tsx
+frontend/src/features/app-shell/
+frontend/src/features/auth/authGuard.ts
+frontend/src/features/auth/authGuard.test.ts
+frontend/src/features/auth/authRoutePolicy.ts
+frontend/src/features/auth/authRoutePolicy.test.ts
+frontend/src/features/auth/sessionMapping.ts
+frontend/src/features/auth/LoginPage.tsx
+frontend/src/features/auth/LoginPage.test.tsx
+frontend/src/app/api/auth/_lib/authBffHandlers.ts
+frontend/vitest.config.ts
 frontend/src/app/routes.test.tsx
-frontend/src/features/foundation/PlaceholderPage.test.tsx
-frontend/src/features/foundation/placeholderContent.ts
-frontend/src/features/foundation/placeholderContent.test.ts
-frontend/src/features/foundation/types.ts
-frontend/src/features/learning-analytics/
 frontend/SRS.md
 ```
 
-This feature replaces the `/analytics` placeholder with a mock/API-ready Learning Analytics workspace while keeping Backend/Auth integration deferred.
+This feature adds server-side auth guards, protected route decisions, authenticated auth-route redirects, and role-filtered shell navigation while keeping raw tokens inside HttpOnly server-managed cookies.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 

@@ -4,15 +4,19 @@ import { Button } from "../../components/ui/Button";
 import { AppShellBrand } from "./AppShellBrand";
 import { AppShellLogoutButton } from "./AppShellLogoutButton";
 import { AppShellNavigationGroup } from "./AppShellNavigationGroup";
-import { aiAction, primaryNavigation, secondaryNavigation } from "./navigationData";
+import { aiAction, getPrimaryNavigationForRole, getSecondaryNavigationForRole } from "./navigationData";
+import type { AuthSession } from "../auth/types";
 
 type MobileNavigationDialogProps = {
   onClose: () => void;
   pathname: string;
+  session: AuthSession;
 };
 
-export const MobileNavigationDialog = ({ onClose, pathname }: MobileNavigationDialogProps) => {
+export const MobileNavigationDialog = ({ onClose, pathname, session }: MobileNavigationDialogProps) => {
   const AiActionIcon = aiAction.icon;
+  const primaryNavigation = getPrimaryNavigationForRole(session.user.role);
+  const secondaryNavigation = getSecondaryNavigationForRole(session.user.role);
 
   return (
     <div className="fixed inset-0 z-40 lg:hidden">
