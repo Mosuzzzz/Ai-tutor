@@ -8,9 +8,9 @@ import type { FormEvent } from "react";
 import { Button } from "../../components/ui/Button";
 import { AuthDivider, AuthField, MockSocialButton, MockStatus } from "./AuthFormFields";
 import { AuthShell } from "./AuthShell";
+import { submitLogin } from "./authApiClient";
 import { AUTH_COPY, AUTH_MESSAGES, INITIAL_LOGIN_FORM } from "./authContent";
 import { validateLogin } from "./authValidation";
-import { submitMockLogin } from "./mockAuthClient";
 import type { AuthSubmissionStatus, LoginInput } from "./types";
 
 export const LoginPage = () => {
@@ -43,7 +43,7 @@ export const LoginPage = () => {
     setSubmissionMessage(AUTH_MESSAGES.loginSubmitting);
 
     try {
-      const submission = await submitMockLogin(result.values);
+      const submission = await submitLogin(result.values);
 
       setSubmissionStatus(submission.ok ? "success" : "error");
       setSubmissionMessage(submission.message);
@@ -67,7 +67,13 @@ export const LoginPage = () => {
 
       <form className="space-y-5" noValidate onSubmit={handleSubmit}>
         {submissionStatus !== "idle" && (
-          <MockStatus tone={submissionStatus === "error" ? "error" : "success"}>{submissionMessage}</MockStatus>
+          <MockStatus
+            tone={
+              submissionStatus === "submitting" ? "info" : submissionStatus === "error" ? "error" : "success"
+            }
+          >
+            {submissionMessage}
+          </MockStatus>
         )}
         <AuthField
           autoComplete="email"

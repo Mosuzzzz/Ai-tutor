@@ -69,15 +69,19 @@ export const MockStatus = ({
   tone = "success"
 }: {
   children: ReactNode;
-  tone?: "error" | "success";
+  tone?: "error" | "info" | "success";
 }) => {
+  const toneClassNames = {
+    error: "rounded-lg border border-[#f2b8b5] bg-[#fff8f7] px-4 py-3 text-label-md font-bold text-[#8c1d18]",
+    info: "rounded-lg border border-[#b9d1f3] bg-[#f3f7ff] px-4 py-3 text-label-md font-bold text-[#10253f]",
+    success:
+      "rounded-lg border border-[#f4b35b]/40 bg-[#fff7e8] px-4 py-3 text-label-md font-bold text-[#704512]"
+  } satisfies Record<"error" | "info" | "success", string>;
+
   return (
     <p
-      className={
-        tone === "error"
-          ? "rounded-lg border border-[#f2b8b5] bg-[#fff8f7] px-4 py-3 text-label-md font-bold text-[#8c1d18]"
-          : "rounded-lg border border-[#f4b35b]/40 bg-[#fff7e8] px-4 py-3 text-label-md font-bold text-[#704512]"
-      }
+      className={toneClassNames[tone]}
+      data-tone={tone}
       role="status"
     >
       {children}

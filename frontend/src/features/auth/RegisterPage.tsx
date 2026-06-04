@@ -8,6 +8,7 @@ import type { FormEvent, ReactNode } from "react";
 import { Button } from "../../components/ui/Button";
 import { AuthDivider, AuthField, MockSocialButton, MockStatus } from "./AuthFormFields";
 import { AuthShell } from "./AuthShell";
+import { submitRegister } from "./authApiClient";
 import {
   AUTH_COPY,
   AUTH_MESSAGES,
@@ -16,7 +17,6 @@ import {
   INITIAL_REGISTER_FORM
 } from "./authContent";
 import { validateRegister } from "./authValidation";
-import { submitMockRegister } from "./mockAuthClient";
 import type { AuthRole, AuthSubmissionStatus, RegisterInput } from "./types";
 
 export const RegisterPage = () => {
@@ -52,7 +52,7 @@ export const RegisterPage = () => {
     setSubmissionMessage(AUTH_MESSAGES.registerSubmitting);
 
     try {
-      const submission = await submitMockRegister(result.values);
+      const submission = await submitRegister(result.values);
 
       setSubmissionStatus(submission.ok ? "success" : "error");
       setSubmissionMessage(submission.message);
@@ -76,7 +76,13 @@ export const RegisterPage = () => {
 
       <form className="space-y-5" noValidate onSubmit={handleSubmit}>
         {submissionStatus !== "idle" && (
-          <MockStatus tone={submissionStatus === "error" ? "error" : "success"}>{submissionMessage}</MockStatus>
+          <MockStatus
+            tone={
+              submissionStatus === "submitting" ? "info" : submissionStatus === "error" ? "error" : "success"
+            }
+          >
+            {submissionMessage}
+          </MockStatus>
         )}
 
         <fieldset>

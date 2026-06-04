@@ -1,4 +1,5 @@
 export type AuthRole = "student" | "teacher";
+export type AuthRouteRole = AuthRole | "global_admin" | "tenant_admin";
 
 export type LoginInput = {
   email: string;
@@ -33,21 +34,24 @@ export type RegisterFields = keyof RegisterInput;
 
 export type AuthSubmissionStatus = "idle" | "submitting" | "success" | "error";
 
-export type AuthMockSession = {
+export type AuthSession = {
   mode: "http-only-cookie";
   storesTokenInClient: false;
   user: {
-    displayName?: string;
+    displayName?: string | null;
     email: string;
-    role: AuthRole;
+    role: AuthRouteRole;
   };
 };
+
+export type AuthMockSession = AuthSession;
 
 export type AuthSubmissionResult =
   | {
       ok: true;
       message: string;
-      session: AuthMockSession;
+      requiresEmailVerification?: boolean;
+      session?: AuthSession;
     }
   | {
       ok: false;
