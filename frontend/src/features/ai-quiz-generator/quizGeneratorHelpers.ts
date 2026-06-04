@@ -2,6 +2,7 @@ import type {
   QuizCitationPreview,
   QuizDifficulty,
   QuizDraftStatus,
+  QuizQuestionPreview,
   QuizSource,
   QuizSourceStatus,
   QuizSourceType
@@ -86,6 +87,10 @@ export const countReadyQuizSources = (sources: QuizSource[]) => {
 
 export const estimateQuizDuration = (questionCount: number) => {
   return `${Math.ceil(clampQuestionCount(questionCount) * 1.5)} นาที`;
+};
+
+export const getSafeQuizDraftQuestions = (questions: QuizQuestionPreview[] | null | undefined) => {
+  return Array.isArray(questions) ? questions : [];
 };
 
 export const buildQuizCitationLabel = (citation: QuizCitationPreview) => {

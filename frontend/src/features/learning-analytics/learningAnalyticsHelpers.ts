@@ -5,6 +5,7 @@ import type {
   LearningSkillGap,
   LearningTrendPoint
 } from "./types";
+import { normalizePercentValue } from "../../lib/percent";
 
 const departmentLabels: Record<string, string> = {
   error_documents: "เอกสารมีปัญหา",
@@ -14,7 +15,7 @@ const departmentLabels: Record<string, string> = {
 };
 
 export const normalizeAnalyticsPercent = (value: number) => {
-  return Math.min(100, Math.max(0, Math.round(value)));
+  return normalizePercentValue(value);
 };
 
 export const formatAnalyticsPercent = (value: number) => {

@@ -5,6 +5,7 @@ import type {
   TeacherClassSummary,
   TeacherQuizStatus
 } from "./types";
+import { normalizeRatePercentValue } from "../../lib/percent";
 
 const classStatusOrder: Record<TeacherClassStatus, number> = {
   active: 0,
@@ -13,9 +14,7 @@ const classStatusOrder: Record<TeacherClassStatus, number> = {
 };
 
 export const getCompletionPercentValue = (rate: number) => {
-  const normalizedRate = rate <= 1 ? rate * 100 : rate;
-
-  return Math.min(100, Math.max(0, Math.round(normalizedRate)));
+  return normalizeRatePercentValue(rate);
 };
 
 export const formatCompletionRate = (rate: number) => {

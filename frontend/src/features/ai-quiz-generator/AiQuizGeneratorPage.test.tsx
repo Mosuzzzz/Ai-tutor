@@ -11,6 +11,22 @@ const emptyQuizMock: QuizGeneratorViewModel = {
   sources: []
 };
 
+const emptyDraftQuizMock: QuizGeneratorViewModel = {
+  ...aiQuizGeneratorMock,
+  draft: {
+    ...aiQuizGeneratorMock.draft,
+    questions: []
+  }
+};
+
+const nullDraftQuizMock = {
+  ...aiQuizGeneratorMock,
+  draft: {
+    ...aiQuizGeneratorMock.draft,
+    questions: null
+  }
+} as unknown as QuizGeneratorViewModel;
+
 describe("AiQuizGeneratorPage", () => {
   it("renders an API-ready Thai quiz generator workspace", () => {
     render(<AiQuizGeneratorPage />);
@@ -80,6 +96,18 @@ describe("AiQuizGeneratorPage", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("ยังไม่มีแหล่งข้อมูลที่พร้อมสร้างควิซ");
     expect(screen.queryByRole("button", { name: "สร้างควิซ" })).not.toBeInTheDocument();
+  });
+
+  it("renders a safe empty draft state when backend returns no questions", () => {
+    const { rerender } = render(<AiQuizGeneratorPage quiz={emptyDraftQuizMock} />);
+
+    expect(screen.getByTestId("ai-quiz-empty-draft")).toHaveAttribute("role", "status");
+    expect(screen.queryByText("correct_index")).not.toBeInTheDocument();
+
+    rerender(<AiQuizGeneratorPage quiz={nullDraftQuizMock} />);
+
+    expect(screen.getByTestId("ai-quiz-empty-draft")).toHaveAttribute("role", "status");
+    expect(screen.queryByText("correct_index")).not.toBeInTheDocument();
   });
 
   it("supports swapping selected source data without changing UI structure", () => {

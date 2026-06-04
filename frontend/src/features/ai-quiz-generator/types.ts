@@ -63,7 +63,7 @@ export type QuizGeneratorViewModel = {
     status: QuizDraftStatus;
     title: string;
     generatedAtLabel: string;
-    questions: QuizQuestionPreview[];
+    questions?: QuizQuestionPreview[] | null;
   };
   metrics: QuizMetric[];
   instructions: string[];

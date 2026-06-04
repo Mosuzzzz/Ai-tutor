@@ -558,6 +558,17 @@ Implemented server-side route protection and role-aware shell routing:
 - App shell navigation is filtered by the current session role before rendering.
 - The shell profile initial/display label comes from sanitized session metadata, not from URL or client storage.
 
+### Frontend API Safety Fixes
+
+Implemented frontend safety guards before wiring more real API payloads:
+
+- `src/lib/percent.ts` centralizes percent normalization for student progress, teacher completion rates, and learning analytics charts.
+- AI Quiz Generator treats `draft.questions` as API-controlled data and safely handles `null`, `undefined`, and empty arrays without crashing.
+- AI Quiz Generator renders an empty draft state instead of mapping directly over a missing question list.
+- Learning Analytics renders panel-level empty states for empty `score_trend`, `skill_gaps`, `activities`, and `department_stats` lists.
+- `next.config.ts` now builds CSP by environment: development/test keep Next.js-compatible script allowances, while production removes `unsafe-eval` and `unsafe-inline` from `script-src`.
+- Production `style-src` still allows inline styles because current chart/progress surfaces use React inline style values; full nonce/hash styling can be revisited during production hardening.
+
 ## 7. Visual Design Summary
 
 ### Foundation UI
@@ -700,12 +711,13 @@ are ignored in `.gitignore`.
 
 ### Security Notes
 
-Current CSP still includes development-friendly allowances for Next.js runtime:
+Development/test CSP still includes Next.js-compatible script allowances:
 
 - `'unsafe-inline'`
 - `'unsafe-eval'`
 
-Before production hardening, this should be revisited with nonce/hash strategy when deployment requirements are clear.
+Production `script-src` is hardened to `script-src 'self'` and removes `unsafe-inline` / `unsafe-eval`.
+Production `style-src` still allows inline styles because the current chart/progress surfaces use React inline style values; full nonce/hash styling can be revisited when deployment requirements are clear.
 
 ## 9. Testing Coverage
 
@@ -750,6 +762,7 @@ src/features/student-dashboard/dashboardHelpers.test.ts
 src/features/teacher-dashboard/TeacherDashboardPage.test.tsx
 src/features/teacher-dashboard/teacherDashboardHelpers.test.ts
 src/lib/cn.test.ts
+src/lib/percent.test.ts
 ```
 
 Current coverage focus:
@@ -797,15 +810,19 @@ Current coverage focus:
 - AI quiz loading/error/empty states
 - AI quiz disabled generate/publish actions and backend endpoint hiding
 - AI quiz safe preview without answer keys and layout overflow guard
+- AI quiz null/empty draft question guard for API-controlled payloads
 - learning analytics route and API-ready mock marker
 - learning analytics helper percent/risk/sorting/trend/metric behavior
 - learning analytics loading/error/empty states
+- learning analytics panel-level empty states for partial empty API lists
 - learning analytics accessible score chart, skill progressbar, activity table, and backend endpoint hiding
 - learning analytics layout overflow guard for long Thai content
+- shared percent normalization helper behavior
+- production CSP script-src hardening while keeping dev/test compatibility
 
 Current latest verification:
 
-- `npm test`: 44 test files, 163 tests
+- `npm test`: 45 test files, 169 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -828,39 +845,37 @@ The following items should wait until Backend/API integration branches:
 - Logout behavior
 - Real social login providers
 - Optional double-submit CSRF token if the team requires more than Origin guard
+- Full nonce/hash CSP hardening for inline chart/progress styles
 
 The following items can be done before Backend if needed:
 
-- Production CSP hardening plan
 - `.env.example` once required public environment variables are known
 - Better image generation/asset pipeline
 - shadcn/Radix component expansion for forms and dialogs
 
 ## 11. Commit Scope Recommendation
 
-For the current AuthGuardRoleRouting commit, include:
+For the current FrontendApiSafetyFixes commit, include:
 
 ```text
-frontend/src/app/PlaceholderRoute.tsx
-frontend/src/app/*/page.tsx
-frontend/src/app/*/page.test.tsx
-frontend/src/app/auth-routes.test.tsx
-frontend/src/app/protected-routes.test.tsx
-frontend/src/features/app-shell/
-frontend/src/features/auth/authGuard.ts
-frontend/src/features/auth/authGuard.test.ts
-frontend/src/features/auth/authRoutePolicy.ts
-frontend/src/features/auth/authRoutePolicy.test.ts
-frontend/src/features/auth/sessionMapping.ts
-frontend/src/features/auth/LoginPage.tsx
-frontend/src/features/auth/LoginPage.test.tsx
-frontend/src/app/api/auth/_lib/authBffHandlers.ts
-frontend/vitest.config.ts
-frontend/src/app/routes.test.tsx
+frontend/next.config.ts
 frontend/SRS.md
+frontend/src/app/security-headers.test.ts
+frontend/src/lib/percent.ts
+frontend/src/lib/percent.test.ts
+frontend/src/features/student-dashboard/dashboardHelpers.ts
+frontend/src/features/teacher-dashboard/teacherDashboardHelpers.ts
+frontend/src/features/learning-analytics/learningAnalyticsHelpers.ts
+frontend/src/features/learning-analytics/LearningAnalyticsPage.tsx
+frontend/src/features/learning-analytics/LearningAnalyticsPage.test.tsx
+frontend/src/features/ai-quiz-generator/AiQuizGeneratorPage.tsx
+frontend/src/features/ai-quiz-generator/AiQuizGeneratorPage.test.tsx
+frontend/src/features/ai-quiz-generator/quizGeneratorHelpers.ts
+frontend/src/features/ai-quiz-generator/quizGeneratorHelpers.test.ts
+frontend/src/features/ai-quiz-generator/types.ts
 ```
 
-This feature adds server-side auth guards, protected route decisions, authenticated auth-route redirects, and role-filtered shell navigation while keeping raw tokens inside HttpOnly server-managed cookies.
+This feature adds frontend guards for API-controlled empty/null payloads, centralizes percent normalization, and hardens production `script-src` while keeping development/test CSP compatible with Next.js.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 
