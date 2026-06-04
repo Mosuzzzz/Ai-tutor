@@ -16,6 +16,24 @@ const emptyAnalyticsMock: LearningAnalyticsViewModel = {
   activities: []
 };
 
+const partialEmptyAnalyticsMock: LearningAnalyticsViewModel = {
+  ...learningAnalyticsMock,
+  apiResponse: {
+    ...learningAnalyticsMock.apiResponse,
+    department_stats: [],
+    skill_gaps: []
+  },
+  activities: []
+};
+
+const noTrendAnalyticsMock: LearningAnalyticsViewModel = {
+  ...learningAnalyticsMock,
+  apiResponse: {
+    ...learningAnalyticsMock.apiResponse,
+    score_trend: []
+  }
+};
+
 describe("LearningAnalyticsPage", () => {
   it("renders an API-ready Thai learning analytics workspace", () => {
     render(<LearningAnalyticsPage />);
@@ -75,6 +93,18 @@ describe("LearningAnalyticsPage", () => {
     expect(screen.queryByText("tenant_id")).not.toBeInTheDocument();
     expect(screen.queryByText("user_id")).not.toBeInTheDocument();
     expect(screen.getByTestId("learning-analytics")).not.toHaveAttribute("data-api-endpoint");
+  });
+
+  it("renders panel-level empty states for partially empty API lists", () => {
+    const { rerender } = render(<LearningAnalyticsPage analytics={partialEmptyAnalyticsMock} />);
+
+    expect(screen.getByTestId("learning-skill-gaps-empty")).toHaveAttribute("role", "status");
+    expect(screen.getByTestId("learning-activity-empty")).toHaveAttribute("role", "status");
+    expect(screen.getByTestId("learning-department-empty")).toHaveAttribute("role", "status");
+
+    rerender(<LearningAnalyticsPage analytics={noTrendAnalyticsMock} />);
+
+    expect(screen.getByTestId("learning-score-trend-empty")).toHaveAttribute("role", "status");
   });
 
   it("renders loading, error, and empty states with explicit accessible semantics", () => {

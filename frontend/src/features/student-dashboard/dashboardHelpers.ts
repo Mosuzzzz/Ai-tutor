@@ -1,7 +1,8 @@
 import type { RecentScore } from "./types";
+import { normalizePercentValue } from "../../lib/percent";
 
 export const getProgressPercentValue = (value: number) => {
-  return Math.min(100, Math.max(0, Math.round(value)));
+  return normalizePercentValue(value);
 };
 
 export const formatScore = (score: number) => {

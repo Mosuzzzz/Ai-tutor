@@ -24,6 +24,7 @@ import {
   formatQuizSourceStatus,
   formatQuizSourceType,
   getSelectedQuizSource,
+  getSafeQuizDraftQuestions,
   sortQuizSourcesByReadiness
 } from "./quizGeneratorHelpers";
 import type {
@@ -206,6 +207,8 @@ const QuestionPreviewCard = ({ index, question }: { index: number; question: Qui
 };
 
 const PreviewPanel = ({ quiz }: { quiz: QuizGeneratorViewModel }) => {
+  const questions = getSafeQuizDraftQuestions(quiz.draft.questions);
+
   return (
     <section
       aria-label="แบบร่างคำถาม"
@@ -222,11 +225,21 @@ const PreviewPanel = ({ quiz }: { quiz: QuizGeneratorViewModel }) => {
             {formatQuizDraftStatus(quiz.draft.status)}
           </span>
         </div>
-        <div className="mt-5 grid gap-4">
-          {quiz.draft.questions.map((question, index) => (
-            <QuestionPreviewCard index={index} key={question.id} question={question} />
-          ))}
-        </div>
+        {questions.length > 0 ? (
+          <div className="mt-5 grid gap-4">
+            {questions.map((question, index) => (
+              <QuestionPreviewCard index={index} key={question.id} question={question} />
+            ))}
+          </div>
+        ) : (
+          <div
+            className="mt-5 rounded border border-outline-variant/40 bg-[#fbfcff] p-5 text-body-md text-on-surface-variant"
+            data-testid="ai-quiz-empty-draft"
+            role="status"
+          >
+            ยังไม่มีคำถามในแบบร่าง รอผลลัพธ์จาก AI หรือลองเลือกแหล่งข้อมูลใหม่
+          </div>
+        )}
         <div className="mt-5 flex flex-wrap gap-3">
           <Button disabled variant="secondary">
             เผยแพร่แบบทดสอบ

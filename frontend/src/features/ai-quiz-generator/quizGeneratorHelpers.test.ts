@@ -9,10 +9,11 @@ import {
   formatQuizDraftStatus,
   formatQuizSourceStatus,
   formatQuizSourceType,
+  getSafeQuizDraftQuestions,
   getSelectedQuizSource,
   sortQuizSourcesByReadiness
 } from "./quizGeneratorHelpers";
-import type { QuizCitationPreview, QuizSource } from "./types";
+import type { QuizCitationPreview, QuizQuestionPreview, QuizSource } from "./types";
 
 const sources: QuizSource[] = [
   {
@@ -64,6 +65,13 @@ const citation: QuizCitationPreview = {
   matched_text: "ตรวจอุปกรณ์ป้องกันก่อนเริ่มทดลอง"
 };
 
+const question: QuizQuestionPreview = {
+  citation,
+  id: "question-1",
+  options: [{ id: "a", label: "A" }],
+  question_text: "Question"
+};
+
 describe("quizGeneratorHelpers", () => {
   it("formats difficulty, source type, source status, and draft status labels in Thai", () => {
     expect(formatDifficulty("easy")).toBe("ง่าย");
@@ -105,6 +113,13 @@ describe("quizGeneratorHelpers", () => {
     expect(countReadyQuizSources(sources)).toBe(2);
     expect(estimateQuizDuration(5)).toBe("8 นาที");
     expect(estimateQuizDuration(12)).toBe("18 นาที");
+  });
+
+  it("guards draft questions from nullish backend payloads", () => {
+    expect(getSafeQuizDraftQuestions([question])).toEqual([question]);
+    expect(getSafeQuizDraftQuestions([])).toEqual([]);
+    expect(getSafeQuizDraftQuestions(null)).toEqual([]);
+    expect(getSafeQuizDraftQuestions(undefined)).toEqual([]);
   });
 
   it("builds citation labels without leaking API field names", () => {

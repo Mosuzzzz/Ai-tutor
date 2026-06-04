@@ -56,6 +56,9 @@ const activityIconMap: Record<LearningActivityType, LucideIcon> = {
 const actionLinkClassName =
   "inline-flex min-h-12 max-w-full items-center justify-center gap-2 rounded border border-[#234c5c]/15 bg-white px-4 py-2 text-left text-label-md font-bold text-[#234c5c] transition-colors hover:bg-[#eaf7f8] focus:outline-none focus:ring-2 focus:ring-[#72b7bf] focus:ring-offset-2";
 
+const emptyPanelClassName =
+  "mt-4 rounded border border-outline-variant/40 bg-[#fbfcff] p-4 text-body-md text-on-surface-variant";
+
 const formatTrendDateLabel = (date: string) => {
   return new Intl.DateTimeFormat("th-TH", {
     day: "numeric",
@@ -83,6 +86,18 @@ const MetricCard = ({ metric }: { metric: LearningAnalyticsMetric }) => {
 };
 
 const ScoreTrendChart = ({ trend }: { trend: LearningTrendPoint[] }) => {
+  if (trend.length === 0) {
+    return (
+      <Card className="min-w-0 overflow-hidden p-5">
+        <p className="text-label-sm font-semibold text-[#234c5c]">Score Trend</p>
+        <h3 className="mt-1 break-words text-headline-md text-on-surface">แนวโน้มคะแนนเฉลี่ย</h3>
+        <div className={emptyPanelClassName} data-testid="learning-score-trend-empty" role="status">
+          ยังไม่มีข้อมูลแนวโน้มคะแนนจาก API
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="min-w-0 overflow-hidden p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -181,11 +196,17 @@ const SkillRadarPanel = ({ skillGaps }: { skillGaps: LearningSkillGap[] }) => {
         วิเคราะห์จุดอ่อน
       </div>
       <h3 className="mt-2 text-headline-md text-on-surface">เรดาร์ทักษะที่ควรทบทวน</h3>
-      <div className="mt-5 grid gap-3">
-        {sortedSkillGaps.map((gap) => (
-          <SkillGapCard gap={gap} key={gap.topic} />
-        ))}
-      </div>
+      {sortedSkillGaps.length > 0 ? (
+        <div className="mt-5 grid gap-3">
+          {sortedSkillGaps.map((gap) => (
+            <SkillGapCard gap={gap} key={gap.topic} />
+          ))}
+        </div>
+      ) : (
+        <div className={emptyPanelClassName} data-testid="learning-skill-gaps-empty" role="status">
+          ยังไม่มีข้อมูลจุดอ่อนรายทักษะจาก API
+        </div>
+      )}
     </Card>
   );
 };
@@ -196,24 +217,41 @@ const DepartmentStatsPanel = ({ analytics }: { analytics: LearningAnalyticsViewM
   return (
     <Card className="min-w-0 overflow-hidden p-5">
       <h3 className="text-headline-md text-on-surface">สถานะเอกสารประกอบการเรียน</h3>
-      <div className="mt-4 grid gap-3">
-        {sortedStats.map((stat) => (
-          <div
-            className="flex min-w-0 items-center justify-between gap-3 rounded border border-outline-variant/40 bg-[#fbfcff] p-3"
-            key={stat.label}
-          >
-            <span className="break-words text-body-md font-semibold text-on-surface-variant">
-              {formatDepartmentLabel(stat.label)}
-            </span>
-            <span className="text-headline-sm font-bold text-on-surface">{stat.value}</span>
-          </div>
-        ))}
-      </div>
+      {sortedStats.length > 0 ? (
+        <div className="mt-4 grid gap-3">
+          {sortedStats.map((stat) => (
+            <div
+              className="flex min-w-0 items-center justify-between gap-3 rounded border border-outline-variant/40 bg-[#fbfcff] p-3"
+              key={stat.label}
+            >
+              <span className="break-words text-body-md font-semibold text-on-surface-variant">
+                {formatDepartmentLabel(stat.label)}
+              </span>
+              <span className="text-headline-sm font-bold text-on-surface">{stat.value}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className={emptyPanelClassName} data-testid="learning-department-empty" role="status">
+          ยังไม่มีข้อมูลสถานะเอกสารประกอบการเรียนจาก API
+        </div>
+      )}
     </Card>
   );
 };
 
 const LearningActivityTable = ({ activities }: { activities: LearningActivity[] }) => {
+  if (activities.length === 0) {
+    return (
+      <Card className="min-w-0 overflow-hidden p-5">
+        <h3 className="text-headline-md text-on-surface">กิจกรรมการเรียนล่าสุด</h3>
+        <div className={emptyPanelClassName} data-testid="learning-activity-empty" role="status">
+          ยังไม่มีกิจกรรมล่าสุดจาก API
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="min-w-0 overflow-hidden p-5">
       <h3 className="text-headline-md text-on-surface">กิจกรรมการเรียนล่าสุด</h3>
