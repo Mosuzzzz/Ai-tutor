@@ -26,6 +26,7 @@ const teacherSession: AuthSession = {
 const requirePageSession = vi.hoisted(() => vi.fn());
 const loadStudentDashboardForSession = vi.hoisted(() => vi.fn());
 const loadTeacherDashboardForSession = vi.hoisted(() => vi.fn());
+const loadDocumentSummaryForSession = vi.hoisted(() => vi.fn());
 
 vi.mock("@/features/auth/authGuard", () => ({
   requirePageSession
@@ -37,6 +38,10 @@ vi.mock("@/features/student-dashboard/studentDashboardApi", () => ({
 
 vi.mock("@/features/teacher-dashboard/teacherDashboardApi", () => ({
   loadTeacherDashboardForSession
+}));
+
+vi.mock("@/features/document-summary/documentSummaryApi", () => ({
+  loadDocumentSummaryForSession
 }));
 
 describe("protected app routes", () => {
@@ -79,6 +84,29 @@ describe("protected app routes", () => {
         teacherName: "Teacher One"
       },
       status: "ready"
+    });
+    loadDocumentSummaryForSession.mockReset();
+    loadDocumentSummaryForSession.mockResolvedValue({
+      dashboard: {
+        apiEndpoint: "/api/files/dashboard",
+        apiResponse: {
+          documents: [],
+          status_counts: {
+            error: 0,
+            pending: 0,
+            processing: 0,
+            ready: 0
+          },
+          total_documents: 0
+        },
+        detailEndpointPattern: "/api/files/{file_id}/detail",
+        documentDetails: [],
+        generatedAtLabel: "5 Jun 2026, 10:00",
+        recapEndpointPattern: "/api/recap/{file_id}",
+        selectedDocumentId: "",
+        workspaceName: "Document Workspace"
+      },
+      status: "empty"
     });
   });
 

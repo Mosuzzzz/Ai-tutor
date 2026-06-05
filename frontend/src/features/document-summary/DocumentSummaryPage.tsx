@@ -33,6 +33,7 @@ import type {
 
 type DocumentSummaryPageProps = {
   dashboard?: DocumentSummaryViewModel;
+  dataSource?: "api" | "api-ready-mock";
   errorMessage?: string;
   selectedDocumentId?: string;
   status?: DocumentSummaryStatus;
@@ -63,6 +64,7 @@ const getDetailByDocumentId = (
 
 export const DocumentSummaryPage = ({
   dashboard = documentSummaryMock,
+  dataSource = "api-ready-mock",
   errorMessage = "ไม่สามารถโหลดข้อมูลสรุปเอกสารได้",
   selectedDocumentId,
   status = "ready"
@@ -95,7 +97,7 @@ export const DocumentSummaryPage = ({
 
   if (!selectedDetail) {
     return (
-      <div className="space-y-6" data-source="api-ready-mock" data-testid="document-summary">
+      <div className="space-y-6" data-source={dataSource} data-testid="document-summary">
         <Card className="text-center" role="status">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded bg-surface-container text-primary">
             <FileSearch aria-hidden="true" className="h-6 w-6" />
@@ -147,7 +149,7 @@ export const DocumentSummaryPage = ({
   ];
 
   return (
-    <div className="space-y-6" data-source="api-ready-mock" data-testid="document-summary">
+    <div className="space-y-6" data-source={dataSource} data-testid="document-summary">
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <div className="overflow-hidden rounded border border-[#0e2d4f]/10 bg-[#24344d] text-white shadow-ambient">
           <div className="p-5 md:p-7">

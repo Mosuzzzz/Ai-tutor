@@ -194,16 +194,44 @@ Included:
 - Pure helper functions สำหรับ status label, summary count, readiness sorting, selected document fallback และ markdown parsing
 - Test coverage สำหรับ helper, component, route `/documents`, loading/error/empty state และการไม่ expose backend endpoint ลง DOM
 
-Out of scope until Backend/Auth is ready:
+Superseded by DocumentsApiIntegration:
 
 - Real `/api/files/dashboard` fetch
 - Real `/api/files/{file_id}/detail` fetch
-- Real `/api/recap/{file_id}` generation request
-- Upload document flow
-- Export/share implementation
+- Cached `GET /api/recap/{file_id}` fallback
 - Zod validation สำหรับ response จาก API จริง
 - Tenant/session permission checks ก่อน render document data
 - Backend error mapping และ empty states จาก API จริง
+
+Still out of scope:
+
+- Upload document flow
+- Delete/download document flow
+- Export/share implementation
+- POST recap generation request
+
+### DocumentsApiIntegration Update
+
+The `/documents` route now uses the protected session boundary and reads document data through the shared server-side API client instead of rendering only static mock data.
+
+Included:
+
+- `/documents` calls `requirePageSession("/documents")` before loading any document data.
+- `src/features/document-summary/documentSummaryApi.ts` reads only the server-side HttpOnly access cookie and calls Backend document endpoints through `backendJsonRequest`.
+- `src/features/document-summary/documentSummaryContract.ts` validates `/api/files/dashboard`, `/api/files/{file_id}/detail`, `/api/files/{file_id}/status`, and `/api/recap/{file_id}` responses with Zod.
+- `src/features/document-summary/documentSummaryMapper.ts` maps Backend dashboard/detail/recap responses into the existing Document Summary view model.
+- The selected document defaults to a ready document with an available summary, falls back to ready documents, then falls back to the first document in the library.
+- If a ready detail response has no `summary_markdown`, the loader attempts cached `GET /api/recap/{file_id}` and uses that markdown when available.
+- Empty, error, processing, ready, and no-summary states map into UI-safe states without exposing backend endpoints or auth tokens in the DOM.
+- Upload/delete/download are not wired in this branch because they are state-changing or file-streaming operations and should be added through dedicated Next.js BFF routes with CSRF/origin checks.
+
+Out of scope for this branch:
+
+- Document upload UI and multipart BFF route
+- Document delete BFF route
+- Original-file download proxy/streaming route
+- Export/share summary actions
+- POST recap generation from the browser
 
 ### Completed Phase 6: AI Chat & Summary
 
@@ -308,7 +336,7 @@ Out of scope until Backend/Auth is ready:
 | `/` | `src/app/page.tsx` | Student Dashboard API-integrated | Main learner dashboard |
 | `/teacher` | `src/app/teacher/page.tsx` | Teacher Dashboard API-integrated | Main teacher dashboard |
 | `/courses` | `src/app/courses/page.tsx` | Placeholder | Courses module shell |
-| `/documents` | `src/app/documents/page.tsx` | Document Summary mock/API-ready | AI document summary workspace |
+| `/documents` | `src/app/documents/page.tsx` | Document Summary API-integrated | AI document summary workspace |
 | `/chat` | `src/app/chat/page.tsx` | AI Chat & Summary mock/API-ready | Grounded document chat workspace |
 | `/quiz` | `src/app/quiz/page.tsx` | AI Quiz Generator mock/API-ready | AI quiz generation workspace |
 | `/analytics` | `src/app/analytics/page.tsx` | Learning Analytics mock/API-ready | Learning insight workspace |
@@ -853,6 +881,10 @@ Current coverage focus:
 - document summary helper status/sorting/markdown parsing
 - document summary loading/error/empty states
 - document summary action links, disabled export/share, and backend endpoint hiding
+- document summary Backend `/api/files/dashboard`, `/api/files/{file_id}/detail`, `/api/files/{file_id}/status`, and `/api/recap/{file_id}` Zod contracts
+- document summary server-side HttpOnly cookie API loader
+- document summary session-based view-model mapping and cached recap fallback
+- document summary API empty/error state mapping
 - AI chat route and API-ready mock marker
 - AI chat helper status/sorting/citation/grounded-message behavior
 - AI chat loading/error/empty states
@@ -875,7 +907,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 51 test files, 195 tests
+- `npm test`: 54 test files, 206 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -886,7 +918,7 @@ The following items should wait until Backend/API integration branches:
 
 - OAuth callback handling
 - Teacher dashboard real API integration and loading/error/empty states
-- Document Summary real API integration, upload, recap generation, export/share, and response validation
+- Document Summary upload/delete/download BFF routes with CSRF/origin checks, POST recap generation, and export/share implementation
 - AI Chat real API integration, history fetch, streaming response, rate-limit handling, and response validation
 - AI Quiz real API integration, publish flow, learner-safe exam view, submit flow, and response validation
 - Learning Analytics real API integration, learner/trainer view split, event stream mapping, and response validation
@@ -905,30 +937,25 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current TeacherDashboardApiIntegration commit, include:
+For the current DocumentsApiIntegration commit, include:
 
 ```text
 frontend/SRS.md
-frontend/src/app/teacher/page.tsx
-frontend/src/app/teacher/page.test.tsx
-frontend/src/features/app-shell/navigationData.ts
-frontend/src/features/app-shell/navigationData.test.ts
-frontend/src/features/auth/authRoutePolicy.ts
-frontend/src/features/auth/authRoutePolicy.test.ts
-frontend/src/features/teacher-dashboard/TeacherDashboardPage.tsx
-frontend/src/features/teacher-dashboard/TeacherDashboardPage.test.tsx
-frontend/src/features/teacher-dashboard/teacherDashboardApi.ts
-frontend/src/features/teacher-dashboard/teacherDashboardApi.test.ts
-frontend/src/features/teacher-dashboard/teacherDashboardContract.ts
-frontend/src/features/teacher-dashboard/teacherDashboardContract.test.ts
-frontend/src/features/teacher-dashboard/teacherDashboardData.ts
-frontend/src/features/teacher-dashboard/teacherDashboardMapper.ts
-frontend/src/features/teacher-dashboard/teacherDashboardMapper.test.ts
-frontend/src/features/teacher-dashboard/teacherDashboardTestData.ts
-frontend/src/features/teacher-dashboard/types.ts
+frontend/src/app/documents/page.tsx
+frontend/src/app/documents/page.test.tsx
+frontend/src/app/protected-routes.test.tsx
+frontend/src/features/document-summary/DocumentSummaryPage.tsx
+frontend/src/features/document-summary/documentSummaryApi.ts
+frontend/src/features/document-summary/documentSummaryApi.test.ts
+frontend/src/features/document-summary/documentSummaryContract.ts
+frontend/src/features/document-summary/documentSummaryContract.test.ts
+frontend/src/features/document-summary/documentSummaryMapper.ts
+frontend/src/features/document-summary/documentSummaryMapper.test.ts
+frontend/src/features/document-summary/documentSummaryTestData.ts
+frontend/src/features/document-summary/types.ts
 ```
 
-This feature connects the protected teacher dashboard to Backend `/api/analytics/trainer` and `/api/analytics/trainer/students` through the shared server-side API client, validates both responses with Zod, maps them to the existing UI shape, and keeps auth tokens inside HttpOnly cookies.
+This feature connects the protected document summary route to Backend `/api/files/dashboard`, `/api/files/{file_id}/detail`, `/api/files/{file_id}/status`, and cached `GET /api/recap/{file_id}` through the shared server-side API client, validates responses with Zod, maps them to the existing UI shape, and keeps auth tokens inside HttpOnly cookies.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 
