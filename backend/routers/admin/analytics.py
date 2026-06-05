@@ -127,7 +127,7 @@ def _build_recent_activity(db: Session, user_id: str, tenant_id: str) -> list[sc
 def _build_skill_breakdown(db: Session, user_id: str, tenant_id: str) -> list[schemas.SkillScore]:
     user_exams = (
         db.query(Exam)
-        .filter(Exam.tenant_id == tenant_id, Exam.user_id == user_id, Exam.taken_at.isnot(None))
+        .filter(Exam.tenant_id == tenant_id, Exam.submitted_by == user_id, Exam.taken_at.isnot(None))
         .all()
     )
     by_file: dict[str, list[int]] = defaultdict(list)
@@ -161,14 +161,19 @@ def usage_overview(days: int = 30, db: Session = Depends(get_db), _=Depends(requ
 def learner_dashboard(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     """Learner-facing dashboard metrics (FR-DASH-01)."""
     tenant_id = current_user.tenant_id
-    tenant_exams = (
+    user_id = current_user.id
+    user_exams = (
         db.query(Exam)
-        .filter(Exam.tenant_id == tenant_id, Exam.taken_at.isnot(None))
+        .filter(
+            Exam.tenant_id == tenant_id,
+            Exam.submitted_by == user_id,
+            Exam.taken_at.isnot(None),
+        )
         .all()
     )
-    completed_quizzes = len(tenant_exams)
-    average_score = round(sum(_score_percentage(exam) for exam in tenant_exams) / completed_quizzes, 1) if completed_quizzes else 0.0
-    streak_days = len({exam.taken_at.date() for exam in tenant_exams if exam.taken_at})
+    completed_quizzes = len(user_exams)
+    average_score = round(sum(_score_percentage(exam) for exam in user_exams) / completed_quizzes, 1) if completed_quizzes else 0.0
+    streak_days = len({exam.taken_at.date() for exam in user_exams if exam.taken_at})
     read_documents_count = db.query(File).filter(File.tenant_id == tenant_id, File.status == "ready").count()
 
     return {
@@ -176,10 +181,10 @@ def learner_dashboard(db: Session = Depends(get_db), current_user=Depends(get_cu
         "average_score": average_score,
         "streak_days": streak_days,
         "read_documents_count": read_documents_count,
-        "recent_scores": _build_recent_scores(tenant_exams),
-        "score_trend": _build_score_trend(tenant_exams),
-        "recent_activity": _build_recent_activity(db, current_user.id, tenant_id),
-        "skill_breakdown": _build_skill_breakdown(db, current_user.id, tenant_id),
+        "recent_scores": _build_recent_scores(user_exams),
+        "score_trend": _build_score_trend(user_exams),
+        "recent_activity": _build_recent_activity(db, user_id, tenant_id),
+        "skill_breakdown": _build_skill_breakdown(db, user_id, tenant_id),
     }
 
 
@@ -209,7 +214,7 @@ def trainer_students(db: Session = Depends(get_db), current_user=Depends(require
     learners = db.query(User).filter(User.tenant_id == tenant_id, User.role == "learner").all()
     result = []
     for learner in learners:
-        completed = [e for e in learner.exams if e.taken_at is not None]
+        completed = [e for e in learner.exams if e.taken_at is not None and e.submitted_by == learner.id]
         scores = [_score_percentage(e) for e in completed]
         result.append(schemas.StudentStat(
             user_id=learner.id,

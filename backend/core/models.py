@@ -60,7 +60,7 @@ class User(Base):
     # Relationships
     tenant = relationship("Tenant", back_populates="users")
     uploaded_files = relationship("File", back_populates="uploader", cascade="all, delete-orphan")
-    exams = relationship("Exam", back_populates="user", cascade="all, delete-orphan")
+    exams = relationship("Exam", foreign_keys="Exam.user_id", back_populates="user", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="user", cascade="all, delete-orphan")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
 
@@ -91,18 +91,20 @@ class Exam(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     file_id = Column(String(36), ForeignKey("files.id", ondelete="CASCADE"), nullable=False)
     tenant_id = Column(String(36), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False) # Trainer (creator) or Learner (taker)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False) # Trainer who created the exam
     questions = Column(JSON, nullable=False) # Structure: list of {id, question_text, options, correct_index, explanation, citation}
     user_answers = Column(JSON, nullable=True) # Map of question_id -> user choice index
     score = Column(Integer, nullable=True) # 0 to 100
     status = Column(String(50), default="draft", nullable=False) # 'draft', 'published'
+    submitted_by = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True) # Learner who submitted
     taken_at = Column(DateTime, nullable=True) # Null if still a draft/uncompleted template
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
     tenant = relationship("Tenant", back_populates="exams")
     file = relationship("File", back_populates="exams")
-    user = relationship("User", back_populates="exams")
+    user = relationship("User", foreign_keys=[user_id], back_populates="exams")
+    submitter = relationship("User", foreign_keys=[submitted_by])
 
 
 class Embedding(Base):

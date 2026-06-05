@@ -160,6 +160,7 @@ def submit_exam(exam_id: str, payload: schemas.ExamSubmitRequest, current_user: 
     exam.user_answers = answers
     exam.score = score
     exam.taken_at = datetime.utcnow()
+    exam.submitted_by = current_user.id
     db.commit()
     db.refresh(exam)
 
