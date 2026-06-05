@@ -48,4 +48,6 @@ export type StudentDashboardViewModel = {
   assistantPrompts: AssistantPrompt[];
 };
 
-export type StudentDashboardStatus = "ready" | "loading" | "error";
+export type StudentDashboardDataSource = "api" | "api-ready-mock";
+
+export type StudentDashboardStatus = "empty" | "ready" | "loading" | "error";
