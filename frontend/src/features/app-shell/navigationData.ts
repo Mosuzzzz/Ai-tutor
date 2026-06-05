@@ -15,7 +15,7 @@ import type { AuthRouteRole } from "../auth/types";
 import type { NavigationItem, ShellAction } from "./types";
 
 const ALL_AUTH_ROLES = ["student", "teacher", "tenant_admin", "global_admin"] as const;
-const TEACHER_ROLES = ["teacher", "tenant_admin", "global_admin"] as const;
+const TEACHER_ROLES = ["teacher", "tenant_admin"] as const;
 
 export const primaryNavigation = [
   { allowedRoles: ["student"], href: "/", icon: LayoutDashboard, label: "แดชบอร์ด" },

@@ -3,7 +3,6 @@ import type { TeacherDashboardViewModel } from "./types";
 export const teacherDashboardMock = {
   teacherName: "ครูเมย์",
   generatedAtLabel: "วันนี้ 18:00",
-  apiEndpoint: "/api/admin/analytics/dashboard",
   apiResponse: {
     total_students: 156,
     generated_quizzes: 24,

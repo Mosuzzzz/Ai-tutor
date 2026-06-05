@@ -19,11 +19,11 @@ const createSession = (role: AuthSession["user"]["role"]): AuthSession => ({
 });
 
 describe("auth route policy", () => {
-  it("routes learners to the student dashboard and teacher/admin roles to the teacher dashboard", () => {
+  it("routes learners to the student dashboard, trainers to teacher dashboard, and global admins to analytics", () => {
     expect(getDefaultRouteForRole("student")).toBe("/");
     expect(getDefaultRouteForRole("teacher")).toBe("/teacher");
     expect(getDefaultRouteForRole("tenant_admin")).toBe("/teacher");
-    expect(getDefaultRouteForRole("global_admin")).toBe("/teacher");
+    expect(getDefaultRouteForRole("global_admin")).toBe("/analytics");
   });
 
   it("requires an authenticated session before rendering protected app routes", () => {
@@ -40,6 +40,10 @@ describe("auth route policy", () => {
     });
     expect(resolveProtectedRouteDecision(createSession("teacher"), "/")).toEqual({
       href: "/teacher",
+      type: "redirect"
+    });
+    expect(resolveProtectedRouteDecision(createSession("global_admin"), "/teacher")).toEqual({
+      href: "/analytics",
       type: "redirect"
     });
   });
@@ -59,6 +63,9 @@ describe("auth route policy", () => {
 
   it("normalizes nested paths before checking route access", () => {
     expect(canAccessRoute("teacher", "/quiz/drafts")).toBe(true);
+    expect(canAccessRoute("tenant_admin", "/teacher/overview")).toBe(true);
+    expect(canAccessRoute("global_admin", "/teacher/overview")).toBe(false);
+    expect(canAccessRoute("global_admin", "/quiz/drafts")).toBe(false);
     expect(canAccessRoute("student", "/quiz/drafts")).toBe(false);
   });
 });
