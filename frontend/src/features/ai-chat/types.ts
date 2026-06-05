@@ -1,4 +1,4 @@
-export type ChatDocumentStatus = "ready" | "processing" | "error";
+export type ChatDocumentStatus = "ready" | "pending" | "processing" | "error";
 
 export type ChatRole = "assistant" | "learner";
 
@@ -60,4 +60,4 @@ export type AiChatSummaryViewModel = {
   summaryPanel: ChatSummaryPanel;
 };
 
-export type AiChatSummaryStatus = "ready" | "loading" | "error";
+export type AiChatSummaryStatus = "ready" | "loading" | "empty" | "error";
