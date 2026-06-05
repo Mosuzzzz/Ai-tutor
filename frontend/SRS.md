@@ -254,16 +254,34 @@ Included:
 - Pure helper functions สำหรับ status label, readiness sorting, selected document fallback, citation label และ grounded message count
 - Test coverage สำหรับ helper, component, route `/chat`, loading/error/empty state และการไม่ expose backend endpoint ลง DOM
 
-Out of scope until Backend/Auth is ready:
+Superseded by ChatApiIntegration and remaining out of scope:
 
-- Real `/api/chat/query` request
-- Real `/api/chat/history` fetch
-- Conversation persistence
-- Streaming response UI
-- Auth/session cookie binding
+- Superseded: BFF-backed real `/api/chat/query` request path
+- Superseded: Real `/api/chat/history` fetch
+- Still deferred: visible composer enablement and conversation persistence beyond Backend audit history
+- Still deferred: streaming response UI
+- Superseded: Auth/session cookie binding via HttpOnly cookie
 - Tenant/session permission checks ก่อน render chat data
 - Zod validation สำหรับ response จาก API จริง
 - Backend error mapping และ rate-limit/error states จาก API จริง
+
+### ChatApiIntegration Update
+
+Included:
+
+- `/chat` now loads document context and chat history from Backend through the server-side API client.
+- The loader reads auth only from the HttpOnly access cookie and never from `localStorage` or `sessionStorage`.
+- Backend `/api/chat/history` responses are validated with Zod and mapped into the existing chat UI view model.
+- Backend audit-lite citation payloads are normalized into the UI citation shape before rendering.
+- `POST /api/chat/query` is proxied through a Next.js BFF route with Origin/CSRF guard, safe input validation, and sanitized error messages.
+- The visible composer stays disabled until the next UI interaction branch wires real submit UX.
+
+Remaining out of scope:
+
+- Streaming assistant responses.
+- Visible composer submit/retry UX.
+- Optional double-submit CSRF token if the team requires it beyond Origin guard.
+- Rate-limit-specific UI copy once Backend returns final error semantics.
 
 ### Completed Phase 7: AI Quiz Generator
 
@@ -337,7 +355,7 @@ Out of scope until Backend/Auth is ready:
 | `/teacher` | `src/app/teacher/page.tsx` | Teacher Dashboard API-integrated | Main teacher dashboard |
 | `/courses` | `src/app/courses/page.tsx` | Placeholder | Courses module shell |
 | `/documents` | `src/app/documents/page.tsx` | Document Summary API-integrated | AI document summary workspace |
-| `/chat` | `src/app/chat/page.tsx` | AI Chat & Summary mock/API-ready | Grounded document chat workspace |
+| `/chat` | `src/app/chat/page.tsx` | AI Chat & Summary API-integrated | Grounded document chat workspace |
 | `/quiz` | `src/app/quiz/page.tsx` | AI Quiz Generator mock/API-ready | AI quiz generation workspace |
 | `/analytics` | `src/app/analytics/page.tsx` | Learning Analytics mock/API-ready | Learning insight workspace |
 | `/settings` | `src/app/settings/page.tsx` | Placeholder | Settings module shell |
@@ -792,6 +810,7 @@ Current test files:
 
 ```text
 src/app/analytics/page.test.tsx
+src/app/api/chat/_lib/chatBffHandlers.test.ts
 src/app/auth-routes.test.tsx
 src/app/chat/page.test.tsx
 src/app/documents/page.test.tsx
@@ -808,7 +827,10 @@ src/features/app-shell/AppShell.test.tsx
 src/features/app-shell/appShellHelpers.test.ts
 src/features/app-shell/navigationData.test.ts
 src/features/ai-chat/AiChatSummaryPage.test.tsx
+src/features/ai-chat/aiChatApi.test.ts
+src/features/ai-chat/aiChatContract.test.ts
 src/features/ai-chat/aiChatHelpers.test.ts
+src/features/ai-chat/aiChatMapper.test.ts
 src/features/ai-quiz-generator/AiQuizGeneratorPage.test.tsx
 src/features/ai-quiz-generator/quizGeneratorHelpers.test.ts
 src/features/auth/AuthShell.test.tsx
@@ -890,6 +912,10 @@ Current coverage focus:
 - AI chat loading/error/empty states
 - AI chat action links, disabled composer, and backend endpoint hiding
 - AI chat layout overflow guard for long Thai filenames and messages
+- AI chat Backend `/api/chat/query` and `/api/chat/history` Zod contracts
+- AI chat server-side HttpOnly cookie API loader
+- AI chat session-based view-model mapping and citation normalization
+- AI chat same-origin BFF query route with Origin/CSRF guard
 - AI quiz route and API-ready mock marker
 - AI quiz helper difficulty/status/source/count/citation behavior
 - AI quiz loading/error/empty states
@@ -907,7 +933,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 54 test files, 206 tests
+- `npm test`: 58 test files, 220 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -919,7 +945,7 @@ The following items should wait until Backend/API integration branches:
 - OAuth callback handling
 - Teacher dashboard real API integration and loading/error/empty states
 - Document Summary upload/delete/download BFF routes with CSRF/origin checks, POST recap generation, and export/share implementation
-- AI Chat real API integration, history fetch, streaming response, rate-limit handling, and response validation
+- AI Chat visible composer enablement, streaming response UI, rate-limit UX, and optional double-submit CSRF token
 - AI Quiz real API integration, publish flow, learner-safe exam view, submit flow, and response validation
 - Learning Analytics real API integration, learner/trainer view split, event stream mapping, and response validation
 - Backend validation error mapping
@@ -937,25 +963,29 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current DocumentsApiIntegration commit, include:
+For the current ChatApiIntegration commit, include:
 
 ```text
 frontend/SRS.md
-frontend/src/app/documents/page.tsx
-frontend/src/app/documents/page.test.tsx
+frontend/src/app/api/chat/_lib/chatBffHandlers.ts
+frontend/src/app/api/chat/_lib/chatBffHandlers.test.ts
+frontend/src/app/api/chat/query/route.ts
+frontend/src/app/chat/page.tsx
+frontend/src/app/chat/page.test.tsx
 frontend/src/app/protected-routes.test.tsx
-frontend/src/features/document-summary/DocumentSummaryPage.tsx
-frontend/src/features/document-summary/documentSummaryApi.ts
-frontend/src/features/document-summary/documentSummaryApi.test.ts
-frontend/src/features/document-summary/documentSummaryContract.ts
-frontend/src/features/document-summary/documentSummaryContract.test.ts
-frontend/src/features/document-summary/documentSummaryMapper.ts
-frontend/src/features/document-summary/documentSummaryMapper.test.ts
-frontend/src/features/document-summary/documentSummaryTestData.ts
-frontend/src/features/document-summary/types.ts
+frontend/src/features/ai-chat/AiChatSummaryPage.tsx
+frontend/src/features/ai-chat/aiChatApi.ts
+frontend/src/features/ai-chat/aiChatApi.test.ts
+frontend/src/features/ai-chat/aiChatContract.ts
+frontend/src/features/ai-chat/aiChatContract.test.ts
+frontend/src/features/ai-chat/aiChatHelpers.ts
+frontend/src/features/ai-chat/aiChatMapper.ts
+frontend/src/features/ai-chat/aiChatMapper.test.ts
+frontend/src/features/ai-chat/aiChatTestData.ts
+frontend/src/features/ai-chat/types.ts
 ```
 
-This feature connects the protected document summary route to Backend `/api/files/dashboard`, `/api/files/{file_id}/detail`, `/api/files/{file_id}/status`, and cached `GET /api/recap/{file_id}` through the shared server-side API client, validates responses with Zod, maps them to the existing UI shape, and keeps auth tokens inside HttpOnly cookies.
+This feature connects the protected chat route to Backend document context and `GET /api/chat/history` through the shared server-side API client, adds a same-origin BFF route for `POST /api/chat/query`, validates responses with Zod, normalizes Backend citation shapes, maps them to the existing UI shape, and keeps auth tokens inside HttpOnly cookies.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 

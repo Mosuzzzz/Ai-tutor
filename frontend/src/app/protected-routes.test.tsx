@@ -27,6 +27,7 @@ const requirePageSession = vi.hoisted(() => vi.fn());
 const loadStudentDashboardForSession = vi.hoisted(() => vi.fn());
 const loadTeacherDashboardForSession = vi.hoisted(() => vi.fn());
 const loadDocumentSummaryForSession = vi.hoisted(() => vi.fn());
+const loadAiChatSummaryForSession = vi.hoisted(() => vi.fn());
 
 vi.mock("@/features/auth/authGuard", () => ({
   requirePageSession
@@ -42,6 +43,10 @@ vi.mock("@/features/teacher-dashboard/teacherDashboardApi", () => ({
 
 vi.mock("@/features/document-summary/documentSummaryApi", () => ({
   loadDocumentSummaryForSession
+}));
+
+vi.mock("@/features/ai-chat/aiChatApi", () => ({
+  loadAiChatSummaryForSession
 }));
 
 describe("protected app routes", () => {
@@ -105,6 +110,26 @@ describe("protected app routes", () => {
         recapEndpointPattern: "/api/recap/{file_id}",
         selectedDocumentId: "",
         workspaceName: "Document Workspace"
+      },
+      status: "empty"
+    });
+    loadAiChatSummaryForSession.mockReset();
+    loadAiChatSummaryForSession.mockResolvedValue({
+      chat: {
+        chatHistoryEndpoint: "/api/chat/history",
+        chatQueryEndpoint: "/api/chat/query",
+        documents: [],
+        documentsEndpoint: "/api/files/dashboard",
+        messages: [],
+        metrics: [],
+        selectedDocumentId: "",
+        suggestedPrompts: [],
+        summaryPanel: {
+          summary: "",
+          takeaways: [],
+          title: "Chat Summary"
+        },
+        workspaceName: "Chat Workspace"
       },
       status: "empty"
     });

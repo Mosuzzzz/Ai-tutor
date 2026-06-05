@@ -32,6 +32,7 @@ import type {
 
 type AiChatSummaryPageProps = {
   chat?: AiChatSummaryViewModel;
+  dataSource?: "api" | "api-ready-mock";
   errorMessage?: string;
   selectedDocumentId?: string;
   status?: AiChatSummaryStatus;
@@ -39,6 +40,7 @@ type AiChatSummaryPageProps = {
 
 const statusToneClassNames: Record<ChatDocumentStatus, string> = {
   error: "bg-[#ffe9df] text-[#9a3b18]",
+  pending: "bg-[#eaf3ff] text-[#24527a]",
   processing: "bg-[#fff3d8] text-[#8a5a00]",
   ready: "bg-[#e6f6ee] text-[#216148]"
 };
@@ -226,6 +228,7 @@ const ChatComposer = () => {
 
 export const AiChatSummaryPage = ({
   chat = aiChatSummaryMock,
+  dataSource = "api-ready-mock",
   errorMessage = "ไม่สามารถโหลดบทสนทนา AI ได้",
   selectedDocumentId,
   status = "ready"
@@ -254,7 +257,7 @@ export const AiChatSummaryPage = ({
 
   if (!selectedDocument) {
     return (
-      <div className="space-y-6" data-source="api-ready-mock" data-testid="ai-chat-summary">
+      <div className="space-y-6" data-source={dataSource} data-testid="ai-chat-summary">
         <Card className="text-center" role="status">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded bg-surface-container text-primary">
             <TriangleAlert aria-hidden="true" className="h-6 w-6" />
@@ -269,7 +272,7 @@ export const AiChatSummaryPage = ({
   }
 
   return (
-    <div className="space-y-6" data-source="api-ready-mock" data-testid="ai-chat-summary">
+    <div className="space-y-6" data-source={dataSource} data-testid="ai-chat-summary">
       <section className="overflow-hidden rounded border border-[#2d5f72]/15 bg-[#183642] text-white shadow-ambient">
         <div className="p-5 md:p-7">
           <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#ffd37a]">

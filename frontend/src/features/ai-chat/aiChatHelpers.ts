@@ -3,12 +3,14 @@ import type { ChatCitation, ChatDocument, ChatDocumentStatus, ChatMessage, ChatR
 const statusPriority: Record<ChatDocumentStatus, number> = {
   ready: 0,
   processing: 1,
-  error: 2
+  pending: 2,
+  error: 3
 };
 
 const chatDocumentStatusLabels: Record<ChatDocumentStatus, string> = {
   ready: "พร้อมถาม AI",
   processing: "กำลังประมวลผล",
+  pending: "รอประมวลผล",
   error: "มีปัญหา"
 };
 
