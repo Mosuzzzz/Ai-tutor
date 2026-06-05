@@ -24,15 +24,40 @@ const teacherSession: AuthSession = {
 };
 
 const requirePageSession = vi.hoisted(() => vi.fn());
+const loadStudentDashboardForSession = vi.hoisted(() => vi.fn());
 
 vi.mock("@/features/auth/authGuard", () => ({
   requirePageSession
+}));
+
+vi.mock("@/features/student-dashboard/studentDashboardApi", () => ({
+  loadStudentDashboardForSession
 }));
 
 describe("protected app routes", () => {
   beforeEach(() => {
     requirePageSession.mockReset();
     requirePageSession.mockResolvedValue(studentSession);
+    loadStudentDashboardForSession.mockReset();
+    loadStudentDashboardForSession.mockResolvedValue({
+      dashboard: {
+        apiResponse: {
+          average_score: 88,
+          completed_quizzes: 7,
+          read_documents_count: 4,
+          recent_scores: [],
+          score_trend: [],
+          streak_days: 3
+        },
+        assistantPrompts: [],
+        continueLearning: [],
+        generatedAtLabel: "5 มิ.ย. 2569 10:00",
+        learnerName: "Student One",
+        nextMilestone: "เริ่มเรียนจากเอกสารแรกของคุณ",
+        roleLabel: "ผู้เรียน"
+      },
+      status: "ready"
+    });
   });
 
   it("guards the student dashboard route before rendering", async () => {

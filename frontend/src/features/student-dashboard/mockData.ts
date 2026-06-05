@@ -1,7 +1,5 @@
 import type { StudentDashboardViewModel } from "./types";
 
-export const STUDENT_DASHBOARD_API_PATH = "/api/analytics/dashboard";
-
 export const studentDashboardMock = {
   learnerName: "ศิวกร",
   roleLabel: "ผู้เรียน",
@@ -89,7 +87,3 @@ export const studentDashboardMock = {
     }
   ]
 } satisfies StudentDashboardViewModel;
-
-export const fetchStudentDashboard = async () => {
-  return studentDashboardMock;
-};

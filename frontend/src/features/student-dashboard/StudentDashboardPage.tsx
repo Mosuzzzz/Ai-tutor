@@ -23,9 +23,15 @@ import {
   scoreToGrade
 } from "./dashboardHelpers";
 import { studentDashboardMock } from "./mockData";
-import type { ContinueLearningItem, StudentDashboardStatus, StudentDashboardViewModel } from "./types";
+import type {
+  ContinueLearningItem,
+  StudentDashboardDataSource,
+  StudentDashboardStatus,
+  StudentDashboardViewModel
+} from "./types";
 
 type StudentDashboardPageProps = {
+  dataSource?: StudentDashboardDataSource;
   dashboard?: StudentDashboardViewModel;
   errorMessage?: string;
   status?: StudentDashboardStatus;
@@ -47,6 +53,7 @@ const progressTypeIcon: Record<ContinueLearningItem["type"], LucideIcon> = {
 };
 
 export const StudentDashboardPage = ({
+  dataSource = "api-ready-mock",
   dashboard = studentDashboardMock,
   errorMessage = "ไม่สามารถโหลดข้อมูลผู้เรียนได้",
   status = "ready"
@@ -69,6 +76,40 @@ export const StudentDashboardPage = ({
         role="alert"
       >
         {errorMessage}
+      </div>
+    );
+  }
+
+  if (status === "empty") {
+    return (
+      <div data-source={dataSource} data-testid="student-dashboard" className="space-y-6">
+        <section className="rounded border border-outline-variant/40 bg-surface-container-lowest p-6 shadow-ambient">
+          <div role="status">
+            <p className="text-label-sm font-semibold uppercase text-on-surface-variant">Student Dashboard</p>
+            <h2 className="mt-2 text-headline-lg-mobile font-bold text-on-surface md:text-headline-lg">
+              ยังไม่มีข้อมูลการเรียน
+            </h2>
+            <p className="mt-3 max-w-2xl text-body-md text-on-surface-variant">
+              {dashboard.learnerName} ยังไม่มีผลควิซหรือเอกสารพร้อมอ่านในระบบ เริ่มจากคอร์สหรืออัปโหลดเอกสารแรกเพื่อให้ AI Tutor สร้างแผนต่อไป
+            </p>
+          </div>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-[#f5b94f] px-4 py-2 text-label-md font-bold text-[#16233a] transition-colors hover:bg-[#ffd37a] focus:outline-none focus:ring-2 focus:ring-[#ffd37a] focus:ring-offset-2"
+              href="/courses"
+            >
+              เริ่มเรียนเลย
+              <ArrowRight aria-hidden="true" className="h-5 w-5" />
+            </Link>
+            <Link
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-outline-variant/50 bg-white px-4 py-2 text-label-md font-bold text-primary transition-colors hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
+              href="/documents"
+            >
+              เปิดเอกสารเรียน
+              <FileText aria-hidden="true" className="h-5 w-5" />
+            </Link>
+          </div>
+        </section>
       </div>
     );
   }
@@ -110,7 +151,7 @@ export const StudentDashboardPage = ({
   const topScores = getTopScores(dashboard.apiResponse.recent_scores);
 
   return (
-    <div data-source="api-ready-mock" data-testid="student-dashboard" className="space-y-6">
+    <div data-source={dataSource} data-testid="student-dashboard" className="space-y-6">
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.55fr)]">
         <div className="overflow-hidden rounded border border-[#0e2d4f]/10 bg-[#10233f] text-white shadow-ambient">
           <div className="grid gap-6 p-5 md:p-7 lg:grid-cols-[minmax(0,1fr)_260px]">

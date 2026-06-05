@@ -27,6 +27,33 @@ describe("StudentDashboardPage", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("ไม่สามารถโหลดข้อมูลผู้เรียนได้");
   });
 
+  it("renders an API empty state without exposing endpoint details", () => {
+    render(
+      <StudentDashboardPage
+        dashboard={{
+          ...studentDashboardMock,
+          apiResponse: {
+            average_score: 0,
+            completed_quizzes: 0,
+            read_documents_count: 0,
+            recent_scores: [],
+            score_trend: [],
+            streak_days: 0
+          },
+          assistantPrompts: [],
+          continueLearning: []
+        }}
+        dataSource="api"
+        status="empty"
+      />
+    );
+
+    const dashboard = screen.getByTestId("student-dashboard");
+    expect(dashboard).toHaveAttribute("data-source", "api");
+    expect(dashboard).not.toHaveAttribute("data-api-endpoint");
+    expect(screen.getByRole("status")).toHaveTextContent("ยังไม่มีข้อมูลการเรียน");
+  });
+
   it("renders AI prompt and hero quick action links", () => {
     render(<StudentDashboardPage />);
 

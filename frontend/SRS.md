@@ -108,6 +108,26 @@ Out of scope until Backend is ready:
 - Backend error mapping และ empty states จาก API จริง
 - Permission checks จาก session จริง
 
+### Completed Phase 3.1: Student Dashboard API Integration
+
+StudentDashboardApiIntegration connects the learner home dashboard to the Backend analytics contract while preserving the existing UI composition.
+
+Included:
+
+- `/` calls `loadStudentDashboardForSession()` after `requirePageSession("/")` returns the current session.
+- `src/features/student-dashboard/studentDashboardApi.ts` reads only the server-side HttpOnly access cookie and calls Backend `/api/analytics/dashboard` through the shared API client.
+- `src/features/student-dashboard/studentDashboardContract.ts` validates the learner dashboard payload with Zod before UI mapping.
+- `src/features/student-dashboard/studentDashboardMapper.ts` maps Backend response data into the existing Thai student dashboard view model and uses the sanitized session display name/email.
+- Student Dashboard supports API `ready`, `empty`, and `error` states without exposing Backend endpoint details or auth tokens in the DOM.
+- Frontend does not send or trust a `user_id` from the URL/client state; it relies on Backend to scope `/api/analytics/dashboard` from the current HttpOnly-cookie session token. Backend should confirm this endpoint is learner-scoped, not only tenant-scoped.
+
+Out of scope for this branch:
+
+- Real continue-learning recommendations from Backend
+- Learner-specific activity/skill breakdown UI from the extra Backend fields
+- Teacher dashboard real API integration
+- Playwright E2E against a running Backend
+
 ### Completed Phase 4: Teacher Dashboard
 
 หน้า `/teacher` ถูกเพิ่มเป็น dashboard สำหรับครูแบบ mock/API-ready เพื่อให้ทีมเห็น flow ฝั่ง teacher ก่อนเชื่อมต่อ Backend จริง
@@ -267,7 +287,7 @@ Out of scope until Backend/Auth is ready:
 
 | Route | File | Status | Purpose |
 | --- | --- | --- | --- |
-| `/` | `src/app/page.tsx` | Student Dashboard mock/API-ready | Main learner dashboard |
+| `/` | `src/app/page.tsx` | Student Dashboard API-integrated | Main learner dashboard |
 | `/teacher` | `src/app/teacher/page.tsx` | Teacher Dashboard mock/API-ready | Main teacher dashboard |
 | `/courses` | `src/app/courses/page.tsx` | Placeholder | Courses module shell |
 | `/documents` | `src/app/documents/page.tsx` | Document Summary mock/API-ready | AI document summary workspace |
@@ -758,7 +778,10 @@ src/features/learning-analytics/learningAnalyticsHelpers.test.ts
 src/features/document-summary/DocumentSummaryPage.test.tsx
 src/features/document-summary/documentSummaryHelpers.test.ts
 src/features/student-dashboard/StudentDashboardPage.test.tsx
+src/features/student-dashboard/studentDashboardApi.test.ts
+src/features/student-dashboard/studentDashboardContract.test.ts
 src/features/student-dashboard/dashboardHelpers.test.ts
+src/features/student-dashboard/studentDashboardMapper.test.ts
 src/features/teacher-dashboard/TeacherDashboardPage.test.tsx
 src/features/teacher-dashboard/teacherDashboardHelpers.test.ts
 src/lib/cn.test.ts
@@ -793,6 +816,10 @@ Current coverage focus:
 - student dashboard helper formatting/sorting/relative time
 - student dashboard loading/error states
 - student dashboard action links and accessible progressbar
+- student dashboard Backend `/api/analytics/dashboard` Zod contract
+- student dashboard server-side HttpOnly cookie API loader
+- student dashboard current-session view-model mapping
+- student dashboard API empty/error state mapping
 - teacher dashboard route and API-ready mock marker
 - teacher dashboard helper formatting/sorting/status labels
 - teacher dashboard action links and accessible progressbar
@@ -822,7 +849,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 45 test files, 169 tests
+- `npm test`: 48 test files, 183 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -832,9 +859,6 @@ Current latest verification:
 The following items should wait until Backend/API integration branches:
 
 - OAuth callback handling
-- Student dashboard analytics API client
-- Dashboard response validation with Zod
-- Student dashboard empty states from real API
 - Teacher dashboard real API integration and loading/error/empty states
 - Document Summary real API integration, upload, recap generation, export/share, and response validation
 - AI Chat real API integration, history fetch, streaming response, rate-limit handling, and response validation
@@ -855,27 +879,25 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current FrontendApiSafetyFixes commit, include:
+For the current StudentDashboardApiIntegration commit, include:
 
 ```text
-frontend/next.config.ts
 frontend/SRS.md
-frontend/src/app/security-headers.test.ts
-frontend/src/lib/percent.ts
-frontend/src/lib/percent.test.ts
-frontend/src/features/student-dashboard/dashboardHelpers.ts
-frontend/src/features/teacher-dashboard/teacherDashboardHelpers.ts
-frontend/src/features/learning-analytics/learningAnalyticsHelpers.ts
-frontend/src/features/learning-analytics/LearningAnalyticsPage.tsx
-frontend/src/features/learning-analytics/LearningAnalyticsPage.test.tsx
-frontend/src/features/ai-quiz-generator/AiQuizGeneratorPage.tsx
-frontend/src/features/ai-quiz-generator/AiQuizGeneratorPage.test.tsx
-frontend/src/features/ai-quiz-generator/quizGeneratorHelpers.ts
-frontend/src/features/ai-quiz-generator/quizGeneratorHelpers.test.ts
-frontend/src/features/ai-quiz-generator/types.ts
+frontend/src/app/page.tsx
+frontend/src/app/page.test.tsx
+frontend/src/features/student-dashboard/StudentDashboardPage.tsx
+frontend/src/features/student-dashboard/StudentDashboardPage.test.tsx
+frontend/src/features/student-dashboard/mockData.ts
+frontend/src/features/student-dashboard/studentDashboardApi.ts
+frontend/src/features/student-dashboard/studentDashboardApi.test.ts
+frontend/src/features/student-dashboard/studentDashboardContract.ts
+frontend/src/features/student-dashboard/studentDashboardContract.test.ts
+frontend/src/features/student-dashboard/studentDashboardMapper.ts
+frontend/src/features/student-dashboard/studentDashboardMapper.test.ts
+frontend/src/features/student-dashboard/types.ts
 ```
 
-This feature adds frontend guards for API-controlled empty/null payloads, centralizes percent normalization, and hardens production `script-src` while keeping development/test CSP compatible with Next.js.
+This feature connects the protected learner home dashboard to Backend `/api/analytics/dashboard` through the shared server-side API client, validates the response with Zod, maps it to the existing UI shape, and keeps auth tokens inside HttpOnly cookies.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 
