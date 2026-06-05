@@ -66,4 +66,4 @@ export type DocumentSummaryViewModel = {
   documentDetails: DocumentSummaryDetail[];
 };
 
-export type DocumentSummaryStatus = "ready" | "loading" | "error";
+export type DocumentSummaryStatus = "ready" | "loading" | "empty" | "error";

@@ -14,24 +14,57 @@ const studentSession: AuthSession = {
   }
 };
 
+const documentDashboard = {
+  apiEndpoint: "/api/files/dashboard",
+  apiResponse: {
+    documents: [],
+    status_counts: {
+      error: 0,
+      pending: 0,
+      processing: 0,
+      ready: 0
+    },
+    total_documents: 0
+  },
+  detailEndpointPattern: "/api/files/{file_id}/detail",
+  documentDetails: [],
+  generatedAtLabel: "5 Jun 2026, 10:00",
+  recapEndpointPattern: "/api/recap/{file_id}",
+  selectedDocumentId: "",
+  workspaceName: "Document Workspace"
+};
+
 const requirePageSession = vi.hoisted(() => vi.fn());
+const loadDocumentSummaryForSession = vi.hoisted(() => vi.fn());
 
 vi.mock("@/features/auth/authGuard", () => ({
   requirePageSession
+}));
+
+vi.mock("@/features/document-summary/documentSummaryApi", () => ({
+  loadDocumentSummaryForSession
 }));
 
 describe("documents route", () => {
   beforeEach(() => {
     requirePageSession.mockReset();
     requirePageSession.mockResolvedValue(studentSession);
+    loadDocumentSummaryForSession.mockReset();
+    loadDocumentSummaryForSession.mockResolvedValue({
+      dashboard: documentDashboard,
+      status: "empty"
+    });
   });
 
-  it("renders the document summary feature inside the app shell", async () => {
+  it("renders the API-backed document summary feature inside the app shell", async () => {
     render(await DocumentsPage());
 
     expect(requirePageSession).toHaveBeenCalledWith("/documents");
+    expect(loadDocumentSummaryForSession).toHaveBeenCalledWith({
+      session: studentSession
+    });
     expect(screen.getByRole("banner")).toHaveTextContent("AI Tutor");
-    expect(screen.getByRole("main")).toHaveTextContent("สรุปเอกสารด้วย AI");
     expect(screen.getByTestId("document-summary")).toBeInTheDocument();
+    expect(screen.getByTestId("document-summary")).toHaveAttribute("data-source", "api");
   });
 });
