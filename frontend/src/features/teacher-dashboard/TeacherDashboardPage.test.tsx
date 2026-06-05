@@ -14,6 +14,41 @@ describe("TeacherDashboardPage", () => {
     expect(screen.getByText("82%")).toBeInTheDocument();
   });
 
+  it("renders loading, error, and empty API states without exposing endpoint details", () => {
+    const { rerender } = render(<TeacherDashboardPage status="loading" />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("กำลังโหลดแดชบอร์ดครู");
+
+    rerender(<TeacherDashboardPage errorMessage="ไม่สามารถโหลดแดชบอร์ดครูได้" status="error" />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("ไม่สามารถโหลดแดชบอร์ดครูได้");
+
+    rerender(
+      <TeacherDashboardPage
+        dashboard={{
+          apiResponse: {
+            activities: [],
+            classes: [],
+            completion_rate: 0,
+            generated_quizzes: 0,
+            quizzes: [],
+            reviewed_documents: 0,
+            total_students: 0
+          },
+          generatedAtLabel: "5 มิ.ย. 2569 17:00",
+          teacherName: "Teacher One"
+        }}
+        dataSource="api"
+        status="empty"
+      />
+    );
+
+    const dashboard = screen.getByTestId("teacher-dashboard");
+    expect(dashboard).toHaveAttribute("data-source", "api");
+    expect(dashboard).not.toHaveAttribute("data-api-endpoint");
+    expect(screen.getByRole("status")).toHaveTextContent("ยังไม่มีข้อมูลผู้เรียน");
+  });
+
   it("renders class progress and quiz status summaries", () => {
     render(<TeacherDashboardPage />);
 

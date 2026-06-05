@@ -23,10 +23,19 @@ import {
   getTopActivity,
   sortTeacherClasses
 } from "./teacherDashboardHelpers";
-import type { TeacherActivityType, TeacherDashboardViewModel, TeacherMetric } from "./types";
+import type {
+  TeacherActivityType,
+  TeacherDashboardDataSource,
+  TeacherDashboardStatus,
+  TeacherDashboardViewModel,
+  TeacherMetric
+} from "./types";
 
 type TeacherDashboardPageProps = {
+  dataSource?: TeacherDashboardDataSource;
   dashboard?: TeacherDashboardViewModel;
+  errorMessage?: string;
+  status?: TeacherDashboardStatus;
 };
 
 type TeacherAction = {
@@ -81,7 +90,67 @@ const actions: TeacherAction[] = [
   }
 ];
 
-export const TeacherDashboardPage = ({ dashboard = teacherDashboardMock }: TeacherDashboardPageProps) => {
+export const TeacherDashboardPage = ({
+  dataSource = "api-ready-mock",
+  dashboard = teacherDashboardMock,
+  errorMessage = "ไม่สามารถโหลดแดชบอร์ดครูได้",
+  status = "ready"
+}: TeacherDashboardPageProps) => {
+  if (status === "loading") {
+    return (
+      <section
+        aria-live="polite"
+        className="rounded border border-outline-variant/40 bg-surface-container-lowest p-6 shadow-ambient"
+        role="status"
+      >
+        กำลังโหลดแดชบอร์ดครู
+      </section>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <section className="rounded border border-error/30 bg-error-container p-6 text-on-error-container" role="alert">
+        {errorMessage}
+      </section>
+    );
+  }
+
+  if (status === "empty") {
+    return (
+      <div data-source={dataSource} data-testid="teacher-dashboard" className="space-y-6">
+        <section className="rounded border border-outline-variant/40 bg-surface-container-lowest p-6 shadow-ambient">
+          <div role="status">
+            <p className="text-label-sm font-semibold uppercase text-on-surface-variant">Teacher Dashboard</p>
+            <h2 className="mt-2 text-headline-lg-mobile font-bold text-on-surface md:text-headline-lg">
+              ยังไม่มีข้อมูลผู้เรียน
+            </h2>
+            <p className="mt-3 max-w-2xl text-body-md text-on-surface-variant">
+              {dashboard.teacherName} ยังไม่มีข้อมูลผู้เรียน ควิซ หรือเอกสารพร้อมสรุปในระบบ
+              เริ่มจากเพิ่มคอร์สหรือสร้างควิซแรกเพื่อให้ AI Tutor สร้างสถิติสำหรับครู
+            </p>
+          </div>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-[#f5b94f] px-4 py-2 text-label-md font-bold text-[#16233a] transition-colors hover:bg-[#ffd37a] focus:outline-none focus:ring-2 focus:ring-[#ffd37a] focus:ring-offset-2"
+              href="/courses"
+            >
+              เปิดคอร์สเรียน
+              <ArrowRight aria-hidden="true" className="h-5 w-5" />
+            </Link>
+            <Link
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-outline-variant/50 bg-white px-4 py-2 text-label-md font-bold text-primary transition-colors hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
+              href="/quiz"
+            >
+              สร้างควิซแรก
+              <PenLine aria-hidden="true" className="h-5 w-5" />
+            </Link>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   const metrics: TeacherMetric[] = [
     {
       id: "students",
@@ -117,7 +186,7 @@ export const TeacherDashboardPage = ({ dashboard = teacherDashboardMock }: Teach
   const topActivity = getTopActivity(dashboard.apiResponse.activities);
 
   return (
-    <div data-source="api-ready-mock" data-testid="teacher-dashboard" className="space-y-6">
+    <div data-source={dataSource} data-testid="teacher-dashboard" className="space-y-6">
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <div className="overflow-hidden rounded border border-[#0e2d4f]/10 bg-[#173829] text-white shadow-ambient">
           <div className="p-5 md:p-7">

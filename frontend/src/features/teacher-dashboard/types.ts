@@ -53,6 +53,9 @@ export type TeacherDashboardApiResponse = {
 export type TeacherDashboardViewModel = {
   teacherName: string;
   generatedAtLabel: string;
-  apiEndpoint: string;
   apiResponse: TeacherDashboardApiResponse;
 };
+
+export type TeacherDashboardDataSource = "api" | "api-ready-mock";
+
+export type TeacherDashboardStatus = "empty" | "ready" | "loading" | "error";

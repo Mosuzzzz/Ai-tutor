@@ -125,7 +125,6 @@ Out of scope for this branch:
 
 - Real continue-learning recommendations from Backend
 - Learner-specific activity/skill breakdown UI from the extra Backend fields
-- Teacher dashboard real API integration
 - Playwright E2E against a running Backend
 
 ### Completed Phase 4: Teacher Dashboard
@@ -146,7 +145,7 @@ Included:
 - Pure helper functions สำหรับ format rate, sort class, status label, activity label และ greeting
 - Test coverage สำหรับ helper, component, route และ navigation regression
 
-Out of scope until Backend/Auth is ready:
+Superseded by TeacherDashboardApiIntegration:
 
 - Real teacher analytics API fetch
 - Role guard เช่น `RequireRole("teacher")`
@@ -154,6 +153,25 @@ Out of scope until Backend/Auth is ready:
 - Zod validation สำหรับ response จาก API จริง
 - Loading/error/empty states จาก network จริง
 - Backend error mapping
+
+### Completed Phase 4.1: Teacher Dashboard API Integration
+
+TeacherDashboardApiIntegration connects `/teacher` to the Backend trainer analytics contract while preserving the existing Thai dashboard composition.
+
+Included:
+
+- `/teacher` calls `loadTeacherDashboardForSession()` after `requirePageSession("/teacher")` returns a sanitized teacher or tenant admin session.
+- `src/features/teacher-dashboard/teacherDashboardApi.ts` reads only the server-side HttpOnly access cookie and calls Backend `/api/analytics/trainer` plus `/api/analytics/trainer/students` through the shared API client.
+- `src/features/teacher-dashboard/teacherDashboardContract.ts` validates both trainer analytics and student-list payloads with Zod before UI mapping.
+- `src/features/teacher-dashboard/teacherDashboardMapper.ts` maps Backend `total_employees`, `total_quizzes_taken`, `department_stats`, `skill_gaps`, and student stats into the existing teacher dashboard view model.
+- Teacher Dashboard supports API `ready`, `empty`, and `error` states without exposing Backend endpoint details or auth tokens in the DOM.
+- Route protection maps Backend `trainer` to frontend `teacher`, allows `teacher`/`tenant_admin` on `/teacher`, and redirects `global_admin` to `/analytics` because Backend trainer endpoints do not accept global admin sessions.
+
+Out of scope for this branch:
+
+- Backend-provided class/course-level teacher dashboard data beyond the current trainer analytics endpoints
+- Real-time teacher analytics refresh
+- Playwright E2E against a running Backend
 
 ### Completed Phase 5: Document Summary
 
@@ -288,7 +306,7 @@ Out of scope until Backend/Auth is ready:
 | Route | File | Status | Purpose |
 | --- | --- | --- | --- |
 | `/` | `src/app/page.tsx` | Student Dashboard API-integrated | Main learner dashboard |
-| `/teacher` | `src/app/teacher/page.tsx` | Teacher Dashboard mock/API-ready | Main teacher dashboard |
+| `/teacher` | `src/app/teacher/page.tsx` | Teacher Dashboard API-integrated | Main teacher dashboard |
 | `/courses` | `src/app/courses/page.tsx` | Placeholder | Courses module shell |
 | `/documents` | `src/app/documents/page.tsx` | Document Summary mock/API-ready | AI document summary workspace |
 | `/chat` | `src/app/chat/page.tsx` | AI Chat & Summary mock/API-ready | Grounded document chat workspace |
@@ -574,7 +592,8 @@ Implemented server-side route protection and role-aware shell routing:
 - Protected app routes call `requirePageSession()` before rendering sensitive UI.
 - `/login` and `/register` call `redirectAuthenticatedRoute()` so an authenticated user is sent to the correct dashboard.
 - Student users can access `/`, `/courses`, `/documents`, `/chat`, `/analytics`, and `/settings`.
-- Teacher/admin users can access `/teacher`, `/courses`, `/documents`, `/chat`, `/quiz`, `/analytics`, and `/settings`.
+- Teacher and tenant admin users can access `/teacher`, `/courses`, `/documents`, `/chat`, `/quiz`, `/analytics`, and `/settings`.
+- Global admin users are routed to `/analytics` and do not receive teacher-only `/teacher` or `/quiz` navigation unless Backend expands those trainer endpoints to accept global admin sessions.
 - App shell navigation is filtered by the current session role before rendering.
 - The shell profile initial/display label comes from sanitized session metadata, not from URL or client storage.
 
@@ -783,7 +802,10 @@ src/features/student-dashboard/studentDashboardContract.test.ts
 src/features/student-dashboard/dashboardHelpers.test.ts
 src/features/student-dashboard/studentDashboardMapper.test.ts
 src/features/teacher-dashboard/TeacherDashboardPage.test.tsx
+src/features/teacher-dashboard/teacherDashboardApi.test.ts
+src/features/teacher-dashboard/teacherDashboardContract.test.ts
 src/features/teacher-dashboard/teacherDashboardHelpers.test.ts
+src/features/teacher-dashboard/teacherDashboardMapper.test.ts
 src/lib/cn.test.ts
 src/lib/percent.test.ts
 ```
@@ -823,6 +845,10 @@ Current coverage focus:
 - teacher dashboard route and API-ready mock marker
 - teacher dashboard helper formatting/sorting/status labels
 - teacher dashboard action links and accessible progressbar
+- teacher dashboard Backend `/api/analytics/trainer` and `/api/analytics/trainer/students` Zod contracts
+- teacher dashboard server-side HttpOnly cookie API loader
+- teacher dashboard session-based view-model mapping
+- teacher dashboard API empty/error state mapping
 - document summary route and API-ready mock marker
 - document summary helper status/sorting/markdown parsing
 - document summary loading/error/empty states
@@ -849,7 +875,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 48 test files, 183 tests
+- `npm test`: 51 test files, 195 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -879,25 +905,30 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current StudentDashboardApiIntegration commit, include:
+For the current TeacherDashboardApiIntegration commit, include:
 
 ```text
 frontend/SRS.md
-frontend/src/app/page.tsx
-frontend/src/app/page.test.tsx
-frontend/src/features/student-dashboard/StudentDashboardPage.tsx
-frontend/src/features/student-dashboard/StudentDashboardPage.test.tsx
-frontend/src/features/student-dashboard/mockData.ts
-frontend/src/features/student-dashboard/studentDashboardApi.ts
-frontend/src/features/student-dashboard/studentDashboardApi.test.ts
-frontend/src/features/student-dashboard/studentDashboardContract.ts
-frontend/src/features/student-dashboard/studentDashboardContract.test.ts
-frontend/src/features/student-dashboard/studentDashboardMapper.ts
-frontend/src/features/student-dashboard/studentDashboardMapper.test.ts
-frontend/src/features/student-dashboard/types.ts
+frontend/src/app/teacher/page.tsx
+frontend/src/app/teacher/page.test.tsx
+frontend/src/features/app-shell/navigationData.ts
+frontend/src/features/app-shell/navigationData.test.ts
+frontend/src/features/auth/authRoutePolicy.ts
+frontend/src/features/auth/authRoutePolicy.test.ts
+frontend/src/features/teacher-dashboard/TeacherDashboardPage.tsx
+frontend/src/features/teacher-dashboard/TeacherDashboardPage.test.tsx
+frontend/src/features/teacher-dashboard/teacherDashboardApi.ts
+frontend/src/features/teacher-dashboard/teacherDashboardApi.test.ts
+frontend/src/features/teacher-dashboard/teacherDashboardContract.ts
+frontend/src/features/teacher-dashboard/teacherDashboardContract.test.ts
+frontend/src/features/teacher-dashboard/teacherDashboardData.ts
+frontend/src/features/teacher-dashboard/teacherDashboardMapper.ts
+frontend/src/features/teacher-dashboard/teacherDashboardMapper.test.ts
+frontend/src/features/teacher-dashboard/teacherDashboardTestData.ts
+frontend/src/features/teacher-dashboard/types.ts
 ```
 
-This feature connects the protected learner home dashboard to Backend `/api/analytics/dashboard` through the shared server-side API client, validates the response with Zod, maps it to the existing UI shape, and keeps auth tokens inside HttpOnly cookies.
+This feature connects the protected teacher dashboard to Backend `/api/analytics/trainer` and `/api/analytics/trainer/students` through the shared server-side API client, validates both responses with Zod, maps them to the existing UI shape, and keeps auth tokens inside HttpOnly cookies.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 

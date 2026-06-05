@@ -21,7 +21,7 @@ export type AuthRouteDecision =
     };
 
 const ALL_AUTH_ROLES = ["student", "teacher", "tenant_admin", "global_admin"] as const;
-const TEACHER_ROLES = ["teacher", "tenant_admin", "global_admin"] as const;
+const TEACHER_ROLES = ["teacher", "tenant_admin"] as const;
 
 export const protectedRouteRoles = {
   "/": ["student"],
@@ -35,7 +35,15 @@ export const protectedRouteRoles = {
 } satisfies Record<ProtectedRouteHref, readonly AuthRouteRole[]>;
 
 export const getDefaultRouteForRole = (role: AuthRouteRole) => {
-  return role === "student" ? "/" : "/teacher";
+  if (role === "student") {
+    return "/";
+  }
+
+  if (role === "global_admin") {
+    return "/analytics";
+  }
+
+  return "/teacher";
 };
 
 export const canAccessRoute = (role: AuthRouteRole, href: string) => {

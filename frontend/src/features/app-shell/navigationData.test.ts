@@ -38,6 +38,15 @@ describe("app shell navigation data", () => {
     ]);
   });
 
+  it("hides trainer-only navigation from global admin sessions", () => {
+    expect(getPrimaryNavigationForRole("global_admin").map((item) => item.href)).toEqual([
+      "/courses",
+      "/documents",
+      "/chat",
+      "/analytics"
+    ]);
+  });
+
   it("keeps secondary navigation and AI action ready for role-aware expansion", () => {
     expect(secondaryNavigation.map((item) => item.href)).toEqual(["/settings"]);
     expect(aiAction.label).toBe("เริ่มเรียนเลย");
