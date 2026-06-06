@@ -36,6 +36,7 @@ import type {
 } from "./types";
 
 type AiQuizGeneratorPageProps = {
+  dataSource?: "api" | "api-ready-mock";
   errorMessage?: string;
   quiz?: QuizGeneratorViewModel;
   selectedSourceId?: string;
@@ -256,6 +257,7 @@ const PreviewPanel = ({ quiz }: { quiz: QuizGeneratorViewModel }) => {
 };
 
 export const AiQuizGeneratorPage = ({
+  dataSource = "api-ready-mock",
   errorMessage = "ไม่สามารถโหลดตัวสร้างควิซได้",
   quiz = aiQuizGeneratorMock,
   selectedSourceId,
@@ -285,7 +287,7 @@ export const AiQuizGeneratorPage = ({
 
   if (!selectedSource) {
     return (
-      <div className="space-y-6" data-source="api-ready-mock" data-testid="ai-quiz-generator">
+      <div className="space-y-6" data-source={dataSource} data-testid="ai-quiz-generator">
         <Card className="text-center" role="status">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded bg-surface-container text-primary">
             <TriangleAlert aria-hidden="true" className="h-6 w-6" />
@@ -300,7 +302,7 @@ export const AiQuizGeneratorPage = ({
   }
 
   return (
-    <div className="space-y-6" data-source="api-ready-mock" data-testid="ai-quiz-generator">
+    <div className="space-y-6" data-source={dataSource} data-testid="ai-quiz-generator">
       <section className="overflow-hidden rounded border border-[#4f7d3a]/15 bg-[#213719] text-white shadow-ambient">
         <div className="p-5 md:p-7">
           <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#f6cf67]">
