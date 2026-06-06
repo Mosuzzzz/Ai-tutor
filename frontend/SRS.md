@@ -306,14 +306,33 @@ Included:
 
 Out of scope until Backend/Auth is ready:
 
-- Real `/api/exams/generate` request
-- Real `/api/exams/{exam_id}` fetch
-- Real `/api/exams/{exam_id}/publish` request
+- Superseded: BFF-backed real `/api/exams/generate` request path
+- Superseded: Real `/api/exams/{exam_id}` fetch
+- Superseded: BFF-backed real `/api/exams/{exam_id}/publish` request path
 - Upload/manual/course source switching แบบ interactive
 - Trainer/tenant_admin role guard สำหรับ generate/publish
 - Learner-safe exam view และ submit flow จริง
 - Zod validation สำหรับ response จาก API จริง
 - Backend error mapping และ rate-limit/error states จาก API จริง
+
+### QuizApiIntegration Update
+
+Included:
+
+- `/quiz` now loads document sources from Backend through the server-side API client.
+- The loader reads auth only from the HttpOnly access cookie and never from `localStorage` or `sessionStorage`.
+- Backend `/api/exams/{exam_id}` responses are validated with Zod when a selected exam id is provided.
+- Trainer exam payloads are mapped into safe preview questions without `correct_index` or `explanation` in the UI view model.
+- Learner exam payloads are strict and reject answer-key fields if Backend accidentally returns them.
+- Same-origin BFF routes proxy quiz generation, update, publish, and submit actions with Origin/CSRF guard.
+- UI generate/publish buttons remain disabled until a dedicated interaction branch wires real form submit UX.
+
+Remaining out of scope:
+
+- Visible generate/update/publish/submit UI interactions.
+- Learner exam-taking page and score result screen.
+- Rate-limit-specific UI copy once Backend returns final error semantics.
+- Optional double-submit CSRF token if the team requires it beyond Origin guard.
 
 ### Completed Phase 8: Learning Analytics
 
@@ -356,7 +375,7 @@ Out of scope until Backend/Auth is ready:
 | `/courses` | `src/app/courses/page.tsx` | Placeholder | Courses module shell |
 | `/documents` | `src/app/documents/page.tsx` | Document Summary API-integrated | AI document summary workspace |
 | `/chat` | `src/app/chat/page.tsx` | AI Chat & Summary API-integrated | Grounded document chat workspace |
-| `/quiz` | `src/app/quiz/page.tsx` | AI Quiz Generator mock/API-ready | AI quiz generation workspace |
+| `/quiz` | `src/app/quiz/page.tsx` | AI Quiz Generator API-integrated | AI quiz generation workspace |
 | `/analytics` | `src/app/analytics/page.tsx` | Learning Analytics mock/API-ready | Learning insight workspace |
 | `/settings` | `src/app/settings/page.tsx` | Placeholder | Settings module shell |
 | `/login` | `src/app/login/page.tsx` | Mock UI ready | Login screen |
@@ -811,6 +830,7 @@ Current test files:
 ```text
 src/app/analytics/page.test.tsx
 src/app/api/chat/_lib/chatBffHandlers.test.ts
+src/app/api/quiz/_lib/quizBffHandlers.test.ts
 src/app/auth-routes.test.tsx
 src/app/chat/page.test.tsx
 src/app/documents/page.test.tsx
@@ -832,7 +852,10 @@ src/features/ai-chat/aiChatContract.test.ts
 src/features/ai-chat/aiChatHelpers.test.ts
 src/features/ai-chat/aiChatMapper.test.ts
 src/features/ai-quiz-generator/AiQuizGeneratorPage.test.tsx
+src/features/ai-quiz-generator/quizGeneratorApi.test.ts
+src/features/ai-quiz-generator/quizGeneratorContract.test.ts
 src/features/ai-quiz-generator/quizGeneratorHelpers.test.ts
+src/features/ai-quiz-generator/quizGeneratorMapper.test.ts
 src/features/auth/AuthShell.test.tsx
 src/features/auth/authApiClient.test.ts
 src/features/auth/authGuard.test.ts
@@ -922,6 +945,10 @@ Current coverage focus:
 - AI quiz disabled generate/publish actions and backend endpoint hiding
 - AI quiz safe preview without answer keys and layout overflow guard
 - AI quiz null/empty draft question guard for API-controlled payloads
+- AI quiz Backend `/api/exams/generate`, `/api/exams/{exam_id}`, `/api/exams/{exam_id}/publish`, and `/api/exams/{exam_id}/submit` Zod contracts
+- AI quiz server-side HttpOnly cookie API loader
+- AI quiz session-based source/exam view-model mapping without answer-key leakage
+- AI quiz same-origin BFF action routes with Origin/CSRF guard
 - learning analytics route and API-ready mock marker
 - learning analytics helper percent/risk/sorting/trend/metric behavior
 - learning analytics loading/error/empty states
@@ -933,7 +960,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 58 test files, 220 tests
+- `npm test`: 62 test files, 236 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -946,7 +973,7 @@ The following items should wait until Backend/API integration branches:
 - Teacher dashboard real API integration and loading/error/empty states
 - Document Summary upload/delete/download BFF routes with CSRF/origin checks, POST recap generation, and export/share implementation
 - AI Chat visible composer enablement, streaming response UI, rate-limit UX, and optional double-submit CSRF token
-- AI Quiz real API integration, publish flow, learner-safe exam view, submit flow, and response validation
+- AI Quiz visible generate/update/publish/submit UI interactions, learner-safe exam-taking page, score result screen, and rate-limit UX
 - Learning Analytics real API integration, learner/trainer view split, event stream mapping, and response validation
 - Backend validation error mapping
 - Playwright E2E for real auth flow
@@ -963,29 +990,31 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current ChatApiIntegration commit, include:
+For the current QuizApiIntegration commit, include:
 
 ```text
 frontend/SRS.md
-frontend/src/app/api/chat/_lib/chatBffHandlers.ts
-frontend/src/app/api/chat/_lib/chatBffHandlers.test.ts
-frontend/src/app/api/chat/query/route.ts
-frontend/src/app/chat/page.tsx
-frontend/src/app/chat/page.test.tsx
+frontend/src/app/api/quiz/_lib/quizBffHandlers.ts
+frontend/src/app/api/quiz/_lib/quizBffHandlers.test.ts
+frontend/src/app/api/quiz/[examId]/publish/route.ts
+frontend/src/app/api/quiz/[examId]/route.ts
+frontend/src/app/api/quiz/[examId]/submit/route.ts
+frontend/src/app/api/quiz/generate/route.ts
 frontend/src/app/protected-routes.test.tsx
-frontend/src/features/ai-chat/AiChatSummaryPage.tsx
-frontend/src/features/ai-chat/aiChatApi.ts
-frontend/src/features/ai-chat/aiChatApi.test.ts
-frontend/src/features/ai-chat/aiChatContract.ts
-frontend/src/features/ai-chat/aiChatContract.test.ts
-frontend/src/features/ai-chat/aiChatHelpers.ts
-frontend/src/features/ai-chat/aiChatMapper.ts
-frontend/src/features/ai-chat/aiChatMapper.test.ts
-frontend/src/features/ai-chat/aiChatTestData.ts
-frontend/src/features/ai-chat/types.ts
+frontend/src/app/quiz/page.tsx
+frontend/src/app/quiz/page.test.tsx
+frontend/src/features/ai-quiz-generator/AiQuizGeneratorPage.tsx
+frontend/src/features/ai-quiz-generator/quizGeneratorApi.ts
+frontend/src/features/ai-quiz-generator/quizGeneratorApi.test.ts
+frontend/src/features/ai-quiz-generator/quizGeneratorContract.ts
+frontend/src/features/ai-quiz-generator/quizGeneratorContract.test.ts
+frontend/src/features/ai-quiz-generator/quizGeneratorMapper.ts
+frontend/src/features/ai-quiz-generator/quizGeneratorMapper.test.ts
+frontend/src/features/ai-quiz-generator/quizGeneratorTestData.ts
+frontend/src/features/ai-quiz-generator/types.ts
 ```
 
-This feature connects the protected chat route to Backend document context and `GET /api/chat/history` through the shared server-side API client, adds a same-origin BFF route for `POST /api/chat/query`, validates responses with Zod, normalizes Backend citation shapes, maps them to the existing UI shape, and keeps auth tokens inside HttpOnly cookies.
+This feature connects the protected quiz route to Backend document context and optional `GET /api/exams/{exam_id}` through the shared server-side API client, adds same-origin BFF routes for generate/update/publish/submit actions, validates responses with Zod, maps trainer exam questions to the existing UI shape without answer-key leakage, and keeps auth tokens inside HttpOnly cookies.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 

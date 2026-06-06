@@ -10,6 +10,7 @@ export type QuizGenerationRequest = {
   file_id: string;
   num_questions: number;
   difficulty: QuizDifficulty;
+  instructions?: string;
 };
 
 export type QuizSource = {
@@ -69,4 +70,4 @@ export type QuizGeneratorViewModel = {
   instructions: string[];
 };
 
-export type QuizGeneratorStatus = "ready" | "loading" | "error";
+export type QuizGeneratorStatus = "ready" | "loading" | "empty" | "error";

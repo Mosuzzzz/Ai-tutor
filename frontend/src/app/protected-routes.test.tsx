@@ -28,6 +28,7 @@ const loadStudentDashboardForSession = vi.hoisted(() => vi.fn());
 const loadTeacherDashboardForSession = vi.hoisted(() => vi.fn());
 const loadDocumentSummaryForSession = vi.hoisted(() => vi.fn());
 const loadAiChatSummaryForSession = vi.hoisted(() => vi.fn());
+const loadQuizGeneratorForSession = vi.hoisted(() => vi.fn());
 
 vi.mock("@/features/auth/authGuard", () => ({
   requirePageSession
@@ -47,6 +48,10 @@ vi.mock("@/features/document-summary/documentSummaryApi", () => ({
 
 vi.mock("@/features/ai-chat/aiChatApi", () => ({
   loadAiChatSummaryForSession
+}));
+
+vi.mock("@/features/ai-quiz-generator/quizGeneratorApi", () => ({
+  loadQuizGeneratorForSession
 }));
 
 describe("protected app routes", () => {
@@ -130,6 +135,33 @@ describe("protected app routes", () => {
           title: "Chat Summary"
         },
         workspaceName: "Chat Workspace"
+      },
+      status: "empty"
+    });
+    loadQuizGeneratorForSession.mockReset();
+    loadQuizGeneratorForSession.mockResolvedValue({
+      quiz: {
+        detailEndpointPattern: "/api/exams/{exam_id}",
+        draft: {
+          file_id: "",
+          generatedAtLabel: "No draft",
+          id: "",
+          questions: [],
+          status: "draft",
+          title: "Draft"
+        },
+        generateEndpoint: "/api/exams/generate",
+        instructions: [],
+        metrics: [],
+        publishEndpointPattern: "/api/exams/{exam_id}/publish",
+        request: {
+          difficulty: "medium",
+          file_id: "",
+          num_questions: 5
+        },
+        selectedSourceId: "",
+        sources: [],
+        workspaceName: "Quiz Workspace"
       },
       status: "empty"
     });
