@@ -228,8 +228,11 @@ def trainer_students(db: Session = Depends(get_db), current_user=Depends(require
 
 
 @router.get("/audit-logs")
-def audit_logs(db: Session = Depends(get_db), _=Depends(require_role(["tenant_admin", "global_admin"]))):
-    logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(100).all()
+def audit_logs(db: Session = Depends(get_db), current_user=Depends(require_role(["tenant_admin", "global_admin"]))):
+    query = db.query(AuditLog)
+    if current_user.role == "tenant_admin":
+        query = query.filter(AuditLog.tenant_id == current_user.tenant_id)
+    logs = query.order_by(AuditLog.created_at.desc()).limit(100).all()
     return [
         {
             "id": log.id,
