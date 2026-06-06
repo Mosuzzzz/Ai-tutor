@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DOCUMENT_UPLOAD_API_PATH,
+  fileUploadResponseSchema,
   documentDetailResponseSchema,
   documentLibraryResponseSchema,
   fileStatusResponseSchema,
@@ -19,6 +21,21 @@ describe("document summary Backend contract", () => {
     expect(documentDetailResponseSchema.parse(backendDocumentDetailResponse).summary_available).toBe(true);
     expect(fileStatusResponseSchema.parse(backendDocumentStatusResponse).status).toBe("ready");
     expect(recapResponseSchema.parse(backendRecapResponse).cached).toBe(true);
+  });
+
+  it("validates the upload response without requiring browser-only fields", () => {
+    expect(DOCUMENT_UPLOAD_API_PATH).toBe("/api/files/upload");
+    expect(
+      fileUploadResponseSchema.parse({
+        created_at: "2026-06-05T10:00:00.000Z",
+        filename: "safety-handbook.pdf",
+        id: "file-ready",
+        status: "pending",
+        storage_url: "/secure/uploads/safety-handbook.pdf",
+        tenant_id: "tenant-1",
+        uploaded_by: "trainer-1"
+      }).status
+    ).toBe("pending");
   });
 
   it("rejects unknown document status values", () => {

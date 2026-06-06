@@ -5,6 +5,8 @@ import { DocumentSummaryPage } from "../../features/document-summary/DocumentSum
 
 export const dynamic = "force-dynamic";
 
+const DOCUMENT_UPLOAD_ROLES = new Set(["teacher", "tenant_admin", "global_admin"]);
+
 const DocumentsPage = async () => {
   const session = await requirePageSession("/documents");
   const dashboardResult = await loadDocumentSummaryForSession({
@@ -14,6 +16,7 @@ const DocumentsPage = async () => {
   return (
     <AppShell session={session}>
       <DocumentSummaryPage
+        canUploadDocuments={DOCUMENT_UPLOAD_ROLES.has(session.user.role)}
         dashboard={"dashboard" in dashboardResult ? dashboardResult.dashboard : undefined}
         dataSource="api"
         errorMessage={"errorMessage" in dashboardResult ? dashboardResult.errorMessage : undefined}
