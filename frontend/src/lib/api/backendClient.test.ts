@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { describe, expect, it, vi } from "vitest";
 
-import { ApiClientError, backendJsonRequest, mapApiErrorToMessage } from "./backendClient";
+import {
+  ApiClientError,
+  backendFormDataRequest,
+  backendJsonRequest,
+  mapApiErrorToMessage
+} from "./backendClient";
 
 const profileSchema = z.object({
   email: z.email(),
@@ -120,5 +125,38 @@ describe("backendJsonRequest", () => {
     await assertion;
 
     vi.useRealTimers();
+  });
+});
+
+describe("backendFormDataRequest", () => {
+  it("sends multipart data without forcing a JSON content type", async () => {
+    const formData = new FormData();
+    formData.set("file", new File(["training manual"], "training-manual.pdf", { type: "application/pdf" }));
+    const fetcher = vi.fn(async () => jsonResponse({ email: "trainer@example.com", role: "trainer" }));
+
+    const result = await backendFormDataRequest({
+      accessToken: "access-token-from-http-only-cookie",
+      baseUrl: "https://backend.example.com",
+      body: formData,
+      fetcher,
+      path: "/api/files/upload",
+      schema: profileSchema
+    });
+
+    expect(result).toEqual({ email: "trainer@example.com", role: "trainer" });
+    expect(fetcher).toHaveBeenCalledWith(
+      new URL("https://backend.example.com/api/files/upload"),
+      expect.objectContaining({
+        body: formData,
+        headers: expect.objectContaining({
+          Accept: "application/json",
+          Authorization: "Bearer access-token-from-http-only-cookie"
+        }),
+        method: "POST"
+      })
+    );
+
+    const init = fetcher.mock.calls[0]?.[1] as RequestInit;
+    expect(new Headers(init.headers).has("Content-Type")).toBe(false);
   });
 });

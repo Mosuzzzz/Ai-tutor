@@ -205,7 +205,6 @@ Superseded by DocumentsApiIntegration:
 
 Still out of scope:
 
-- Upload document flow
 - Delete/download document flow
 - Export/share implementation
 - POST recap generation request
@@ -223,15 +222,44 @@ Included:
 - The selected document defaults to a ready document with an available summary, falls back to ready documents, then falls back to the first document in the library.
 - If a ready detail response has no `summary_markdown`, the loader attempts cached `GET /api/recap/{file_id}` and uses that markdown when available.
 - Empty, error, processing, ready, and no-summary states map into UI-safe states without exposing backend endpoints or auth tokens in the DOM.
-- Upload/delete/download are not wired in this branch because they are state-changing or file-streaming operations and should be added through dedicated Next.js BFF routes with CSRF/origin checks.
+- Delete/download are not wired in this branch because they are state-changing or file-streaming operations and should be added through dedicated Next.js BFF routes with CSRF/origin checks.
 
 Out of scope for this branch:
 
-- Document upload UI and multipart BFF route
 - Document delete BFF route
 - Original-file download proxy/streaming route
 - Export/share summary actions
 - POST recap generation from the browser
+
+### DocumentUploadProcessingState Update
+
+The `/documents` route now includes the first real Phase 5 document upload flow through a same-origin Next.js BFF boundary.
+
+Included:
+
+- `/documents` passes session role information into the Document Summary page and shows upload UI only for `teacher`, `tenant_admin`, and `global_admin` sessions.
+- Learner/student sessions see a non-upload informational state instead of an active file input.
+- `src/features/document-summary/DocumentUploadPanel.tsx` provides client-side file selection, validation, upload status copy, processing progress semantics, and status polling.
+- `src/features/document-summary/documentUploadApiClient.ts` posts browser uploads only to same-origin `/api/documents/upload` with `credentials: "same-origin"` and does not set a manual multipart `Content-Type`.
+- `src/app/api/documents/upload/route.ts` proxies multipart uploads to Backend `/api/files/upload` through a server-side BFF handler.
+- `src/app/api/documents/[fileId]/status/route.ts` loads processing status through the same server-side cookie boundary.
+- `src/app/api/documents/_lib/documentBffHandlers.ts` applies same-origin CSRF/Origin checks for upload, reads only the HttpOnly access cookie, validates file type/size/name, sanitizes filenames, and returns only safe response fields to the browser.
+- `src/lib/api/backendClient.ts` now supports `backendFormDataRequest()` for server-side multipart requests without leaking auth tokens or forcing JSON `Content-Type`.
+- Upload validation currently allows `.pdf`, `.docx`, `.doc`, `.pptx`, `.ppt`, `.png`, `.jpg`, `.jpeg`, and `.webp` files up to 50MB.
+- Upload success refreshes the route and polls `/api/documents/{fileId}/status` while the document remains `pending` or `processing`.
+
+Security notes:
+
+- Browser code still never reads or stores access/refresh tokens in `localStorage` or `sessionStorage`.
+- The frontend role gate is UX only; Backend `require_role` / tenant scoping must remain the real authorization boundary for upload and status endpoints.
+- BFF upload responses intentionally do not expose Backend `storage_url` or bearer tokens to the DOM.
+
+Still out of scope:
+
+- Delete/download document flow
+- Export/share implementation
+- POST recap generation request
+- Playwright E2E against a running Backend upload pipeline
 
 ### Completed Phase 6: AI Chat & Summary
 
@@ -396,7 +424,7 @@ Still out of scope:
 | `/` | `src/app/page.tsx` | Student Dashboard API-integrated | Main learner dashboard |
 | `/teacher` | `src/app/teacher/page.tsx` | Teacher Dashboard API-integrated | Main teacher dashboard |
 | `/courses` | `src/app/courses/page.tsx` | Placeholder | Courses module shell |
-| `/documents` | `src/app/documents/page.tsx` | Document Summary API-integrated | AI document summary workspace |
+| `/documents` | `src/app/documents/page.tsx` | Document Summary API-integrated + upload processing | AI document summary workspace |
 | `/chat` | `src/app/chat/page.tsx` | AI Chat & Summary API-integrated | Grounded document chat workspace |
 | `/quiz` | `src/app/quiz/page.tsx` | AI Quiz Generator API-integrated | AI quiz generation workspace |
 | `/analytics` | `src/app/analytics/page.tsx` | Learning Analytics API-integrated | Learning insight workspace |
@@ -494,6 +522,10 @@ frontend/
 │   │   ├── document-summary/
 │   │   │   ├── DocumentSummaryPage.tsx
 │   │   │   ├── DocumentSummaryPage.test.tsx
+│   │   │   ├── DocumentUploadPanel.tsx
+│   │   │   ├── DocumentUploadPanel.test.tsx
+│   │   │   ├── documentUploadApiClient.ts
+│   │   │   ├── documentUploadApiClient.test.ts
 │   │   │   ├── documentSummaryData.ts
 │   │   │   ├── documentSummaryHelpers.ts
 │   │   │   ├── documentSummaryHelpers.test.ts
@@ -569,7 +601,7 @@ Current feature modules:
 - `features/ai-chat`: grounded chat UI, backend-like mock data, types, and pure helpers
 - `features/ai-quiz-generator`: quiz generator UI, backend-like mock data, types, and pure helpers
 - `features/auth`: login/register UI, auth form helpers, auth validation, centralized copy/types, and API-ready mock auth client
-- `features/document-summary`: document summary UI, backend-like mock data, types, and pure helpers
+- `features/document-summary`: document summary UI, upload panel, browser-side BFF wrappers, backend-like data contracts, types, and pure helpers
 - `features/learning-analytics`: learning analytics UI, backend-like mock data, types, and pure helpers
 - `features/student-dashboard`: learner dashboard UI, mock/API-ready wrapper, types, and pure helpers
 - `features/teacher-dashboard`: teacher dashboard UI, mock/API-ready data, types, and pure helpers
@@ -591,7 +623,7 @@ Current utilities:
 
 - `cn`: arrow-export safe class name join helper that preserves class order and filters falsey values
 - `lib/api/backendConfig`: server-only Backend base URL normalization and relative path URL builder for BFF route handlers
-- `lib/api/backendClient`: typed JSON request helper with timeout, backend error mapping, Bearer forwarding from server cookies, and Zod response validation
+- `lib/api/backendClient`: typed JSON/FormData request helpers with timeout, backend error mapping, Bearer forwarding from server cookies, and Zod response validation
 - `lib/api/authContract`: Backend auth/session/token schemas and `student -> learner`, `teacher -> trainer` role mapping helpers
 - `lib/api/authCookies`: HttpOnly Secure SameSite=Strict cookie descriptors for access/refresh tokens
 - `lib/api/csrf`: Origin header guard helpers for state-changing BFF routes
@@ -860,6 +892,7 @@ Current test files:
 ```text
 src/app/analytics/page.test.tsx
 src/app/api/chat/_lib/chatBffHandlers.test.ts
+src/app/api/documents/_lib/documentBffHandlers.test.ts
 src/app/api/quiz/_lib/quizBffHandlers.test.ts
 src/app/auth-routes.test.tsx
 src/app/chat/page.test.tsx
@@ -901,7 +934,10 @@ src/features/learning-analytics/learningAnalyticsContract.test.ts
 src/features/learning-analytics/learningAnalyticsHelpers.test.ts
 src/features/learning-analytics/learningAnalyticsMapper.test.ts
 src/features/document-summary/DocumentSummaryPage.test.tsx
+src/features/document-summary/DocumentUploadPanel.test.tsx
+src/features/document-summary/documentSummaryContract.test.ts
 src/features/document-summary/documentSummaryHelpers.test.ts
+src/features/document-summary/documentUploadApiClient.test.ts
 src/features/student-dashboard/StudentDashboardPage.test.tsx
 src/features/student-dashboard/studentDashboardApi.test.ts
 src/features/student-dashboard/studentDashboardContract.test.ts
@@ -960,9 +996,14 @@ Current coverage focus:
 - document summary loading/error/empty states
 - document summary action links, disabled export/share, and backend endpoint hiding
 - document summary Backend `/api/files/dashboard`, `/api/files/{file_id}/detail`, `/api/files/{file_id}/status`, and `/api/recap/{file_id}` Zod contracts
+- document summary upload response contract for Backend `/api/files/upload`
 - document summary server-side HttpOnly cookie API loader
 - document summary session-based view-model mapping and cached recap fallback
 - document summary API empty/error state mapping
+- document upload role-gated UI, client-side file validation, processing progressbar, polling state, and route refresh behavior
+- document upload same-origin browser BFF client without token storage or manual multipart `Content-Type`
+- document upload Next.js BFF handler with Origin guard, HttpOnly cookie forwarding, file type/size/name validation, filename sanitization, safe response shaping, and status polling proxy
+- shared backend FormData request helper behavior for multipart uploads
 - AI chat route and API-ready mock marker
 - AI chat helper status/sorting/citation/grounded-message behavior
 - AI chat loading/error/empty states
@@ -998,7 +1039,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 65 test files, 251 tests
+- `npm test`: 68 test files, 264 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -1009,7 +1050,7 @@ The following items should wait until Backend/API integration branches:
 
 - OAuth callback handling
 - Teacher dashboard real API integration and loading/error/empty states
-- Document Summary upload/delete/download BFF routes with CSRF/origin checks, POST recap generation, and export/share implementation
+- Document Summary delete/download BFF routes with CSRF/origin checks, POST recap generation, and export/share implementation
 - AI Chat visible composer enablement, streaming response UI, rate-limit UX, and optional double-submit CSRF token
 - AI Quiz visible generate/update/publish/submit UI interactions, learner-safe exam-taking page, score result screen, and rate-limit UX
 - Learning Analytics real-time event stream mapping, richer admin audit UI, and Backend-backed E2E verification
@@ -1028,25 +1069,27 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current AnalyticsApiIntegration commit, include:
+For the current DocumentUploadProcessingState commit, include:
 
 ```text
 frontend/SRS.md
-frontend/src/app/analytics/page.tsx
-frontend/src/app/analytics/page.test.tsx
-frontend/src/app/protected-routes.test.tsx
-frontend/src/features/learning-analytics/LearningAnalyticsPage.tsx
-frontend/src/features/learning-analytics/learningAnalyticsApi.ts
-frontend/src/features/learning-analytics/learningAnalyticsApi.test.ts
-frontend/src/features/learning-analytics/learningAnalyticsContract.ts
-frontend/src/features/learning-analytics/learningAnalyticsContract.test.ts
-frontend/src/features/learning-analytics/learningAnalyticsMapper.ts
-frontend/src/features/learning-analytics/learningAnalyticsMapper.test.ts
-frontend/src/features/learning-analytics/learningAnalyticsTestData.ts
-frontend/src/features/learning-analytics/types.ts
+frontend/src/app/api/documents/[fileId]/status/route.ts
+frontend/src/app/api/documents/_lib/documentBffHandlers.test.ts
+frontend/src/app/api/documents/_lib/documentBffHandlers.ts
+frontend/src/app/api/documents/upload/route.ts
+frontend/src/app/documents/page.tsx
+frontend/src/features/document-summary/DocumentSummaryPage.tsx
+frontend/src/features/document-summary/DocumentUploadPanel.test.tsx
+frontend/src/features/document-summary/DocumentUploadPanel.tsx
+frontend/src/features/document-summary/documentSummaryContract.test.ts
+frontend/src/features/document-summary/documentSummaryContract.ts
+frontend/src/features/document-summary/documentUploadApiClient.test.ts
+frontend/src/features/document-summary/documentUploadApiClient.ts
+frontend/src/lib/api/backendClient.test.ts
+frontend/src/lib/api/backendClient.ts
 ```
 
-This feature connects the protected analytics route to role-aware Backend analytics endpoints through the shared server-side API client, validates responses with Zod, maps learner/trainer/admin payloads into the existing Learning Analytics UI, and keeps auth tokens inside HttpOnly cookies.
+This feature adds a role-gated document upload panel, same-origin Next.js BFF upload/status routes, multipart Backend proxying through server-side HttpOnly cookie auth, safe upload response shaping, and processing status polling for the Document Summary workspace.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 

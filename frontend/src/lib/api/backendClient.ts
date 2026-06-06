@@ -50,6 +50,19 @@ export type BackendJsonRequestOptions<TResponse> = {
   timeoutMs?: number;
 };
 
+export type BackendFormDataRequestOptions<TResponse> = {
+  accessToken?: string;
+  baseUrl?: string;
+  body: FormData;
+  fetcher?: ApiFetcher;
+  headers?: HeadersInit;
+  method?: "POST" | "PUT";
+  path: string;
+  schema: z.ZodType<TResponse>;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+};
+
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 export const backendJsonRequest = async <TResponse>({
@@ -90,6 +103,87 @@ export const backendJsonRequest = async <TResponse>({
     const response = await fetcher(createBackendUrl(path, baseUrl), {
       body: body === undefined ? undefined : JSON.stringify(body),
       headers: buildRequestHeaders(headers, accessToken, body !== undefined),
+      method,
+      signal: controller.signal
+    });
+
+    const payload = await readJsonBody(response);
+
+    if (!response.ok) {
+      throw buildBackendError(response, payload);
+    }
+
+    const parsed = schema.safeParse(payload);
+    if (!parsed.success) {
+      throw new ApiClientError({
+        code: "invalid_response",
+        details: parsed.error.issues,
+        message: "Backend response did not match the expected contract",
+        status: response.status
+      });
+    }
+
+    return parsed.data;
+  } catch (error) {
+    if (error instanceof ApiClientError) {
+      throw error;
+    }
+
+    if (timedOut) {
+      throw new ApiClientError({
+        code: "timeout",
+        message: "Backend request timed out"
+      });
+    }
+
+    throw new ApiClientError({
+      code: "network_error",
+      details: error,
+      message: "Backend request failed"
+    });
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+  }
+};
+
+export const backendFormDataRequest = async <TResponse>({
+  accessToken,
+  baseUrl = getBackendBaseUrl(),
+  body,
+  fetcher = globalThis.fetch,
+  headers,
+  method = "POST",
+  path,
+  schema,
+  signal,
+  timeoutMs = DEFAULT_TIMEOUT_MS
+}: BackendFormDataRequestOptions<TResponse>): Promise<TResponse> => {
+  if (!fetcher) {
+    throw new ApiClientError({
+      code: "configuration_error",
+      message: "Fetch API is not available in this runtime"
+    });
+  }
+
+  const controller = new AbortController();
+  let timedOut = false;
+  const timeoutId = globalThis.setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+
+  signal?.addEventListener(
+    "abort",
+    () => {
+      controller.abort();
+    },
+    { once: true }
+  );
+
+  try {
+    const response = await fetcher(createBackendUrl(path, baseUrl), {
+      body,
+      headers: buildRequestHeaders(headers, accessToken, false),
       method,
       signal: controller.signal
     });

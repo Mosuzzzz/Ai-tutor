@@ -23,6 +23,7 @@ import {
   parseSummaryMarkdown,
   sortDocumentsByReadiness
 } from "./documentSummaryHelpers";
+import { DocumentUploadPanel } from "./DocumentUploadPanel";
 import { documentSummaryMock } from "./documentSummaryData";
 import type {
   DocumentProcessingStatus,
@@ -32,6 +33,7 @@ import type {
 } from "./types";
 
 type DocumentSummaryPageProps = {
+  canUploadDocuments?: boolean;
   dashboard?: DocumentSummaryViewModel;
   dataSource?: "api" | "api-ready-mock";
   errorMessage?: string;
@@ -63,6 +65,7 @@ const getDetailByDocumentId = (
 };
 
 export const DocumentSummaryPage = ({
+  canUploadDocuments = false,
   dashboard = documentSummaryMock,
   dataSource = "api-ready-mock",
   errorMessage = "ไม่สามารถโหลดข้อมูลสรุปเอกสารได้",
@@ -98,6 +101,11 @@ export const DocumentSummaryPage = ({
   if (!selectedDetail) {
     return (
       <div className="space-y-6" data-source={dataSource} data-testid="document-summary">
+        {canUploadDocuments && (
+          <section aria-label="อัปโหลดเอกสาร">
+            <DocumentUploadPanel canUpload={canUploadDocuments} />
+          </section>
+        )}
         <Card className="text-center" role="status">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded bg-surface-container text-primary">
             <FileSearch aria-hidden="true" className="h-6 w-6" />
@@ -223,6 +231,12 @@ export const DocumentSummaryPage = ({
           );
         })}
       </section>
+
+      {canUploadDocuments && (
+        <section aria-label="อัปโหลดเอกสาร">
+          <DocumentUploadPanel canUpload={canUploadDocuments} />
+        </section>
+      )}
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
         <section
