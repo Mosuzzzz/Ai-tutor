@@ -27,6 +27,7 @@ import { learningAnalyticsMock } from "./learningAnalyticsData";
 import type {
   LearningActivity,
   LearningActivityType,
+  LearningAnalyticsDataSource,
   LearningAnalyticsMetric,
   LearningAnalyticsStatus,
   LearningAnalyticsViewModel,
@@ -36,6 +37,7 @@ import type {
 
 type LearningAnalyticsPageProps = {
   analytics?: LearningAnalyticsViewModel;
+  dataSource?: LearningAnalyticsDataSource;
   errorMessage?: string;
   status?: LearningAnalyticsStatus;
 };
@@ -303,6 +305,7 @@ const LearningActivityTable = ({ activities }: { activities: LearningActivity[] 
 
 export const LearningAnalyticsPage = ({
   analytics = learningAnalyticsMock,
+  dataSource = "api-ready-mock",
   errorMessage = "ไม่สามารถโหลดสถิติการเรียนได้",
   status = "ready"
 }: LearningAnalyticsPageProps) => {
@@ -326,13 +329,17 @@ export const LearningAnalyticsPage = ({
   }
 
   const hasAnalyticsData =
+    analytics.apiResponse.average_tenant_score > 0 ||
+    analytics.apiResponse.department_stats.length > 0 ||
     analytics.apiResponse.score_trend.length > 0 ||
     analytics.apiResponse.skill_gaps.length > 0 ||
-    analytics.activities.length > 0;
+    analytics.activities.length > 0 ||
+    analytics.apiResponse.total_employees > 0 ||
+    analytics.apiResponse.total_quizzes_taken > 0;
 
   if (!hasAnalyticsData) {
     return (
-      <div className="space-y-6" data-source="api-ready-mock" data-testid="learning-analytics">
+      <div className="space-y-6" data-source={dataSource} data-testid="learning-analytics">
         <Card className="text-center" role="status">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded bg-surface-container text-primary">
             <TriangleAlert aria-hidden="true" className="h-6 w-6" />
@@ -351,7 +358,7 @@ export const LearningAnalyticsPage = ({
   const lowestScoringSkill = getLowestScoringSkill(analytics.apiResponse.skill_gaps);
 
   return (
-    <div className="space-y-6" data-source="api-ready-mock" data-testid="learning-analytics">
+    <div className="space-y-6" data-source={dataSource} data-testid="learning-analytics">
       <section className="overflow-hidden rounded border border-[#234c5c]/15 bg-[#153642] text-white shadow-ambient">
         <div className="p-5 md:p-7">
           <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#ffd37a]">
