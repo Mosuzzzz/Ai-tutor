@@ -54,4 +54,6 @@ export type LearningAnalyticsViewModel = {
   activities: LearningActivity[];
 };
 
-export type LearningAnalyticsStatus = "ready" | "loading" | "error";
+export type LearningAnalyticsDataSource = "api" | "api-ready-mock";
+
+export type LearningAnalyticsStatus = "ready" | "loading" | "empty" | "error";

@@ -29,6 +29,7 @@ const loadTeacherDashboardForSession = vi.hoisted(() => vi.fn());
 const loadDocumentSummaryForSession = vi.hoisted(() => vi.fn());
 const loadAiChatSummaryForSession = vi.hoisted(() => vi.fn());
 const loadQuizGeneratorForSession = vi.hoisted(() => vi.fn());
+const loadLearningAnalyticsForSession = vi.hoisted(() => vi.fn());
 
 vi.mock("@/features/auth/authGuard", () => ({
   requirePageSession
@@ -52,6 +53,10 @@ vi.mock("@/features/ai-chat/aiChatApi", () => ({
 
 vi.mock("@/features/ai-quiz-generator/quizGeneratorApi", () => ({
   loadQuizGeneratorForSession
+}));
+
+vi.mock("@/features/learning-analytics/learningAnalyticsApi", () => ({
+  loadLearningAnalyticsForSession
 }));
 
 describe("protected app routes", () => {
@@ -162,6 +167,25 @@ describe("protected app routes", () => {
         selectedSourceId: "",
         sources: [],
         workspaceName: "Quiz Workspace"
+      },
+      status: "empty"
+    });
+    loadLearningAnalyticsForSession.mockReset();
+    loadLearningAnalyticsForSession.mockResolvedValue({
+      analytics: {
+        activities: [],
+        apiResponse: {
+          average_tenant_score: 0,
+          department_stats: [],
+          score_trend: [],
+          skill_gaps: [],
+          total_employees: 0,
+          total_quizzes_taken: 0
+        },
+        generatedAtLabel: "5 Jun 2026, 10:00",
+        learnerAnalyticsEndpoint: "/api/analytics/dashboard",
+        trainerAnalyticsEndpoint: "/api/analytics/trainer",
+        workspaceName: "Learning Analytics"
       },
       status: "empty"
     });

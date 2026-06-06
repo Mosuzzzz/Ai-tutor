@@ -9,9 +9,12 @@ const emptyAnalyticsMock: LearningAnalyticsViewModel = {
   ...learningAnalyticsMock,
   apiResponse: {
     ...learningAnalyticsMock.apiResponse,
+    average_tenant_score: 0,
     department_stats: [],
     score_trend: [],
-    skill_gaps: []
+    skill_gaps: [],
+    total_employees: 0,
+    total_quizzes_taken: 0
   },
   activities: []
 };
@@ -32,6 +35,20 @@ const noTrendAnalyticsMock: LearningAnalyticsViewModel = {
     ...learningAnalyticsMock.apiResponse,
     score_trend: []
   }
+};
+
+const metricsOnlyAnalyticsMock: LearningAnalyticsViewModel = {
+  ...learningAnalyticsMock,
+  activities: [],
+  apiResponse: {
+    average_tenant_score: 0,
+    department_stats: [],
+    score_trend: [],
+    skill_gaps: [],
+    total_employees: 128,
+    total_quizzes_taken: 34
+  },
+  workspaceName: "Global Admin"
 };
 
 describe("LearningAnalyticsPage", () => {
@@ -105,6 +122,19 @@ describe("LearningAnalyticsPage", () => {
     rerender(<LearningAnalyticsPage analytics={noTrendAnalyticsMock} />);
 
     expect(screen.getByTestId("learning-score-trend-empty")).toHaveAttribute("role", "status");
+  });
+
+  it("renders the dashboard shell when API data contains only aggregate metrics", () => {
+    render(<LearningAnalyticsPage analytics={metricsOnlyAnalyticsMock} dataSource="api" />);
+
+    expect(screen.getByTestId("learning-analytics")).toHaveAttribute("data-source", "api");
+    expect(screen.getByTestId("learning-analytics-grid")).toBeInTheDocument();
+    expect(screen.getByText("Global Admin")).toBeInTheDocument();
+    expect(screen.getByText("128")).toBeInTheDocument();
+    expect(screen.getByText("34")).toBeInTheDocument();
+    expect(screen.getByTestId("learning-score-trend-empty")).toHaveAttribute("role", "status");
+    expect(screen.getByTestId("learning-skill-gaps-empty")).toHaveAttribute("role", "status");
+    expect(screen.getByTestId("learning-activity-empty")).toHaveAttribute("role", "status");
   });
 
   it("renders loading, error, and empty states with explicit accessible semantics", () => {

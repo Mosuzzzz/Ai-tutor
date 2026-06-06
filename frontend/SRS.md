@@ -4,7 +4,7 @@
 
 ## 1. Project Overview
 
-AI Tutor Frontend เป็น Next.js 16 App Router application สำหรับแพลตฟอร์มผู้ช่วยเรียนรู้ด้วย AI โดยช่วงปัจจุบันมีฐาน UI, หน้า Auth แบบ mock, หน้า Student Dashboard, Teacher Dashboard, Document Summary, AI Chat & Summary, AI Quiz Generator และ Learning Analytics แบบ mock/API-ready ก่อนเชื่อมต่อ Backend จริง
+AI Tutor Frontend เป็น Next.js 16 App Router application สำหรับแพลตฟอร์มผู้ช่วยเรียนรู้ด้วย AI โดยช่วงปัจจุบันมีฐาน UI, หน้า Auth แบบ mock, หน้า Student Dashboard, Teacher Dashboard, Document Summary, AI Chat & Summary, AI Quiz Generator และ Learning Analytics ที่เชื่อม Backend แบบ API-integrated ผ่าน server-side HttpOnly cookie boundary
 
 ### Technology Stack
 
@@ -366,6 +366,29 @@ Out of scope until Backend/Auth is ready:
 - Backend error mapping และ empty states จาก API จริง
 - Real event stream จาก quiz/chat/document usage
 
+### AnalyticsApiIntegration Update
+
+The `/analytics` route now uses the protected session boundary and reads role-aware analytics data through the shared server-side API client instead of rendering only static mock data.
+
+Included:
+
+- `/analytics` calls `requirePageSession("/analytics")` before loading any analytics data.
+- `src/features/learning-analytics/learningAnalyticsApi.ts` reads only the server-side HttpOnly access cookie and calls Backend analytics endpoints through `backendJsonRequest`.
+- Student/learner sessions call `/api/analytics/dashboard` and map `score_trend`, `recent_activity`, and `skill_breakdown` into the shared analytics workspace.
+- Teacher sessions call `/api/analytics/trainer` and `/api/analytics/trainer/students` only.
+- Tenant admin sessions call trainer analytics plus `/api/analytics/audit-logs`.
+- Global admin sessions call `/api/analytics/usage?days=30` plus `/api/analytics/audit-logs` and do not call trainer-only endpoints.
+- `src/features/learning-analytics/learningAnalyticsContract.ts` validates learner, trainer, student list, usage, and audit-log payloads with Zod before UI mapping.
+- `src/features/learning-analytics/learningAnalyticsMapper.ts` maps Backend responses into the existing Learning Analytics view model while avoiding token, IP address, and `user_id` exposure in UI state.
+- Learning Analytics supports API `ready`, `empty`, and `error` states with `data-source="api"` on the route-rendered page.
+
+Still out of scope:
+
+- Real-time analytics/event stream refresh
+- Dedicated admin audit table UI beyond the current shared activity table mapping
+- Playwright E2E against a running Backend
+- Rate-limit-specific analytics error copy once Backend returns final error semantics
+
 ## 3. Route Map
 
 | Route | File | Status | Purpose |
@@ -376,7 +399,7 @@ Out of scope until Backend/Auth is ready:
 | `/documents` | `src/app/documents/page.tsx` | Document Summary API-integrated | AI document summary workspace |
 | `/chat` | `src/app/chat/page.tsx` | AI Chat & Summary API-integrated | Grounded document chat workspace |
 | `/quiz` | `src/app/quiz/page.tsx` | AI Quiz Generator API-integrated | AI quiz generation workspace |
-| `/analytics` | `src/app/analytics/page.tsx` | Learning Analytics mock/API-ready | Learning insight workspace |
+| `/analytics` | `src/app/analytics/page.tsx` | Learning Analytics API-integrated | Learning insight workspace |
 | `/settings` | `src/app/settings/page.tsx` | Placeholder | Settings module shell |
 | `/login` | `src/app/login/page.tsx` | Mock UI ready | Login screen |
 | `/register` | `src/app/register/page.tsx` | Mock UI ready | Register screen |
@@ -429,8 +452,15 @@ frontend/
 │   │   │   ├── LearningAnalyticsPage.tsx
 │   │   │   ├── LearningAnalyticsPage.test.tsx
 │   │   │   ├── learningAnalyticsData.ts
+│   │   │   ├── learningAnalyticsApi.ts
+│   │   │   ├── learningAnalyticsApi.test.ts
+│   │   │   ├── learningAnalyticsContract.ts
+│   │   │   ├── learningAnalyticsContract.test.ts
 │   │   │   ├── learningAnalyticsHelpers.ts
 │   │   │   ├── learningAnalyticsHelpers.test.ts
+│   │   │   ├── learningAnalyticsMapper.ts
+│   │   │   ├── learningAnalyticsMapper.test.ts
+│   │   │   ├── learningAnalyticsTestData.ts
 │   │   │   └── types.ts
 │   │   ├── ai-quiz-generator/
 │   │   │   ├── AiQuizGeneratorPage.tsx
@@ -866,7 +896,10 @@ src/features/auth/authValidation.test.ts
 src/features/foundation/PlaceholderPage.test.tsx
 src/features/foundation/placeholderContent.test.ts
 src/features/learning-analytics/LearningAnalyticsPage.test.tsx
+src/features/learning-analytics/learningAnalyticsApi.test.ts
+src/features/learning-analytics/learningAnalyticsContract.test.ts
 src/features/learning-analytics/learningAnalyticsHelpers.test.ts
+src/features/learning-analytics/learningAnalyticsMapper.test.ts
 src/features/document-summary/DocumentSummaryPage.test.tsx
 src/features/document-summary/documentSummaryHelpers.test.ts
 src/features/student-dashboard/StudentDashboardPage.test.tsx
@@ -955,12 +988,17 @@ Current coverage focus:
 - learning analytics panel-level empty states for partial empty API lists
 - learning analytics accessible score chart, skill progressbar, activity table, and backend endpoint hiding
 - learning analytics layout overflow guard for long Thai content
+- learning analytics Backend `/api/analytics/dashboard`, `/api/analytics/trainer`, `/api/analytics/trainer/students`, `/api/analytics/usage`, and `/api/analytics/audit-logs` Zod contracts
+- learning analytics server-side HttpOnly cookie API loader
+- learning analytics role-aware endpoint selection for student, teacher, tenant admin, and global admin sessions
+- learning analytics session-based view-model mapping without token/IP/`user_id` leakage
+- learning analytics API empty/error state mapping
 - shared percent normalization helper behavior
 - production CSP script-src hardening while keeping dev/test compatibility
 
 Current latest verification:
 
-- `npm test`: 62 test files, 236 tests
+- `npm test`: 65 test files, 251 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -974,7 +1012,7 @@ The following items should wait until Backend/API integration branches:
 - Document Summary upload/delete/download BFF routes with CSRF/origin checks, POST recap generation, and export/share implementation
 - AI Chat visible composer enablement, streaming response UI, rate-limit UX, and optional double-submit CSRF token
 - AI Quiz visible generate/update/publish/submit UI interactions, learner-safe exam-taking page, score result screen, and rate-limit UX
-- Learning Analytics real API integration, learner/trainer view split, event stream mapping, and response validation
+- Learning Analytics real-time event stream mapping, richer admin audit UI, and Backend-backed E2E verification
 - Backend validation error mapping
 - Playwright E2E for real auth flow
 - Logout behavior
@@ -990,31 +1028,25 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current QuizApiIntegration commit, include:
+For the current AnalyticsApiIntegration commit, include:
 
 ```text
 frontend/SRS.md
-frontend/src/app/api/quiz/_lib/quizBffHandlers.ts
-frontend/src/app/api/quiz/_lib/quizBffHandlers.test.ts
-frontend/src/app/api/quiz/[examId]/publish/route.ts
-frontend/src/app/api/quiz/[examId]/route.ts
-frontend/src/app/api/quiz/[examId]/submit/route.ts
-frontend/src/app/api/quiz/generate/route.ts
+frontend/src/app/analytics/page.tsx
+frontend/src/app/analytics/page.test.tsx
 frontend/src/app/protected-routes.test.tsx
-frontend/src/app/quiz/page.tsx
-frontend/src/app/quiz/page.test.tsx
-frontend/src/features/ai-quiz-generator/AiQuizGeneratorPage.tsx
-frontend/src/features/ai-quiz-generator/quizGeneratorApi.ts
-frontend/src/features/ai-quiz-generator/quizGeneratorApi.test.ts
-frontend/src/features/ai-quiz-generator/quizGeneratorContract.ts
-frontend/src/features/ai-quiz-generator/quizGeneratorContract.test.ts
-frontend/src/features/ai-quiz-generator/quizGeneratorMapper.ts
-frontend/src/features/ai-quiz-generator/quizGeneratorMapper.test.ts
-frontend/src/features/ai-quiz-generator/quizGeneratorTestData.ts
-frontend/src/features/ai-quiz-generator/types.ts
+frontend/src/features/learning-analytics/LearningAnalyticsPage.tsx
+frontend/src/features/learning-analytics/learningAnalyticsApi.ts
+frontend/src/features/learning-analytics/learningAnalyticsApi.test.ts
+frontend/src/features/learning-analytics/learningAnalyticsContract.ts
+frontend/src/features/learning-analytics/learningAnalyticsContract.test.ts
+frontend/src/features/learning-analytics/learningAnalyticsMapper.ts
+frontend/src/features/learning-analytics/learningAnalyticsMapper.test.ts
+frontend/src/features/learning-analytics/learningAnalyticsTestData.ts
+frontend/src/features/learning-analytics/types.ts
 ```
 
-This feature connects the protected quiz route to Backend document context and optional `GET /api/exams/{exam_id}` through the shared server-side API client, adds same-origin BFF routes for generate/update/publish/submit actions, validates responses with Zod, maps trainer exam questions to the existing UI shape without answer-key leakage, and keeps auth tokens inside HttpOnly cookies.
+This feature connects the protected analytics route to role-aware Backend analytics endpoints through the shared server-side API client, validates responses with Zod, maps learner/trainer/admin payloads into the existing Learning Analytics UI, and keeps auth tokens inside HttpOnly cookies.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 
