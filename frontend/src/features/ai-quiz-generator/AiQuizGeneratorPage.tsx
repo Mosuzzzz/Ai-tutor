@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
   ArrowRight,
   Bot,
@@ -14,6 +17,7 @@ import Link from "next/link";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { cn } from "../../lib/cn";
+import { generateQuizDraft } from "./quizGenerationClient";
 import { aiQuizGeneratorMock } from "./quizGeneratorData";
 import {
   buildQuizCitationLabel,
@@ -27,6 +31,7 @@ import {
   getSafeQuizDraftQuestions,
   sortQuizSourcesByReadiness
 } from "./quizGeneratorHelpers";
+import { toGeneratedQuizDraft } from "./quizGeneratorMapper";
 import type {
   QuizGeneratorStatus,
   QuizGeneratorViewModel,
@@ -120,12 +125,20 @@ const SourcePanel = ({
 };
 
 const SettingsPanel = ({
+  generationError,
+  generationStatus,
+  onGenerate,
   quiz,
   selectedSource
 }: {
+  generationError?: string;
+  generationStatus: "idle" | "submitting" | "success" | "error";
+  onGenerate: () => void;
   quiz: QuizGeneratorViewModel;
   selectedSource: QuizSource;
 }) => {
+  const isGenerating = generationStatus === "submitting";
+
   return (
     <Card className="min-w-0 overflow-hidden p-5">
       <div className="flex items-center gap-2 text-label-sm font-semibold text-[#355526]">
@@ -169,14 +182,30 @@ const SettingsPanel = ({
           </ul>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button disabled>
-            สร้างควิซ
+          <Button disabled={isGenerating} onClick={onGenerate}>
+            {isGenerating ? "กำลังสร้างควิซ" : "สร้างควิซ"}
             <Bot aria-hidden="true" className="h-4 w-4" />
           </Button>
           <span className="text-label-sm font-semibold text-on-surface-variant">
             ใช้แหล่งข้อมูล: {selectedSource.title}
           </span>
         </div>
+        {generationStatus === "success" ? (
+          <div
+            className="rounded border border-[#b8dfc8] bg-[#effaf3] p-3 text-body-md font-semibold text-[#216148]"
+            role="status"
+          >
+            สร้างแบบร่างควิซสำเร็จ
+          </div>
+        ) : null}
+        {generationStatus === "error" && generationError ? (
+          <div
+            className="rounded border border-[#f2b8b5] bg-[#fff8f7] p-3 text-body-md font-semibold text-[#8c1d18]"
+            role="alert"
+          >
+            {generationError}
+          </div>
+        ) : null}
       </div>
     </Card>
   );
@@ -263,6 +292,10 @@ export const AiQuizGeneratorPage = ({
   selectedSourceId,
   status = "ready"
 }: AiQuizGeneratorPageProps) => {
+  const [draft, setDraft] = useState(quiz.draft);
+  const [generationError, setGenerationError] = useState<string>();
+  const [generationStatus, setGenerationStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+
   if (status === "loading") {
     return (
       <Card className="text-body-md text-on-surface-variant" role="status">
@@ -300,6 +333,40 @@ export const AiQuizGeneratorPage = ({
       </div>
     );
   }
+
+  const activeQuiz: QuizGeneratorViewModel = {
+    ...quiz,
+    draft
+  };
+
+  const handleGenerateQuiz = async () => {
+    setGenerationError(undefined);
+    setGenerationStatus("submitting");
+
+    const result = await generateQuizDraft({
+      difficulty: quiz.request.difficulty,
+      fileId: selectedSource.id,
+      instructions: quiz.request.instructions,
+      numQuestions: quiz.request.num_questions
+    });
+
+    if (!result.ok) {
+      setGenerationError(result.message);
+      setGenerationStatus("error");
+      return;
+    }
+
+    setDraft(
+      toGeneratedQuizDraft({
+        examResponse: result.exam,
+        source: {
+          filename: selectedSource.title,
+          id: selectedSource.id
+        }
+      })
+    );
+    setGenerationStatus("success");
+  };
 
   return (
     <div className="space-y-6" data-source={dataSource} data-testid="ai-quiz-generator">
@@ -342,8 +409,14 @@ export const AiQuizGeneratorPage = ({
           </Card>
         </div>
         <div className="grid min-w-0 gap-4 overflow-hidden">
-          <SettingsPanel quiz={quiz} selectedSource={selectedSource} />
-          <PreviewPanel quiz={quiz} />
+          <SettingsPanel
+            generationError={generationError}
+            generationStatus={generationStatus}
+            onGenerate={handleGenerateQuiz}
+            quiz={activeQuiz}
+            selectedSource={selectedSource}
+          />
+          <PreviewPanel quiz={activeQuiz} />
         </div>
       </section>
     </div>

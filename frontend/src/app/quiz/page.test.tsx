@@ -48,4 +48,19 @@ describe("quiz route", () => {
     expect(screen.getByRole("main")).toContainElement(screen.getByTestId("ai-quiz-generator"));
     expect(screen.getByTestId("ai-quiz-generator")).toHaveAttribute("data-source", "api");
   });
+
+  it("passes a documentId query param into the quiz generator loader", async () => {
+    render(
+      await QuizPage({
+        searchParams: Promise.resolve({
+          documentId: "file-ready"
+        })
+      })
+    );
+
+    expect(loadQuizGeneratorForSession).toHaveBeenCalledWith({
+      selectedDocumentId: "file-ready",
+      session: teacherSession
+    });
+  });
 });

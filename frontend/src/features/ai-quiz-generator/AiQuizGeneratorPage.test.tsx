@@ -1,8 +1,9 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AiQuizGeneratorPage } from "./AiQuizGeneratorPage";
 import { aiQuizGeneratorMock } from "./quizGeneratorData";
+import { backendGeneratedExamResponse } from "./quizGeneratorTestData";
 import type { QuizGeneratorViewModel } from "./types";
 
 const emptyQuizMock: QuizGeneratorViewModel = {
@@ -27,6 +28,10 @@ const nullDraftQuizMock = {
   }
 } as unknown as QuizGeneratorViewModel;
 
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe("AiQuizGeneratorPage", () => {
   it("renders an API-ready Thai quiz generator workspace", () => {
     render(<AiQuizGeneratorPage />);
@@ -38,7 +43,7 @@ describe("AiQuizGeneratorPage", () => {
     expect(screen.getByRole("heading", { name: "แบบร่างคำถาม" })).toBeInTheDocument();
   });
 
-  it("renders source selection, backend-shaped request settings, and disabled mock actions", () => {
+  it("renders source selection, backend-shaped request settings, and generation actions", () => {
     render(<AiQuizGeneratorPage />);
 
     const selectedSource = screen.getByRole("article", {
@@ -50,8 +55,81 @@ describe("AiQuizGeneratorPage", () => {
     expect(screen.getByText("5 ข้อ")).toBeInTheDocument();
     expect(screen.getByText("ความยาก")).toBeInTheDocument();
     expect(screen.getByText("ปานกลาง")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "สร้างควิซ" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "สร้างควิซ" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "เผยแพร่แบบทดสอบ" })).toBeDisabled();
+  });
+
+  it("generates a quiz draft from the selected document through the BFF without exposing answer keys", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          exam: backendGeneratedExamResponse,
+          ok: true
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json"
+          },
+          status: 200
+        }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<AiQuizGeneratorPage quiz={emptyDraftQuizMock} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "สร้างควิซ" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/quiz/generate", {
+        body: JSON.stringify({
+          difficulty: "medium",
+          fileId: aiQuizGeneratorMock.selectedSourceId,
+          instructions: aiQuizGeneratorMock.request.instructions,
+          numQuestions: 5
+        }),
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        method: "POST"
+      });
+    });
+
+    expect(await screen.findByText("What should learners review before entering the lab?")).toBeInTheDocument();
+    expect(screen.getByText("Review the safety checklist")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("สร้างแบบร่างควิซสำเร็จ");
+    expect(screen.queryByText("correct_index")).not.toBeInTheDocument();
+    expect(screen.queryByText("The safety checklist is required before lab work.")).not.toBeInTheDocument();
+  });
+
+  it("keeps the selected source visible and shows a safe error when quiz generation fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            message: "File is not ready for quiz generation.",
+            ok: false
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json"
+            },
+            status: 400
+          }
+        )
+      )
+    );
+
+    render(<AiQuizGeneratorPage quiz={emptyDraftQuizMock} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "สร้างควิซ" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("File is not ready for quiz generation.");
+    expect(screen.getByText("คู่มือความปลอดภัยห้องปฏิบัติการ.pdf")).toBeInTheDocument();
+    expect(screen.queryByText("/api/quiz/generate")).not.toBeInTheDocument();
   });
 
   it("renders safe question preview with options and citations but no answer keys", () => {

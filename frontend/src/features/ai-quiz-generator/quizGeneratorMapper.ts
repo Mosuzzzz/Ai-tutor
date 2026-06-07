@@ -13,6 +13,11 @@ import type {
 
 type DocumentLibraryItem = DocumentLibraryResponse["documents"][number];
 
+type QuizQuestionSource = {
+  filename: string;
+  id: string;
+};
+
 type QuizGeneratorViewModelInput = {
   documentsResponse: DocumentLibraryResponse;
   examResponse?: ExamResponse;
@@ -26,6 +31,30 @@ const DEFAULT_QUIZ_INSTRUCTIONS = [
   "Keep every option clear and distinct.",
   "Do not expose answer keys in learner-facing previews."
 ];
+
+export const toGeneratedQuizDraft = ({
+  examResponse,
+  source,
+  timestamp = new Date()
+}: {
+  examResponse: ExamResponse;
+  source?: QuizQuestionSource;
+  timestamp?: Date;
+}): QuizGeneratorViewModel["draft"] => {
+  return {
+    file_id: examResponse.file_id,
+    generatedAtLabel: formatGeneratedAt(timestamp),
+    id: examResponse.id,
+    questions: examResponse.questions.map((question) =>
+      toQuizQuestionPreview({
+        question,
+        source
+      })
+    ),
+    status: toQuizDraftStatus(examResponse.status),
+    title: source ? `Quiz draft for ${source.filename}` : `Quiz draft ${examResponse.id}`
+  };
+};
 
 export const toQuizGeneratorViewModel = ({
   documentsResponse,
@@ -147,19 +176,16 @@ const buildDraft = ({
     };
   }
 
-  return {
-    file_id: examResponse.file_id,
-    generatedAtLabel: formatGeneratedAt(timestamp),
-    id: examResponse.id,
-    questions: examResponse.questions.map((question) =>
-      toQuizQuestionPreview({
-        question,
-        source: selectedSource
-      })
-    ),
-    status: toQuizDraftStatus(examResponse.status),
-    title: selectedSource ? `Quiz draft for ${selectedSource.filename}` : `Quiz draft ${examResponse.id}`
-  };
+  return toGeneratedQuizDraft({
+    examResponse,
+    source: selectedSource
+      ? {
+          filename: selectedSource.filename,
+          id: selectedSource.id
+        }
+      : undefined,
+    timestamp
+  });
 };
 
 const toQuizQuestionPreview = ({
@@ -167,7 +193,7 @@ const toQuizQuestionPreview = ({
   source
 }: {
   question: ExamResponse["questions"][number];
-  source?: DocumentLibraryItem;
+  source?: QuizQuestionSource;
 }): QuizQuestionPreview => {
   const fullQuestion = question as Partial<TrainerExamQuestion>;
 
