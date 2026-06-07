@@ -10,6 +10,7 @@ import {
   backendRecapResponse
 } from "./documentSummaryTestData";
 import {
+  loadDocumentSummaryDetailForSession,
   loadDocumentSummaryForSession,
   type DocumentSummaryBackendRequest
 } from "./documentSummaryApi";
@@ -162,6 +163,75 @@ describe("loadDocumentSummaryForSession", () => {
     expect(result.status).toBe("error");
     expect(result.errorMessage).toBeTruthy();
     expect(backendRequest).not.toHaveBeenCalled();
+  });
+
+  it("loads an exact detail document for deep-linked summary pages", async () => {
+    const backendRequest = vi.fn(async ({ path }: BackendJsonRequestOptions<unknown>) => {
+      if (path === "/api/files/dashboard") {
+        return backendDocumentDashboardResponse;
+      }
+
+      if (path === "/api/files/file-needs-recap/detail") {
+        return {
+          ...backendDocumentDetailResponse,
+          filename: "ethics-guide.pdf",
+          id: "file-needs-recap",
+          summary_available: false,
+          summary_markdown: null
+        };
+      }
+
+      if (path === "/api/files/file-needs-recap/status") {
+        return {
+          ...backendDocumentStatusResponse,
+          file_id: "file-needs-recap",
+          filename: "ethics-guide.pdf"
+        };
+      }
+
+      if (path === "/api/recap/file-needs-recap") {
+        return backendRecapResponse;
+      }
+
+      throw new Error(`Unexpected path ${path}`);
+    }) as unknown as ReturnType<typeof vi.fn> & DocumentSummaryBackendRequest;
+
+    const result = await loadDocumentSummaryDetailForSession({
+      backendRequest,
+      cookieStore: createCookieStore("server-cookie-token"),
+      selectedDocumentId: "file-needs-recap",
+      session
+    });
+
+    expect(result.status).toBe("ready");
+    expect(result.dashboard?.selectedDocumentId).toBe("file-needs-recap");
+    expect(result.dashboard?.documentDetails[0]?.summaryMarkdown).toContain("AI ethics guidance");
+    expect(backendRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: "/api/files/file-needs-recap/detail"
+      })
+    );
+  });
+
+  it("does not fall back to another document when a deep-linked file id is missing", async () => {
+    const backendRequest = vi.fn(async ({ path }: BackendJsonRequestOptions<unknown>) => {
+      if (path === "/api/files/dashboard") {
+        return backendDocumentDashboardResponse;
+      }
+
+      throw new Error(`Unexpected path ${path}`);
+    }) as unknown as ReturnType<typeof vi.fn> & DocumentSummaryBackendRequest;
+
+    const result = await loadDocumentSummaryDetailForSession({
+      backendRequest,
+      cookieStore: createCookieStore("server-cookie-token"),
+      selectedDocumentId: "missing-file",
+      session
+    });
+
+    expect(result.status).toBe("error");
+    expect(result.errorMessage).toBeTruthy();
+    expect(backendRequest).toHaveBeenCalledTimes(1);
   });
 
   it("maps invalid Backend responses into an error state", async () => {

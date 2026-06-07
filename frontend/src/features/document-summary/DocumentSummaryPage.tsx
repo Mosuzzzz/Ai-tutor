@@ -17,6 +17,7 @@ import Link from "next/link";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import {
+  buildDocumentDetailHref,
   countAvailableSummaries,
   formatDocumentStatus,
   getSelectedDocument,
@@ -199,6 +200,13 @@ export const DocumentSummaryPage = ({
           <p className="mt-2 text-body-md text-on-surface-variant">{selectedDetail.uploadedByLabel}</p>
           <p className="mt-1 text-body-md text-on-surface-variant">{selectedDetail.generatedAtLabel}</p>
           <div className="mt-5 flex flex-wrap gap-2">
+            <Link
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-primary-container/20 bg-surface-container-low px-4 py-2 text-label-md font-bold text-primary transition-all duration-200 hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
+              href={buildDocumentDetailHref(selectedDetail.id)}
+            >
+              <FileSearch aria-hidden="true" className="h-4 w-4" />
+              ดูรายละเอียดเอกสาร
+            </Link>
             <Button disabled variant="secondary">
               <Download aria-hidden="true" className="h-4 w-4" />
               ส่งออกสรุป

@@ -40,6 +40,7 @@ type LoadDocumentSummaryOptions = {
   cookieStore?: ServerCookieStore;
   selectedDocumentId?: string;
   session: AuthSession;
+  strictSelectedDocument?: boolean;
   timestamp?: Date;
 };
 
@@ -58,6 +59,7 @@ export const loadDocumentSummaryForSession = async ({
   cookieStore,
   selectedDocumentId,
   session,
+  strictSelectedDocument = false,
   timestamp
 }: LoadDocumentSummaryOptions): Promise<DocumentSummaryLoadResult> => {
   const store = cookieStore ?? (await cookies());
@@ -91,6 +93,17 @@ export const loadDocumentSummaryForSession = async ({
           timestamp
         }),
         status: "empty"
+      };
+    }
+
+    if (
+      strictSelectedDocument &&
+      selectedDocumentId &&
+      !dashboard.documents.some((document) => document.id === selectedDocumentId)
+    ) {
+      return {
+        errorMessage: "ไม่พบเอกสารหรือคุณไม่มีสิทธิ์เข้าถึง",
+        status: "error"
       };
     }
 
@@ -143,6 +156,17 @@ export const loadDocumentSummaryForSession = async ({
       status: "error"
     };
   }
+};
+
+export const loadDocumentSummaryDetailForSession = async (
+  options: Omit<LoadDocumentSummaryOptions, "strictSelectedDocument"> & {
+    selectedDocumentId: string;
+  }
+) => {
+  return loadDocumentSummaryForSession({
+    ...options,
+    strictSelectedDocument: true
+  });
 };
 
 const loadCachedRecap = async ({

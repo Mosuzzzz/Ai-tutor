@@ -48,6 +48,28 @@ export const getSelectedDocument = (documents: DocumentLibraryItem[], selectedDo
   return sortDocumentsByReadiness(documents).find((document) => document.summary_available) ?? documents[0];
 };
 
+export const buildDocumentDetailHref = (documentId: string) => {
+  return `/documents/${encodeURIComponent(documentId)}`;
+};
+
+export const normalizeDocumentRouteId = (fileId: string | undefined) => {
+  const normalizedFileId = fileId?.trim();
+
+  if (!normalizedFileId || normalizedFileId.length > 200) {
+    return undefined;
+  }
+
+  if (normalizedFileId === "." || normalizedFileId === "..") {
+    return undefined;
+  }
+
+  if (normalizedFileId.includes("/") || normalizedFileId.includes("\\") || normalizedFileId.includes("..")) {
+    return undefined;
+  }
+
+  return normalizedFileId;
+};
+
 const toSlug = (value: string) => {
   return value
     .toLowerCase()
