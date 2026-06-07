@@ -44,6 +44,7 @@ export type DocumentSummaryDetail = {
   uploadedByLabel: string;
   generatedAtLabel: string;
   summaryMarkdown: string;
+  sourcePreview?: string;
   keyTopics: DocumentSummaryTopic[];
   detailedBreakdown: DocumentBreakdownItem[];
   relatedDocuments: RelatedDocument[];

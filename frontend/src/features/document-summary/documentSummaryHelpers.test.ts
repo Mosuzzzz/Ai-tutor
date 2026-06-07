@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildDocumentDetailHref,
   countAvailableSummaries,
   formatDocumentStatus,
   getSelectedDocument,
+  normalizeDocumentRouteId,
   parseSummaryMarkdown,
   sortDocumentsByReadiness
 } from "./documentSummaryHelpers";
@@ -76,6 +78,21 @@ describe("document summary helpers", () => {
   it("selects a requested document or falls back to the first ready summary", () => {
     expect(getSelectedDocument(documents, "doc-ready-old")?.id).toBe("doc-ready-old");
     expect(getSelectedDocument(documents, "missing-id")?.id).toBe("doc-ready-latest");
+  });
+
+  it("builds safe document detail links without exposing backend endpoints", () => {
+    expect(buildDocumentDetailHref("file-ready")).toBe("/documents/file-ready");
+    expect(buildDocumentDetailHref("file ready")).toBe("/documents/file%20ready");
+    expect(buildDocumentDetailHref("/api/files/file-ready/detail")).toBe("/documents/%2Fapi%2Ffiles%2Ffile-ready%2Fdetail");
+  });
+
+  it("normalizes route file ids and rejects unsafe path-like values", () => {
+    expect(normalizeDocumentRouteId(" file-ready ")).toBe("file-ready");
+    expect(normalizeDocumentRouteId("")).toBeUndefined();
+    expect(normalizeDocumentRouteId("..")).toBeUndefined();
+    expect(normalizeDocumentRouteId("../file-ready")).toBeUndefined();
+    expect(normalizeDocumentRouteId("folder\\file-ready")).toBeUndefined();
+    expect(normalizeDocumentRouteId("x".repeat(201))).toBeUndefined();
   });
 
   it("parses markdown headings into safe text sections without rendering HTML", () => {

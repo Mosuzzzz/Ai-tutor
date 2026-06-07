@@ -81,5 +81,9 @@ describe("DocumentSummaryPage", () => {
 
     expect(within(summaryRegion).getByText("แนวทางจริยธรรม AI สำหรับห้องเรียน.pdf")).toBeInTheDocument();
     expect(within(summaryRegion).getByText("ความโปร่งใสในการใช้ AI")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /ดูรายละเอียดเอกสาร/ })).toHaveAttribute(
+      "href",
+      "/documents/doc-ai-ethics"
+    );
   });
 });

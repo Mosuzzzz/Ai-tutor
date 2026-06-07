@@ -261,6 +261,35 @@ Still out of scope:
 - POST recap generation request
 - Playwright E2E against a running Backend upload pipeline
 
+### DocumentSummaryDetailPage Update
+
+The document workspace now supports deep-linked summary detail pages for individual documents.
+
+Included:
+
+- `/documents/[fileId]` renders a protected document detail page inside `AppShell`.
+- The route validates the path segment before loading protected data and rejects empty, path-like, or overly long file ids.
+- The route calls `requirePageSession("/documents")` and then `loadDocumentSummaryDetailForSession()` with the normalized file id.
+- `loadDocumentSummaryDetailForSession()` reuses the server-side HttpOnly cookie API loader and requires an exact document match from `/api/files/dashboard`; it does not fall back to another document when the route id is missing.
+- The detail page shows the selected document filename, status, uploader label, generated date, summary sections, key topics with accessible progressbars, optional source preview, and related document deep links.
+- The main `/documents` page now exposes a safe "ดูรายละเอียดเอกสาร" link to `/documents/{fileId}` for the selected document.
+- Related document links are now generated as `/documents/{fileId}` with `encodeURIComponent()` instead of pointing back to the generic document workspace.
+- Detail actions link to `/quiz?documentId={fileId}` and `/chat?documentId={fileId}` so later Phase 5 branches can consume document context.
+
+Security notes:
+
+- The URL contains only the document id; Backend tenant/session scoping remains the authorization boundary.
+- The detail page does not expose Backend endpoint paths, `storage_url`, bearer tokens, or session tokens in the DOM.
+- Browser code still does not read or store auth tokens in `localStorage` or `sessionStorage`.
+
+Still out of scope:
+
+- Quiz/chat pages consuming `documentId` query params
+- Delete/download document flow
+- Export/share implementation
+- POST recap generation request
+- Playwright E2E against a running Backend detail page
+
 ### Completed Phase 6: AI Chat & Summary
 
 หน้า `/chat` ถูกเปลี่ยนจาก placeholder เป็นหน้า AI Chat & Summary แบบ mock/API-ready สำหรับ core AI flow ต่อจาก Document Summary โดยวาง data shape ให้ใกล้กับ Backend route ที่มีอยู่ เช่น `/api/chat/query`, `/api/chat/history` และ document dashboard context
@@ -425,6 +454,7 @@ Still out of scope:
 | `/teacher` | `src/app/teacher/page.tsx` | Teacher Dashboard API-integrated | Main teacher dashboard |
 | `/courses` | `src/app/courses/page.tsx` | Placeholder | Courses module shell |
 | `/documents` | `src/app/documents/page.tsx` | Document Summary API-integrated + upload processing | AI document summary workspace |
+| `/documents/[fileId]` | `src/app/documents/[fileId]/page.tsx` | Document Summary detail API-integrated | Deep-linked document summary detail |
 | `/chat` | `src/app/chat/page.tsx` | AI Chat & Summary API-integrated | Grounded document chat workspace |
 | `/quiz` | `src/app/quiz/page.tsx` | AI Quiz Generator API-integrated | AI quiz generation workspace |
 | `/analytics` | `src/app/analytics/page.tsx` | Learning Analytics API-integrated | Learning insight workspace |
@@ -520,6 +550,8 @@ frontend/
 │   │   │   ├── placeholderContent.test.ts
 │   │   │   └── types.ts
 │   │   ├── document-summary/
+│   │   │   ├── DocumentSummaryDetailPage.tsx
+│   │   │   ├── DocumentSummaryDetailPage.test.tsx
 │   │   │   ├── DocumentSummaryPage.tsx
 │   │   │   ├── DocumentSummaryPage.test.tsx
 │   │   │   ├── DocumentUploadPanel.tsx
@@ -601,7 +633,7 @@ Current feature modules:
 - `features/ai-chat`: grounded chat UI, backend-like mock data, types, and pure helpers
 - `features/ai-quiz-generator`: quiz generator UI, backend-like mock data, types, and pure helpers
 - `features/auth`: login/register UI, auth form helpers, auth validation, centralized copy/types, and API-ready mock auth client
-- `features/document-summary`: document summary UI, upload panel, browser-side BFF wrappers, backend-like data contracts, types, and pure helpers
+- `features/document-summary`: document summary UI, deep-linked detail UI, upload panel, browser-side BFF wrappers, backend-like data contracts, types, and pure helpers
 - `features/learning-analytics`: learning analytics UI, backend-like mock data, types, and pure helpers
 - `features/student-dashboard`: learner dashboard UI, mock/API-ready wrapper, types, and pure helpers
 - `features/teacher-dashboard`: teacher dashboard UI, mock/API-ready data, types, and pure helpers
@@ -896,6 +928,7 @@ src/app/api/documents/_lib/documentBffHandlers.test.ts
 src/app/api/quiz/_lib/quizBffHandlers.test.ts
 src/app/auth-routes.test.tsx
 src/app/chat/page.test.tsx
+src/app/documents/[fileId]/page.test.tsx
 src/app/documents/page.test.tsx
 src/app/page.test.tsx
 src/app/protected-routes.test.tsx
@@ -933,6 +966,7 @@ src/features/learning-analytics/learningAnalyticsApi.test.ts
 src/features/learning-analytics/learningAnalyticsContract.test.ts
 src/features/learning-analytics/learningAnalyticsHelpers.test.ts
 src/features/learning-analytics/learningAnalyticsMapper.test.ts
+src/features/document-summary/DocumentSummaryDetailPage.test.tsx
 src/features/document-summary/DocumentSummaryPage.test.tsx
 src/features/document-summary/DocumentUploadPanel.test.tsx
 src/features/document-summary/documentSummaryContract.test.ts
@@ -1000,6 +1034,9 @@ Current coverage focus:
 - document summary server-side HttpOnly cookie API loader
 - document summary session-based view-model mapping and cached recap fallback
 - document summary API empty/error state mapping
+- document summary deep-linked detail route guard, route-id normalization, exact selected document loading, and safe missing-document behavior
+- document summary detail page rendering with accessible summary regions, key-topic progressbars, source preview, safe quiz/chat context links, and endpoint/token/storage hiding
+- document summary related document deep links generated with encoded frontend route ids
 - document upload role-gated UI, client-side file validation, processing progressbar, polling state, and route refresh behavior
 - document upload same-origin browser BFF client without token storage or manual multipart `Content-Type`
 - document upload Next.js BFF handler with Origin guard, HttpOnly cookie forwarding, file type/size/name validation, filename sanitization, safe response shaping, and status polling proxy
@@ -1039,7 +1076,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 68 test files, 264 tests
+- `npm test`: 70 test files, 274 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -1069,27 +1106,27 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current DocumentUploadProcessingState commit, include:
+For the current DocumentSummaryDetailPage commit, include:
 
 ```text
 frontend/SRS.md
-frontend/src/app/api/documents/[fileId]/status/route.ts
-frontend/src/app/api/documents/_lib/documentBffHandlers.test.ts
-frontend/src/app/api/documents/_lib/documentBffHandlers.ts
-frontend/src/app/api/documents/upload/route.ts
+frontend/src/app/documents/[fileId]/page.test.tsx
+frontend/src/app/documents/[fileId]/page.tsx
 frontend/src/app/documents/page.tsx
+frontend/src/features/document-summary/DocumentSummaryDetailPage.test.tsx
+frontend/src/features/document-summary/DocumentSummaryDetailPage.tsx
+frontend/src/features/document-summary/DocumentSummaryPage.test.tsx
 frontend/src/features/document-summary/DocumentSummaryPage.tsx
-frontend/src/features/document-summary/DocumentUploadPanel.test.tsx
-frontend/src/features/document-summary/DocumentUploadPanel.tsx
-frontend/src/features/document-summary/documentSummaryContract.test.ts
-frontend/src/features/document-summary/documentSummaryContract.ts
-frontend/src/features/document-summary/documentUploadApiClient.test.ts
-frontend/src/features/document-summary/documentUploadApiClient.ts
-frontend/src/lib/api/backendClient.test.ts
-frontend/src/lib/api/backendClient.ts
+frontend/src/features/document-summary/documentSummaryApi.test.ts
+frontend/src/features/document-summary/documentSummaryApi.ts
+frontend/src/features/document-summary/documentSummaryHelpers.test.ts
+frontend/src/features/document-summary/documentSummaryHelpers.ts
+frontend/src/features/document-summary/documentSummaryMapper.test.ts
+frontend/src/features/document-summary/documentSummaryMapper.ts
+frontend/src/features/document-summary/types.ts
 ```
 
-This feature adds a role-gated document upload panel, same-origin Next.js BFF upload/status routes, multipart Backend proxying through server-side HttpOnly cookie auth, safe upload response shaping, and processing status polling for the Document Summary workspace.
+This feature adds protected deep-linked document summary detail pages, strict selected-document loading through the existing server-side HttpOnly cookie API boundary, safe frontend detail links, and document-context actions for later quiz/chat integration.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 

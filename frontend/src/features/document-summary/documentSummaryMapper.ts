@@ -1,6 +1,6 @@
 import type { AuthSession } from "../auth/types";
 import { documentSummaryMock } from "./documentSummaryData";
-import { parseSummaryMarkdown } from "./documentSummaryHelpers";
+import { buildDocumentDetailHref, parseSummaryMarkdown } from "./documentSummaryHelpers";
 import type {
   DocumentDetailResponse,
   DocumentLibraryResponse,
@@ -95,6 +95,7 @@ const toDocumentSummaryDetail = ({
     id: detail.id,
     keyTopics: buildKeyTopics(sections, detail.filename),
     relatedDocuments: buildRelatedDocuments(dashboard, detail.id),
+    sourcePreview: detail.extracted_text_preview,
     summaryMarkdown,
     uploadedByLabel: `Uploaded by ${libraryDocument?.uploaded_by ?? detail.uploaded_by}`
   };
@@ -141,7 +142,7 @@ const buildRelatedDocuments = (
     .slice(0, 3)
     .map((document) => ({
       filename: document.filename,
-      href: "/documents",
+      href: buildDocumentDetailHref(document.id),
       id: document.id,
       status: document.status
     }));

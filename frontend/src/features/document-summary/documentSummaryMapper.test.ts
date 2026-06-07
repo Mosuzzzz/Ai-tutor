@@ -29,6 +29,9 @@ describe("document summary mapper", () => {
     expect(dashboard.documentDetails[0]?.uploadedByLabel).toContain("Trainer One");
     expect(dashboard.documentDetails[0]?.keyTopics.map((topic) => topic.title)).toContain("Overview");
     expect(dashboard.documentDetails[0]?.relatedDocuments.map((document) => document.id)).toContain("file-needs-recap");
+    expect(dashboard.documentDetails[0]?.relatedDocuments.find((document) => document.id === "file-needs-recap")?.href).toBe(
+      "/documents/file-needs-recap"
+    );
     expect(JSON.stringify(dashboard)).not.toContain("learner@example.com");
   });
 
