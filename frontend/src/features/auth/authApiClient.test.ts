@@ -108,6 +108,43 @@ describe("auth API client", () => {
     );
   });
 
+  it("accepts local dev email verification metadata without exposing backend dev tokens", async () => {
+    const fetcher = vi.fn(async () =>
+      jsonResponse(
+        {
+          email: "teacher@example.com",
+          message: "สมัครสมาชิกและยืนยันอีเมลสำหรับ local dev แล้ว กรุณาเข้าสู่ระบบ",
+          ok: true,
+          requiresEmailVerification: false,
+          verifiedInDevelopment: true
+        },
+        { status: 201 }
+      )
+    );
+    const localStorageSetItem = vi.spyOn(Storage.prototype, "setItem");
+
+    const result = await submitRegister(
+      {
+        acceptedTerms: true,
+        email: "teacher@example.com",
+        fullName: "Teacher Example",
+        password: "secure-pass",
+        role: "teacher"
+      },
+      fetcher
+    );
+
+    expect(result).toMatchObject({
+      email: "teacher@example.com",
+      ok: true,
+      requiresEmailVerification: false,
+      verifiedInDevelopment: true
+    });
+    expect(JSON.stringify(result)).not.toContain("dev_token");
+    expect(JSON.stringify(result)).not.toContain("secure-pass");
+    expect(localStorageSetItem).not.toHaveBeenCalled();
+  });
+
   it("maps email verification failures from the BFF without throwing raw backend details", async () => {
     const fetcher = vi.fn(async () =>
       jsonResponse(

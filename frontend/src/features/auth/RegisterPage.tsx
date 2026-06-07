@@ -24,6 +24,7 @@ export const RegisterPage = () => {
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof RegisterInput, string>>>({});
   const [submissionStatus, setSubmissionStatus] = useState<AuthSubmissionStatus>("idle");
   const [submissionMessage, setSubmissionMessage] = useState("");
+  const [hasDevVerifiedRegistration, setHasDevVerifiedRegistration] = useState(false);
   const isSubmitting = submissionStatus === "submitting";
 
   const updateField = <TField extends keyof RegisterInput>(
@@ -34,6 +35,7 @@ export const RegisterPage = () => {
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
     setSubmissionStatus("idle");
     setSubmissionMessage("");
+    setHasDevVerifiedRegistration(false);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -44,21 +46,25 @@ export const RegisterPage = () => {
       setFieldErrors(result.fieldErrors);
       setSubmissionStatus("idle");
       setSubmissionMessage("");
+      setHasDevVerifiedRegistration(false);
       return;
     }
 
     setFieldErrors({});
     setSubmissionStatus("submitting");
     setSubmissionMessage(AUTH_MESSAGES.registerSubmitting);
+    setHasDevVerifiedRegistration(false);
 
     try {
       const submission = await submitRegister(result.values);
 
       setSubmissionStatus(submission.ok ? "success" : "error");
       setSubmissionMessage(submission.message);
+      setHasDevVerifiedRegistration(submission.ok && Boolean(submission.verifiedInDevelopment));
     } catch {
       setSubmissionStatus("error");
       setSubmissionMessage(AUTH_MESSAGES.genericError);
+      setHasDevVerifiedRegistration(false);
     }
   };
 
@@ -83,6 +89,18 @@ export const RegisterPage = () => {
           >
             {submissionMessage}
           </MockStatus>
+        )}
+
+        {hasDevVerifiedRegistration && (
+          <div className="rounded-lg border border-[#c7cfdd] bg-[#f8f9ff] p-4 text-body-md text-[#3e4a5c]">
+            <p>อีเมลถูกยืนยันสำหรับ local dev แล้ว คุณสามารถเข้าสู่ระบบด้วยบัญชีนี้ได้ทันที</p>
+            <Link
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#10253f] px-4 text-label-md font-bold text-white transition-colors hover:bg-[#18395e]"
+              href="/login"
+            >
+              ไปหน้าเข้าสู่ระบบ
+            </Link>
+          </div>
         )}
 
         <fieldset>

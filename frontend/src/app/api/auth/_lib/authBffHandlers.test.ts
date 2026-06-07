@@ -184,6 +184,103 @@ describe("auth BFF route handlers", () => {
     );
   });
 
+  it("auto-verifies local dev registrations server-side when Backend returns a dev token", async () => {
+    const backendRequest = vi.fn(async ({ path }: Parameters<AuthBackendRequest>[0]) => {
+      if (path === "/api/auth/register") {
+        return {
+          ...actionResponse,
+          dev_token: "dev-email-token"
+        };
+      }
+
+      if (path === "/api/auth/verify-email") {
+        return {
+          ...actionResponse,
+          message: "Email verified successfully.",
+          requires_email_verification: false
+        };
+      }
+
+      throw new Error(`Unhandled backend path: ${path}`);
+    }) as unknown as ReturnType<typeof vi.fn> & AuthBackendRequest;
+    const handlers = createAuthRouteHandlers({
+      backendRequest,
+      enableDevEmailVerification: true
+    });
+
+    const response = await handlers.register(
+      createJsonRequest("/api/auth/register", {
+        body: {
+          acceptedTerms: true,
+          email: "teacher@example.com",
+          fullName: "Teacher Example",
+          password: "secure-pass",
+          role: "teacher"
+        }
+      })
+    );
+
+    const body = await readJson(response);
+
+    expect(response.status).toBe(201);
+    expect(body).toMatchObject({
+      email: "teacher@example.com",
+      ok: true,
+      requiresEmailVerification: false,
+      verifiedInDevelopment: true
+    });
+    expect(JSON.stringify(body)).not.toContain("dev-email-token");
+    expect(backendRequest).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        body: {
+          token: "dev-email-token"
+        },
+        method: "POST",
+        path: "/api/auth/verify-email"
+      })
+    );
+  });
+
+  it("does not auto-verify registrations when the dev verification switch is disabled", async () => {
+    const backendRequest = vi.fn(async ({ path }: Parameters<AuthBackendRequest>[0]) => {
+      if (path === "/api/auth/register") {
+        return {
+          ...actionResponse,
+          dev_token: "dev-email-token"
+        };
+      }
+
+      throw new Error(`Unhandled backend path: ${path}`);
+    }) as unknown as ReturnType<typeof vi.fn> & AuthBackendRequest;
+    const handlers = createAuthRouteHandlers({
+      backendRequest,
+      enableDevEmailVerification: false
+    });
+
+    const response = await handlers.register(
+      createJsonRequest("/api/auth/register", {
+        body: {
+          acceptedTerms: true,
+          email: "teacher@example.com",
+          fullName: "Teacher Example",
+          password: "secure-pass",
+          role: "teacher"
+        }
+      })
+    );
+
+    const body = await readJson(response);
+
+    expect(response.status).toBe(201);
+    expect(body).toMatchObject({
+      ok: true,
+      requiresEmailVerification: true
+    });
+    expect(JSON.stringify(body)).not.toContain("dev-email-token");
+    expect(backendRequest).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects cross-origin auth mutations before they can reach the backend", async () => {
     const backendRequest = createBackendRequest();
     const handlers = createAuthRouteHandlers({ backendRequest });

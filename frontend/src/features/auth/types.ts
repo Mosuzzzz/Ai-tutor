@@ -48,10 +48,12 @@ export type AuthMockSession = AuthSession;
 
 export type AuthSubmissionResult =
   | {
+      email?: string;
       ok: true;
       message: string;
       requiresEmailVerification?: boolean;
       session?: AuthSession;
+      verifiedInDevelopment?: boolean;
     }
   | {
       ok: false;

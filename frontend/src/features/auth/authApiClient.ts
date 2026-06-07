@@ -18,10 +18,12 @@ const authSessionSchema = z.object({
 });
 
 const authSuccessSchema = z.object({
+  email: z.email().optional(),
   message: z.string().min(1),
   ok: z.literal(true),
   requiresEmailVerification: z.boolean().optional(),
-  session: authSessionSchema.optional()
+  session: authSessionSchema.optional(),
+  verifiedInDevelopment: z.boolean().optional()
 });
 
 const authFailureSchema = z.object({

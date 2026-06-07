@@ -95,6 +95,30 @@ describe("RegisterPage", () => {
     );
   });
 
+  it("shows a login action after local dev email verification completes", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      jsonResponse(
+        {
+          email: "teacher@example.com",
+          message: "สมัครสมาชิกและยืนยันอีเมลสำหรับ local dev แล้ว กรุณาเข้าสู่ระบบ",
+          ok: true,
+          requiresEmailVerification: false,
+          verifiedInDevelopment: true
+        },
+        { status: 201 }
+      )
+    );
+    render(<RegisterPage />);
+
+    fillValidTeacherRegistration();
+    fireEvent.click(screen.getByRole("button", { name: "สมัครสมาชิก" }));
+
+    expect(
+      await screen.findByText("สมัครสมาชิกและยืนยันอีเมลสำหรับ local dev แล้ว กรุณาเข้าสู่ระบบ")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "ไปหน้าเข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
+  });
+
   it("uses an info status tone while registration is submitting instead of a success tone", async () => {
     let resolveRegister: (response: Response) => void = () => undefined;
     vi.spyOn(globalThis, "fetch").mockImplementation(
