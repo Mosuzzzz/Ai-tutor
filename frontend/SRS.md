@@ -73,6 +73,23 @@ Included:
 - Security headers configured in Next.js
 - Tests for validation, auth client, routes, components, and security headers
 
+### EmailVerificationDevFlow Update
+
+Local/dev registration now supports Backend email verification without exposing verification tokens to browser code.
+
+Included:
+
+- Next.js BFF `/api/auth/register` can auto-call Backend `/api/auth/verify-email` when Backend returns a `dev_token` and the BFF is running outside production.
+- The `dev_token` is used only inside the server-side BFF handler and is never returned to `authApiClient`, React state, DOM, URL, `localStorage`, or `sessionStorage`.
+- Production behavior keeps the normal email-verification requirement because the dev verification switch defaults off when `NODE_ENV=production`.
+- Register UI shows a safe success state and a direct `/login` action after local dev verification succeeds.
+- Tests cover BFF server-side verification, disabled-switch behavior, client response sanitization, and Register UI login CTA.
+
+Security notes:
+
+- This flow is for local/test developer ergonomics only; real email verification must remain enforced by Backend in staging/production.
+- The browser continues to use same-origin BFF calls with `credentials: "same-origin"` and does not store auth or verification tokens client-side.
+
 Out of scope until Backend/Auth follow-up branches:
 
 - Backend error mapping

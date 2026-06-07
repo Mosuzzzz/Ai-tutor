@@ -74,6 +74,8 @@ const loadDocumentSummaryDetailForSession = vi.hoisted(() => vi.fn());
 const notFound = vi.hoisted(() => vi.fn(() => {
   throw new Error("NEXT_NOT_FOUND");
 }));
+const routerRefresh = vi.hoisted(() => vi.fn());
+const routerReplace = vi.hoisted(() => vi.fn());
 
 vi.mock("@/features/auth/authGuard", () => ({
   requirePageSession
@@ -85,7 +87,11 @@ vi.mock("@/features/document-summary/documentSummaryApi", () => ({
 
 vi.mock("next/navigation", () => ({
   notFound,
-  usePathname: () => "/documents/file-ready"
+  usePathname: () => "/documents/file-ready",
+  useRouter: () => ({
+    refresh: routerRefresh,
+    replace: routerReplace
+  })
 }));
 
 describe("document summary detail route", () => {
@@ -98,6 +104,8 @@ describe("document summary detail route", () => {
       status: "ready"
     });
     notFound.mockClear();
+    routerRefresh.mockReset();
+    routerReplace.mockReset();
   });
 
   it("guards the deep-linked document detail page and loads the selected file id", async () => {

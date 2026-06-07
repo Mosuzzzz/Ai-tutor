@@ -33,6 +33,7 @@ export type AuthBackendRequest = <TResponse>(
 type AuthRouteDependencies = {
   allowedOrigins?: readonly string[];
   backendRequest?: AuthBackendRequest;
+  enableDevEmailVerification?: boolean;
 };
 
 const frontendRoleSchema = z.enum(["student", "teacher"]);
@@ -50,9 +51,12 @@ const registerRouteInputSchema = z.object({
   role: frontendRoleSchema
 });
 
+const DEV_EMAIL_VERIFIED_MESSAGE = "สมัครสมาชิกและยืนยันอีเมลสำหรับ local dev แล้ว กรุณาเข้าสู่ระบบ";
+
 export const createAuthRouteHandlers = ({
   allowedOrigins = getConfiguredAllowedOrigins(),
-  backendRequest = backendJsonRequest
+  backendRequest = backendJsonRequest,
+  enableDevEmailVerification = process.env.NODE_ENV !== "production"
 }: AuthRouteDependencies = {}) => {
   const assertRequestOrigin = (request: Request) => {
     assertCsrfSafeRequest({
@@ -169,6 +173,28 @@ export const createAuthRouteHandlers = ({
           path: "/api/auth/register",
           schema: authActionResponseSchema
         });
+
+        if (enableDevEmailVerification && result.dev_token) {
+          const verification = await backendRequest({
+            body: {
+              token: result.dev_token
+            },
+            method: "POST",
+            path: "/api/auth/verify-email",
+            schema: authActionResponseSchema
+          });
+
+          return NextResponse.json(
+            {
+              email: verification.email ?? result.email ?? input.email,
+              message: DEV_EMAIL_VERIFIED_MESSAGE,
+              ok: true,
+              requiresEmailVerification: false,
+              verifiedInDevelopment: true
+            },
+            { status: 201 }
+          );
+        }
 
         return NextResponse.json(
           {

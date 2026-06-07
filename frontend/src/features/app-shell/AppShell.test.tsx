@@ -1,12 +1,26 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppShell } from "./AppShell";
 import type { AuthSession } from "../auth/types";
 
+const routerRefresh = vi.hoisted(() => vi.fn());
+const routerReplace = vi.hoisted(() => vi.fn());
+
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/documents"
+  usePathname: () => "/documents",
+  useRouter: () => ({
+    refresh: routerRefresh,
+    replace: routerReplace
+  })
 }));
+
+const jsonResponse = (body: unknown, init: ResponseInit = {}) => {
+  return new Response(JSON.stringify(body), {
+    headers: { "content-type": "application/json" },
+    status: init.status ?? 200
+  });
+};
 
 const studentSession: AuthSession = {
   mode: "http-only-cookie",
@@ -29,6 +43,12 @@ const teacherSession: AuthSession = {
 };
 
 describe("AppShell navigation", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    routerRefresh.mockReset();
+    routerReplace.mockReset();
+  });
+
   it("marks the current route as active from the pathname", () => {
     render(
       <AppShell session={studentSession}>
@@ -81,5 +101,33 @@ describe("AppShell navigation", () => {
     expect(screen.getByRole("link", { name: "สร้างควิซ" })).toHaveAttribute("href", "/quiz");
     expect(screen.queryByRole("link", { name: /^แดชบอร์ด$/ })).not.toBeInTheDocument();
     expect(screen.getByLabelText("บัญชีผู้ใช้ Teacher One")).toHaveTextContent("T");
+  });
+
+  it("logs out through the same-origin BFF and redirects to login", async () => {
+    const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      jsonResponse({
+        message: "ออกจากระบบสำเร็จ",
+        ok: true
+      })
+    );
+    render(
+      <AppShell session={studentSession}>
+        <p>Route content</p>
+      </AppShell>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "ออกจากระบบ" }));
+
+    await waitFor(() => {
+      expect(fetcher).toHaveBeenCalledWith(
+        "/api/auth/logout",
+        expect.objectContaining({
+          credentials: "same-origin",
+          method: "POST"
+        })
+      );
+    });
+    expect(routerReplace).toHaveBeenCalledWith("/login");
+    expect(routerRefresh).toHaveBeenCalled();
   });
 });
