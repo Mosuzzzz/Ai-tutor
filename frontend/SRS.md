@@ -291,7 +291,7 @@ Included:
 - The detail page shows the selected document filename, status, uploader label, generated date, summary sections, key topics with accessible progressbars, optional source preview, and related document deep links.
 - The main `/documents` page now exposes a safe "ดูรายละเอียดเอกสาร" link to `/documents/{fileId}` for the selected document.
 - Related document links are now generated as `/documents/{fileId}` with `encodeURIComponent()` instead of pointing back to the generic document workspace.
-- Detail actions link to `/quiz?documentId={fileId}` and `/chat?documentId={fileId}` so later Phase 5 branches can consume document context.
+- Detail actions link to `/quiz?documentId={fileId}` and `/chat?documentId={fileId}` so quiz/chat integration branches can consume document context.
 
 Security notes:
 
@@ -301,7 +301,6 @@ Security notes:
 
 Still out of scope:
 
-- Quiz/chat pages consuming `documentId` query params
 - Delete/download document flow
 - Export/share implementation
 - POST recap generation request
@@ -332,7 +331,8 @@ Superseded by ChatApiIntegration and remaining out of scope:
 
 - Superseded: BFF-backed real `/api/chat/query` request path
 - Superseded: Real `/api/chat/history` fetch
-- Still deferred: visible composer enablement and conversation persistence beyond Backend audit history
+- Superseded: visible composer enablement through ChatWithDocumentContext
+- Still deferred: conversation persistence beyond Backend audit history
 - Still deferred: streaming response UI
 - Superseded: Auth/session cookie binding via HttpOnly cookie
 - Tenant/session permission checks ก่อน render chat data
@@ -348,14 +348,36 @@ Included:
 - Backend `/api/chat/history` responses are validated with Zod and mapped into the existing chat UI view model.
 - Backend audit-lite citation payloads are normalized into the UI citation shape before rendering.
 - `POST /api/chat/query` is proxied through a Next.js BFF route with Origin/CSRF guard, safe input validation, and sanitized error messages.
-- The visible composer stays disabled until the next UI interaction branch wires real submit UX.
+- The initial integration kept the visible composer disabled until a dedicated document-context interaction branch.
 
 Remaining out of scope:
 
 - Streaming assistant responses.
-- Visible composer submit/retry UX.
+- Retry UX after failed chat submissions.
 - Optional double-submit CSRF token if the team requires it beyond Origin guard.
 - Rate-limit-specific UI copy once Backend returns final error semantics.
+
+### ChatWithDocumentContext Update
+
+The `/chat` workspace now supports asking the AI about the currently selected ready document through the existing same-origin BFF route.
+
+Included:
+
+- `/chat` accepts an optional `documentId` query param, normalizes `string`/`string[]` values, and passes the selected document id into the server-side chat loader.
+- Document Summary action links now preserve context by sending users to `/chat?documentId={fileId}` with `encodeURIComponent()`.
+- `AiChatSummaryPage` enables the visible composer for the selected ready document, appends the learner question and assistant answer to the thread, and keeps the submit button disabled while empty or submitting.
+- `submitDocumentChatQuestion()` validates input with Zod, posts to `/api/chat/query` using same-origin credentials, validates the Backend response shape, and maps backend/fetch/malformed-response failures to safe Thai UI copy.
+- `toDocumentContextChatMessages()` maps a successful chat query response into learner and assistant messages with document-grounded citations.
+- Browser code still does not read or store bearer tokens in `localStorage` or `sessionStorage`; auth remains inside the HttpOnly cookie + BFF boundary.
+- Tests cover route query normalization, chat query client success/error paths, mapper citation fallback, component submit UX, safe error rendering, document-summary chat links, and endpoint/token/storage hiding.
+
+Remaining out of scope:
+
+- Streaming assistant responses.
+- Durable threaded conversation persistence beyond Backend chat history/audit behavior.
+- Retry-specific UI beyond the safe error message.
+- Rate-limit-specific UI copy once Backend returns final error semantics.
+- Optional double-submit CSRF token if the team requires it beyond Origin guard.
 
 ### Completed Phase 7: AI Quiz Generator
 
@@ -547,9 +569,18 @@ frontend/
 │   │   ├── ai-chat/
 │   │   │   ├── AiChatSummaryPage.tsx
 │   │   │   ├── AiChatSummaryPage.test.tsx
+│   │   │   ├── aiChatApi.ts
+│   │   │   ├── aiChatApi.test.ts
+│   │   │   ├── aiChatContract.ts
+│   │   │   ├── aiChatContract.test.ts
 │   │   │   ├── aiChatData.ts
 │   │   │   ├── aiChatHelpers.ts
 │   │   │   ├── aiChatHelpers.test.ts
+│   │   │   ├── aiChatMapper.ts
+│   │   │   ├── aiChatMapper.test.ts
+│   │   │   ├── aiChatQueryClient.ts
+│   │   │   ├── aiChatQueryClient.test.ts
+│   │   │   ├── aiChatTestData.ts
 │   │   │   └── types.ts
 │   │   ├── auth/
 │   │   │   ├── AuthFormFields.tsx
@@ -868,10 +899,10 @@ AI Chat & Summary ใช้ layout แบบ workspace สำหรับถา�
 - Chat thread พร้อม learner/assistant message bubbles
 - Citation cards ที่แสดง filename, chunk section และ matched text แบบ plain text
 - Summary side panel สำหรับ takeaways และ action ต่อไปยัง Document Summary/Quiz
-- Disabled composer สำหรับ mock phase
+- Composer สำหรับถามเอกสารที่เลือกผ่าน BFF `/api/chat/query` พร้อม disabled/submitting/error states
 - Copy บนหน้าจอเป็นภาษาไทย
 
-หน้านี้ยังไม่มี API call, streaming, conversation persistence หรือ permission check จริงจนกว่า Auth/Backend contract จะพร้อม
+หน้านี้ใช้ API ผ่าน server-side loader/BFF และ route guard แล้ว แต่ยังไม่มี streaming response, durable threaded persistence beyond Backend chat history, rate-limit-specific UX หรือ optional double-submit CSRF token
 
 ### AI Quiz Generator UI
 
@@ -964,6 +995,7 @@ src/features/ai-chat/aiChatApi.test.ts
 src/features/ai-chat/aiChatContract.test.ts
 src/features/ai-chat/aiChatHelpers.test.ts
 src/features/ai-chat/aiChatMapper.test.ts
+src/features/ai-chat/aiChatQueryClient.test.ts
 src/features/ai-quiz-generator/AiQuizGeneratorPage.test.tsx
 src/features/ai-quiz-generator/quizGeneratorApi.test.ts
 src/features/ai-quiz-generator/quizGeneratorContract.test.ts
@@ -1061,12 +1093,16 @@ Current coverage focus:
 - AI chat route and API-ready mock marker
 - AI chat helper status/sorting/citation/grounded-message behavior
 - AI chat loading/error/empty states
-- AI chat action links, disabled composer, and backend endpoint hiding
+- AI chat action links, visible document-context composer, and backend endpoint hiding
 - AI chat layout overflow guard for long Thai filenames and messages
 - AI chat Backend `/api/chat/query` and `/api/chat/history` Zod contracts
 - AI chat server-side HttpOnly cookie API loader
 - AI chat session-based view-model mapping and citation normalization
 - AI chat same-origin BFF query route with Origin/CSRF guard
+- AI chat `documentId` route query normalization and selected-document context loading
+- AI chat browser query client validation, same-origin credentials, safe error mapping, and no token storage
+- AI chat document-context message mapping with citation fallback
+- Document Summary to AI Chat context links generated with encoded selected document ids
 - AI quiz route and API-ready mock marker
 - AI quiz helper difficulty/status/source/count/citation behavior
 - AI quiz loading/error/empty states
@@ -1093,7 +1129,7 @@ Current coverage focus:
 
 Current latest verification:
 
-- `npm test`: 70 test files, 274 tests
+- `npm test`: 72 test files, 290 tests
 - `npm run lint`: passing
 - `npm run build`: passing
 - `npm audit --audit-level=high`: 0 vulnerabilities
@@ -1105,7 +1141,7 @@ The following items should wait until Backend/API integration branches:
 - OAuth callback handling
 - Teacher dashboard real API integration and loading/error/empty states
 - Document Summary delete/download BFF routes with CSRF/origin checks, POST recap generation, and export/share implementation
-- AI Chat visible composer enablement, streaming response UI, rate-limit UX, and optional double-submit CSRF token
+- AI Chat streaming response UI, richer retry UX, rate-limit UX, and optional double-submit CSRF token
 - AI Quiz visible generate/update/publish/submit UI interactions, learner-safe exam-taking page, score result screen, and rate-limit UX
 - Learning Analytics real-time event stream mapping, richer admin audit UI, and Backend-backed E2E verification
 - Backend validation error mapping
@@ -1123,27 +1159,23 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current DocumentSummaryDetailPage commit, include:
+For the current ChatWithDocumentContext commit, include:
 
 ```text
 frontend/SRS.md
-frontend/src/app/documents/[fileId]/page.test.tsx
-frontend/src/app/documents/[fileId]/page.tsx
-frontend/src/app/documents/page.tsx
-frontend/src/features/document-summary/DocumentSummaryDetailPage.test.tsx
-frontend/src/features/document-summary/DocumentSummaryDetailPage.tsx
+frontend/src/app/chat/page.test.tsx
+frontend/src/app/chat/page.tsx
+frontend/src/features/ai-chat/AiChatSummaryPage.test.tsx
+frontend/src/features/ai-chat/AiChatSummaryPage.tsx
+frontend/src/features/ai-chat/aiChatMapper.test.ts
+frontend/src/features/ai-chat/aiChatMapper.ts
+frontend/src/features/ai-chat/aiChatQueryClient.test.ts
+frontend/src/features/ai-chat/aiChatQueryClient.ts
 frontend/src/features/document-summary/DocumentSummaryPage.test.tsx
 frontend/src/features/document-summary/DocumentSummaryPage.tsx
-frontend/src/features/document-summary/documentSummaryApi.test.ts
-frontend/src/features/document-summary/documentSummaryApi.ts
-frontend/src/features/document-summary/documentSummaryHelpers.test.ts
-frontend/src/features/document-summary/documentSummaryHelpers.ts
-frontend/src/features/document-summary/documentSummaryMapper.test.ts
-frontend/src/features/document-summary/documentSummaryMapper.ts
-frontend/src/features/document-summary/types.ts
 ```
 
-This feature adds protected deep-linked document summary detail pages, strict selected-document loading through the existing server-side HttpOnly cookie API boundary, safe frontend detail links, and document-context actions for later quiz/chat integration.
+This feature enables document-context chat submissions for selected ready documents through the existing server-side HttpOnly cookie + same-origin BFF boundary, maps successful answers into safe learner/assistant messages with citations, and keeps document summary links wired to `/chat?documentId={fileId}`.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 

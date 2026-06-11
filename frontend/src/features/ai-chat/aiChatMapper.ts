@@ -1,7 +1,7 @@
 import type { AuthSession } from "../auth/types";
 import type { DocumentLibraryResponse } from "../document-summary/documentSummaryContract";
 import { aiChatSummaryMock } from "./aiChatData";
-import type { ChatHistoryResponse } from "./aiChatContract";
+import type { ChatHistoryResponse, ChatQueryResponse } from "./aiChatContract";
 import type {
   AiChatSummaryViewModel,
   ChatDocument,
@@ -10,6 +10,11 @@ import type {
 } from "./types";
 
 type DocumentLibraryItem = DocumentLibraryResponse["documents"][number];
+
+type ChatMessageDocumentContext = {
+  filename: string;
+  id: string;
+};
 
 type AiChatSummaryViewModelInput = {
   documentsResponse: DocumentLibraryResponse;
@@ -83,6 +88,41 @@ export const selectChatDocumentForHistory = (
   }
 
   return readyDocuments[0];
+};
+
+export const toDocumentContextChatMessages = ({
+  document,
+  prompt,
+  response,
+  timestamp = new Date()
+}: {
+  document: ChatMessageDocumentContext;
+  prompt: string;
+  response: ChatQueryResponse;
+  timestamp?: Date;
+}): ChatMessage[] => {
+  const createdAtLabel = formatTimeLabel(timestamp.toISOString());
+
+  return [
+    {
+      body: prompt,
+      citations: [],
+      createdAtLabel,
+      id: `${response.chat_history_id}-learner`,
+      role: "learner"
+    },
+    {
+      body: response.response_text,
+      citations: response.citations.map((citation) => ({
+        ...citation,
+        file_id: citation.file_id || document.id,
+        filename: citation.filename || document.filename
+      })),
+      createdAtLabel,
+      id: `${response.chat_history_id}-assistant`,
+      role: "assistant"
+    }
+  ];
 };
 
 const toChatDocument = (document: DocumentLibraryItem): ChatDocument => ({

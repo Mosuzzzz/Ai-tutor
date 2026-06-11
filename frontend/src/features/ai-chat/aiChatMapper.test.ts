@@ -3,11 +3,13 @@ import { describe, expect, it } from "vitest";
 import type { AuthSession } from "../auth/types";
 import {
   backendChatDocumentsResponse,
-  backendChatHistoryResponse
+  backendChatHistoryResponse,
+  backendChatQueryResponse
 } from "./aiChatTestData";
 import {
   isAiChatSummaryEmpty,
   selectChatDocumentForHistory,
+  toDocumentContextChatMessages,
   toAiChatSummaryViewModel
 } from "./aiChatMapper";
 
@@ -59,5 +61,34 @@ describe("AI chat mapper", () => {
 
     expect(selectChatDocumentForHistory(backendChatDocumentsResponse)?.id).toBe("file-ready");
     expect(selectChatDocumentForHistory(backendChatDocumentsResponse, "file-processing")?.id).toBe("file-ready");
+  });
+
+  it("maps a document-scoped chat response into learner and assistant messages with citations", () => {
+    const messages = toDocumentContextChatMessages({
+      document: {
+        filename: "safety-handbook.pdf",
+        id: "file-ready"
+      },
+      prompt: "ควรทบทวนอะไรต่อ",
+      response: backendChatQueryResponse,
+      timestamp: new Date("2026-06-07T12:00:00.000Z")
+    });
+
+    expect(messages).toHaveLength(2);
+    expect(messages[0]).toMatchObject({
+      body: "ควรทบทวนอะไรต่อ",
+      id: "history-3-learner",
+      role: "learner"
+    });
+    expect(messages[1]).toMatchObject({
+      body: "Report incidents immediately and notify the trainer.",
+      id: "history-3-assistant",
+      role: "assistant"
+    });
+    expect(messages[1]?.citations[0]).toMatchObject({
+      chunk_index: 3,
+      file_id: "file-ready",
+      filename: "safety-handbook.pdf"
+    });
   });
 });
