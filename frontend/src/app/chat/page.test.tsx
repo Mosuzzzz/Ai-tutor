@@ -64,4 +64,19 @@ describe("chat route", () => {
     expect(screen.getByTestId("ai-chat-summary")).toBeInTheDocument();
     expect(screen.getByTestId("ai-chat-summary")).toHaveAttribute("data-source", "api");
   });
+
+  it("passes a documentId query param into the AI chat loader", async () => {
+    render(
+      await ChatPage({
+        searchParams: Promise.resolve({
+          documentId: "file-ready"
+        })
+      })
+    );
+
+    expect(loadAiChatSummaryForSession).toHaveBeenCalledWith({
+      selectedDocumentId: "file-ready",
+      session: studentSession
+    });
+  });
 });

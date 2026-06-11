@@ -42,7 +42,10 @@ describe("DocumentSummaryPage", () => {
     expect(screen.getByText("มีปัญหา")).toBeInTheDocument();
 
     expect(screen.getByRole("link", { name: /สร้างควิซจากสรุปนี้/ })).toHaveAttribute("href", "/quiz");
-    expect(screen.getByRole("link", { name: /ถาม AI จากเอกสารนี้/ })).toHaveAttribute("href", "/chat");
+    expect(screen.getByRole("link", { name: /ถาม AI จากเอกสารนี้/ })).toHaveAttribute(
+      "href",
+      "/chat?documentId=doc-lab-safety"
+    );
     expect(screen.getByRole("button", { name: "ส่งออกสรุป" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "แชร์สรุป" })).toBeDisabled();
   });

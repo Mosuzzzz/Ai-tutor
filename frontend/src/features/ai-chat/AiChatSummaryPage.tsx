@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
   ArrowRight,
   Bot,
@@ -13,6 +16,7 @@ import Link from "next/link";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { cn } from "../../lib/cn";
+import { submitDocumentChatQuestion } from "./aiChatQueryClient";
 import {
   buildCitationLabel,
   countGroundedAssistantMessages,
@@ -22,6 +26,7 @@ import {
   sortChatDocumentsByAvailability
 } from "./aiChatHelpers";
 import { aiChatSummaryMock } from "./aiChatData";
+import { toDocumentContextChatMessages } from "./aiChatMapper";
 import type {
   AiChatSummaryStatus,
   AiChatSummaryViewModel,
@@ -156,6 +161,8 @@ const ChatThread = ({ messages }: { messages: ChatMessage[] }) => {
 };
 
 const SummaryPanel = ({ chat, selectedDocument }: { chat: AiChatSummaryViewModel; selectedDocument: ChatDocument }) => {
+  const selectedDocumentQuery = encodeURIComponent(selectedDocument.id);
+
   return (
     <aside className="grid min-w-0 gap-4 overflow-hidden" data-testid="ai-chat-summary-panel">
       <Card>
@@ -170,7 +177,7 @@ const SummaryPanel = ({ chat, selectedDocument }: { chat: AiChatSummaryViewModel
             ดูสรุปเอกสาร
             <ArrowRight aria-hidden="true" className="h-4 w-4" />
           </Link>
-          <Link className={linkClassName} href="/quiz">
+          <Link className={linkClassName} href={`/quiz?documentId=${selectedDocumentQuery}`}>
             สร้างควิซจากคำตอบนี้
             <Bot aria-hidden="true" className="h-4 w-4" />
           </Link>
@@ -203,25 +210,72 @@ const SummaryPanel = ({ chat, selectedDocument }: { chat: AiChatSummaryViewModel
   );
 };
 
-const ChatComposer = () => {
+const ChatComposer = ({
+  errorMessage,
+  onSubmit,
+  selectedDocument,
+  status
+}: {
+  errorMessage?: string;
+  onSubmit: (prompt: string) => Promise<boolean>;
+  selectedDocument: ChatDocument;
+  status: "idle" | "submitting" | "success" | "error";
+}) => {
+  const [prompt, setPrompt] = useState("");
+  const trimmedPrompt = prompt.trim();
+  const isSubmitting = status === "submitting";
+
+  const handleSubmit = async () => {
+    if (!trimmedPrompt || isSubmitting) {
+      return;
+    }
+
+    const submitted = await onSubmit(trimmedPrompt);
+
+    if (submitted) {
+      setPrompt("");
+    }
+  };
+
   return (
     <Card className="min-w-0 overflow-hidden p-4">
       <label className="text-label-sm font-bold text-on-surface" htmlFor="ai-chat-question">
         คำถามถึง AI Tutor
       </label>
+      <p className="mt-2 break-words text-label-sm font-semibold text-on-surface-variant">
+        ใช้เอกสาร: {selectedDocument.filename}
+      </p>
       <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
         <textarea
           aria-label="คำถามถึง AI Tutor"
-          className="min-h-24 min-w-0 resize-none rounded border border-outline-variant/60 bg-surface-container-low px-4 py-3 text-body-md text-on-surface-variant"
-          disabled
+          className="min-h-24 min-w-0 resize-none rounded border border-outline-variant/60 bg-surface-container-low px-4 py-3 text-body-md text-on-surface"
+          disabled={isSubmitting}
           id="ai-chat-question"
+          onChange={(event) => setPrompt(event.target.value)}
           placeholder="คำถามเกี่ยวกับเอกสารที่เลือก"
+          value={prompt}
         />
-        <Button className="self-end" disabled>
-          ส่งคำถาม
+        <Button className="self-end" disabled={!trimmedPrompt || isSubmitting} onClick={handleSubmit}>
+          {isSubmitting ? "กำลังส่งคำถาม" : "ส่งคำถาม"}
           <Send aria-hidden="true" className="h-4 w-4" />
         </Button>
       </div>
+      {status === "success" ? (
+        <div
+          className="mt-4 rounded border border-[#b8dfc8] bg-[#effaf3] p-3 text-body-md font-semibold text-[#216148]"
+          role="status"
+        >
+          ส่งคำถามถึง AI สำเร็จ
+        </div>
+      ) : null}
+      {status === "error" && errorMessage ? (
+        <div
+          className="mt-4 rounded border border-[#f2b8b5] bg-[#fff8f7] p-3 text-body-md font-semibold text-[#8c1d18]"
+          role="alert"
+        >
+          {errorMessage}
+        </div>
+      ) : null}
     </Card>
   );
 };
@@ -233,6 +287,10 @@ export const AiChatSummaryPage = ({
   selectedDocumentId,
   status = "ready"
 }: AiChatSummaryPageProps) => {
+  const [messages, setMessages] = useState(chat.messages);
+  const [queryError, setQueryError] = useState<string>();
+  const [queryStatus, setQueryStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+
   if (status === "loading") {
     return (
       <Card className="text-body-md text-on-surface-variant" role="status">
@@ -271,6 +329,41 @@ export const AiChatSummaryPage = ({
     );
   }
 
+  const activeChat: AiChatSummaryViewModel = {
+    ...chat,
+    messages
+  };
+
+  const handleSubmitQuestion = async (prompt: string) => {
+    setQueryError(undefined);
+    setQueryStatus("submitting");
+
+    const result = await submitDocumentChatQuestion({
+      fileId: selectedDocument.id,
+      prompt
+    });
+
+    if (!result.ok) {
+      setQueryError(result.message);
+      setQueryStatus("error");
+      return false;
+    }
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      ...toDocumentContextChatMessages({
+        document: {
+          filename: selectedDocument.filename,
+          id: selectedDocument.id
+        },
+        prompt,
+        response: result.chat
+      })
+    ]);
+    setQueryStatus("success");
+    return true;
+  };
+
   return (
     <div className="space-y-6" data-source={dataSource} data-testid="ai-chat-summary">
       <section className="overflow-hidden rounded border border-[#2d5f72]/15 bg-[#183642] text-white shadow-ambient">
@@ -302,10 +395,15 @@ export const AiChatSummaryPage = ({
       >
         <DocumentSelector documents={sortedDocuments} selectedDocument={selectedDocument} />
         <div className="grid min-w-0 gap-4 overflow-hidden" data-testid="ai-chat-thread-column">
-          <ChatThread messages={chat.messages} />
-          <ChatComposer />
+          <ChatThread messages={activeChat.messages} />
+          <ChatComposer
+            errorMessage={queryError}
+            onSubmit={handleSubmitQuestion}
+            selectedDocument={selectedDocument}
+            status={queryStatus}
+          />
         </div>
-        <SummaryPanel chat={chat} selectedDocument={selectedDocument} />
+        <SummaryPanel chat={activeChat} selectedDocument={selectedDocument} />
       </section>
     </div>
   );

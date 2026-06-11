@@ -1,8 +1,9 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AiChatSummaryPage } from "./AiChatSummaryPage";
 import { aiChatSummaryMock } from "./aiChatData";
+import { backendChatQueryResponse } from "./aiChatTestData";
 import type { AiChatSummaryViewModel } from "./types";
 
 const emptyChatMock: AiChatSummaryViewModel = {
@@ -11,6 +12,10 @@ const emptyChatMock: AiChatSummaryViewModel = {
   messages: [],
   selectedDocumentId: ""
 };
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("AiChatSummaryPage", () => {
   it("renders an API-ready Thai AI chat and summary workspace", () => {
@@ -37,13 +42,98 @@ describe("AiChatSummaryPage", () => {
     expect(screen.getByText("ตรวจอุปกรณ์ป้องกันก่อนเริ่มทดลอง")).toBeInTheDocument();
   });
 
-  it("renders safe next-step actions and a disabled mock composer", () => {
+  it("renders safe next-step actions and an enabled document-context composer", () => {
     render(<AiChatSummaryPage />);
 
     expect(screen.getByRole("link", { name: /ดูสรุปเอกสาร/ })).toHaveAttribute("href", "/documents");
-    expect(screen.getByRole("link", { name: /สร้างควิซจากคำตอบนี้/ })).toHaveAttribute("href", "/quiz");
-    expect(screen.getByRole("textbox", { name: "คำถามถึง AI Tutor" })).toBeDisabled();
+    expect(screen.getByRole("link", { name: /สร้างควิซจากคำตอบนี้/ })).toHaveAttribute(
+      "href",
+      "/quiz?documentId=doc-lab-safety"
+    );
+    expect(screen.getByRole("textbox", { name: "คำถามถึง AI Tutor" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "ส่งคำถาม" })).toBeDisabled();
+  });
+
+  it("submits a question with selected document context and appends grounded answer citations", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          chat: backendChatQueryResponse,
+          message: "ส่งคำถามถึง AI สำเร็จ",
+          ok: true
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json"
+          },
+          status: 200
+        }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<AiChatSummaryPage chat={{ ...aiChatSummaryMock, messages: [] }} />);
+
+    fireEvent.change(screen.getByRole("textbox", { name: "คำถามถึง AI Tutor" }), {
+      target: {
+        value: "ควรสรุปประเด็นไหนก่อนทำควิซ"
+      }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "ส่งคำถาม" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/chat/query", {
+        body: JSON.stringify({
+          fileId: "doc-lab-safety",
+          prompt: "ควรสรุปประเด็นไหนก่อนทำควิซ"
+        }),
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        method: "POST"
+      });
+    });
+
+    expect(await screen.findByText("ควรสรุปประเด็นไหนก่อนทำควิซ")).toBeInTheDocument();
+    expect(screen.getByText("Report incidents immediately and notify the trainer.")).toBeInTheDocument();
+    expect(screen.getByText("safety-handbook.pdf · ส่วนที่ 4")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("ส่งคำถามถึง AI สำเร็จ");
+    expect(screen.getByRole("textbox", { name: "คำถามถึง AI Tutor" })).toHaveValue("");
+    expect(screen.queryByText("/api/chat/query")).not.toBeInTheDocument();
+  });
+
+  it("keeps document context visible and shows a safe error when chat submit fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            message: "Document is not ready for chat.",
+            ok: false
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json"
+            },
+            status: 400
+          }
+        )
+      )
+    );
+
+    render(<AiChatSummaryPage chat={{ ...aiChatSummaryMock, messages: [] }} />);
+
+    fireEvent.change(screen.getByRole("textbox", { name: "คำถามถึง AI Tutor" }), {
+      target: {
+        value: "ถามจากเอกสารนี้"
+      }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "ส่งคำถาม" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Document is not ready for chat.");
+    expect(screen.getAllByText("คู่มือความปลอดภัยห้องปฏิบัติการ.pdf").length).toBeGreaterThan(0);
   });
 
   it("keeps the three-column workspace from overlapping with long Thai content", () => {

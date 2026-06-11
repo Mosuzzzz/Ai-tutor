@@ -121,6 +121,7 @@ export const DocumentSummaryPage = ({
   }
 
   const parsedSections = parseSummaryMarkdown(selectedDetail.summaryMarkdown);
+  const encodedDocumentId = encodeURIComponent(selectedDetail.id);
 
   const metrics: SummaryMetric[] = [
     {
@@ -182,7 +183,7 @@ export const DocumentSummaryPage = ({
               </Link>
               <Link
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-white/25 bg-white/10 px-4 py-2 text-label-md font-bold text-white transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#24344d]"
-                href="/chat"
+                href={`/chat?documentId=${encodedDocumentId}`}
               >
                 ถาม AI จากเอกสารนี้
                 <MessageSquareText aria-hidden="true" className="h-5 w-5" />
