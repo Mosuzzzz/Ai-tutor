@@ -77,10 +77,10 @@ export const backendSubmitExamResponse = {
       citation: "safety-handbook.pdf section 2",
       correct_index: 0,
       explanation: "Checklist review is required.",
-      question_id: "question-1"
+      question_id: "question-learner-1"
     }
   ],
-  exam_id: "exam-1",
+  exam_id: "exam-learner",
   passed: true,
   score: 100,
   total_questions: 1

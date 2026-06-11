@@ -1,9 +1,10 @@
 import type { AuthSession } from "../auth/types";
 import type { DocumentLibraryResponse } from "../document-summary/documentSummaryContract";
 import { aiQuizGeneratorMock } from "./quizGeneratorData";
-import type { ExamResponse, TrainerExamQuestion } from "./quizGeneratorContract";
+import type { ExamResponse, ExamSubmitResponse, TrainerExamQuestion } from "./quizGeneratorContract";
 import { clampQuestionCount, estimateQuizDuration } from "./quizGeneratorHelpers";
 import type {
+  QuizAttemptResult,
   QuizDraftStatus,
   QuizGeneratorViewModel,
   QuizQuestionPreview,
@@ -69,6 +70,10 @@ export const toQuizGeneratorViewModel = ({
   const instructions = DEFAULT_QUIZ_INSTRUCTIONS;
 
   return {
+    capabilities: {
+      canGenerateQuiz: canGenerateQuiz(session),
+      canSubmitAttempt: canSubmitQuizAttempt(session)
+    },
     detailEndpointPattern: aiQuizGeneratorMock.detailEndpointPattern,
     draft: buildDraft({
       examResponse,
@@ -112,6 +117,35 @@ export const toQuizGeneratorViewModel = ({
 
 export const isQuizGeneratorEmpty = (documentsResponse: DocumentLibraryResponse) => {
   return documentsResponse.total_documents === 0 || !selectQuizSourceForGeneration(documentsResponse);
+};
+
+export const toQuizAttemptResult = ({
+  questions,
+  submitResponse
+}: {
+  questions: QuizQuestionPreview[];
+  submitResponse: ExamSubmitResponse;
+}): QuizAttemptResult => {
+  const questionsById = new Map(questions.map((question) => [question.id, question]));
+
+  return {
+    correctAnswersLabel: `${submitResponse.correct_answers_count}/${submitResponse.total_questions} ข้อ`,
+    items: submitResponse.detailed_results.map((result) => {
+      const question = questionsById.get(result.question_id);
+
+      return {
+        citation: normalizeOptionalText(result.citation),
+        correctOptionLabel: resolveOptionLabel(question, result.correct_index, "ไม่มีข้อมูลคำตอบที่ถูกต้องจาก backend"),
+        chosenOptionLabel: resolveOptionLabel(question, result.chosen, "ยังไม่ได้ตอบ"),
+        explanation: normalizeOptionalText(result.explanation),
+        isCorrect: result.chosen !== undefined && result.chosen !== null && result.chosen === result.correct_index,
+        questionId: result.question_id,
+        questionText: question?.question_text ?? "คำถามจาก Backend"
+      };
+    }),
+    passedLabel: submitResponse.passed ? "ผ่าน" : "ยังไม่ผ่าน",
+    scoreLabel: `${submitResponse.score}%`
+  };
 };
 
 export const selectQuizSourceForGeneration = (
@@ -221,6 +255,24 @@ const toQuizDraftStatus = (status: ExamResponse["status"]): QuizDraftStatus => {
   return "draft";
 };
 
+const resolveOptionLabel = (
+  question: QuizQuestionPreview | undefined,
+  optionIndex: number | null | undefined,
+  fallback: string
+) => {
+  if (optionIndex === undefined || optionIndex === null) {
+    return fallback;
+  }
+
+  return question?.options[optionIndex]?.label ?? fallback;
+};
+
+const normalizeOptionalText = (value: string | null | undefined) => {
+  const normalized = value?.trim();
+
+  return normalized || undefined;
+};
+
 const summarizeMarkdown = (markdown: string) => {
   return markdown
     .replace(/^#{1,6}\s+/gm, "")
@@ -252,6 +304,14 @@ const buildWorkspaceName = (session: AuthSession) => {
   }
 
   return "AI Tutor quiz workspace";
+};
+
+const canGenerateQuiz = (session: AuthSession) => {
+  return session.user.role === "teacher" || session.user.role === "tenant_admin";
+};
+
+const canSubmitQuizAttempt = (session: AuthSession) => {
+  return session.user.role === "student" || session.user.role === "teacher" || session.user.role === "tenant_admin";
 };
 
 const formatDateLabel = (dateValue: string) => {

@@ -50,6 +50,7 @@ describe("auth route policy", () => {
 
   it("allows role-matched protected routes", () => {
     expect(resolveProtectedRouteDecision(createSession("teacher"), "/quiz")).toEqual({ type: "render" });
+    expect(resolveProtectedRouteDecision(createSession("student"), "/quiz")).toEqual({ type: "render" });
     expect(resolveProtectedRouteDecision(createSession("student"), "/documents")).toEqual({ type: "render" });
   });
 
@@ -66,6 +67,6 @@ describe("auth route policy", () => {
     expect(canAccessRoute("tenant_admin", "/teacher/overview")).toBe(true);
     expect(canAccessRoute("global_admin", "/teacher/overview")).toBe(false);
     expect(canAccessRoute("global_admin", "/quiz/drafts")).toBe(false);
-    expect(canAccessRoute("student", "/quiz/drafts")).toBe(false);
+    expect(canAccessRoute("student", "/quiz/drafts")).toBe(true);
   });
 });

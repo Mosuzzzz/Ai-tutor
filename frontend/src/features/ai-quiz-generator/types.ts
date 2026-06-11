@@ -43,6 +43,25 @@ export type QuizQuestionPreview = {
   citation: QuizCitationPreview;
 };
 
+export type QuizAttemptAnswerMap = Record<string, number>;
+
+export type QuizAttemptResultItem = {
+  citation?: string;
+  correctOptionLabel: string;
+  chosenOptionLabel: string;
+  explanation?: string;
+  isCorrect: boolean;
+  questionId: string;
+  questionText: string;
+};
+
+export type QuizAttemptResult = {
+  correctAnswersLabel: string;
+  items: QuizAttemptResultItem[];
+  passedLabel: string;
+  scoreLabel: string;
+};
+
 export type QuizMetric = {
   id: string;
   label: string;
@@ -51,6 +70,10 @@ export type QuizMetric = {
 };
 
 export type QuizGeneratorViewModel = {
+  capabilities: {
+    canGenerateQuiz: boolean;
+    canSubmitAttempt: boolean;
+  };
   workspaceName: string;
   selectedSourceId: string;
   generateEndpoint: "/api/exams/generate";

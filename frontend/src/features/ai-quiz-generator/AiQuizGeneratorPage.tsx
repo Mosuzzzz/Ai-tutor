@@ -17,6 +17,7 @@ import Link from "next/link";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { cn } from "../../lib/cn";
+import { submitQuizAttempt } from "./quizAttemptClient";
 import { generateQuizDraft } from "./quizGenerationClient";
 import { aiQuizGeneratorMock } from "./quizGeneratorData";
 import {
@@ -31,8 +32,10 @@ import {
   getSafeQuizDraftQuestions,
   sortQuizSourcesByReadiness
 } from "./quizGeneratorHelpers";
-import { toGeneratedQuizDraft } from "./quizGeneratorMapper";
+import { toGeneratedQuizDraft, toQuizAttemptResult } from "./quizGeneratorMapper";
 import type {
+  QuizAttemptAnswerMap,
+  QuizAttemptResult,
   QuizGeneratorStatus,
   QuizGeneratorViewModel,
   QuizQuestionPreview,
@@ -47,6 +50,8 @@ type AiQuizGeneratorPageProps = {
   selectedSourceId?: string;
   status?: QuizGeneratorStatus;
 };
+
+type AsyncActionStatus = "idle" | "submitting" | "success" | "error";
 
 const sourceStatusToneClassNames: Record<QuizSourceStatus, string> = {
   error: "bg-[#ffe9df] text-[#9a3b18]",
@@ -132,7 +137,7 @@ const SettingsPanel = ({
   selectedSource
 }: {
   generationError?: string;
-  generationStatus: "idle" | "submitting" | "success" | "error";
+  generationStatus: AsyncActionStatus;
   onGenerate: () => void;
   quiz: QuizGeneratorViewModel;
   selectedSource: QuizSource;
@@ -236,6 +241,125 @@ const QuestionPreviewCard = ({ index, question }: { index: number; question: Qui
   );
 };
 
+const AttemptPanel = ({
+  answers,
+  attemptError,
+  attemptResult,
+  attemptStatus,
+  onAnswerChange,
+  onSubmit,
+  questions
+}: {
+  answers: QuizAttemptAnswerMap;
+  attemptError?: string;
+  attemptResult?: QuizAttemptResult;
+  attemptStatus: AsyncActionStatus;
+  onAnswerChange: (questionId: string, optionIndex: number) => void;
+  onSubmit: () => void;
+  questions: QuizQuestionPreview[];
+}) => {
+  const isSubmitting = attemptStatus === "submitting";
+  const isComplete = questions.length > 0 && questions.every((question) => answers[question.id] !== undefined);
+
+  return (
+    <section aria-label="ทำควิซ" className="grid min-w-0 gap-4 overflow-hidden">
+      <Card className="min-w-0 overflow-hidden p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-label-sm font-semibold text-[#355526]">Learner attempt</p>
+            <h3 className="mt-1 break-words text-headline-md text-on-surface">ทำควิซและบันทึกคะแนน</h3>
+            <p className="mt-2 break-words text-body-md text-on-surface-variant">
+              เลือกคำตอบให้ครบทุกข้อ แล้วส่งผ่าน Backend เพื่อบันทึกคะแนนกลับไปยัง analytics
+            </p>
+          </div>
+          {attemptResult ? (
+            <span className="rounded bg-[#e6f6ee] px-3 py-1 text-label-sm font-bold text-[#216148]">
+              {attemptResult.passedLabel}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="mt-5 grid gap-4">
+          {questions.map((question, questionIndex) => (
+            <fieldset
+              className="min-w-0 rounded border border-outline-variant/40 bg-[#fbfcff] p-4"
+              key={question.id}
+            >
+              <legend className="break-words text-body-lg font-bold text-on-surface">
+                ข้อที่ {questionIndex + 1}: {question.question_text}
+              </legend>
+              <div className="mt-4 grid gap-2">
+                {question.options.map((option, optionIndex) => (
+                  <label
+                    className="flex min-w-0 cursor-pointer items-start gap-3 rounded border border-[#d8e5f5] bg-white p-3 text-body-md text-on-surface-variant transition-colors hover:bg-[#f6f9ff]"
+                    key={option.id}
+                  >
+                    <input
+                      checked={answers[question.id] === optionIndex}
+                      className="mt-1 h-4 w-4 shrink-0 accent-primary"
+                      name={`quiz-question-${question.id}`}
+                      onChange={() => onAnswerChange(question.id, optionIndex)}
+                      type="radio"
+                    />
+                    <span className="break-words">{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ))}
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <Button disabled={!isComplete || isSubmitting || Boolean(attemptResult)} onClick={onSubmit}>
+            {isSubmitting ? "กำลังส่งคำตอบ" : "ส่งคำตอบ"}
+            <ClipboardCheck aria-hidden="true" className="h-4 w-4" />
+          </Button>
+          <span className="text-label-sm font-semibold text-on-surface-variant">
+            {isComplete ? "พร้อมส่งคำตอบ" : "ตอบให้ครบทุกข้อก่อนส่ง"}
+          </span>
+        </div>
+
+        {attemptError ? (
+          <div
+            className="mt-4 rounded border border-[#f2b8b5] bg-[#fff8f7] p-3 text-body-md font-semibold text-[#8c1d18]"
+            role="alert"
+          >
+            {attemptError}
+          </div>
+        ) : null}
+
+        {attemptResult ? (
+          <div className="mt-5 rounded border border-[#b8dfc8] bg-[#effaf3] p-4" role="status">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-headline-md font-bold text-[#216148]">คะแนน {attemptResult.scoreLabel}</p>
+              <p className="text-body-md font-semibold text-[#216148]">ถูก {attemptResult.correctAnswersLabel}</p>
+            </div>
+            <div className="mt-4 grid gap-3">
+              {attemptResult.items.map((item) => (
+                <article className="rounded border border-[#b8dfc8] bg-white p-3" key={item.questionId}>
+                  <p className="break-words text-body-md font-bold text-on-surface">{item.questionText}</p>
+                  <p className="mt-2 break-words text-body-md text-on-surface-variant">
+                    คำตอบของคุณ: {item.chosenOptionLabel}
+                  </p>
+                  <p className="mt-1 break-words text-body-md text-on-surface-variant">
+                    คำตอบที่ถูกต้อง: {item.correctOptionLabel}
+                  </p>
+                  {item.explanation ? (
+                    <p className="mt-2 break-words text-body-md text-on-surface-variant">{item.explanation}</p>
+                  ) : null}
+                  {item.citation ? (
+                    <p className="mt-2 break-words text-label-sm font-semibold text-[#355526]">{item.citation}</p>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </Card>
+    </section>
+  );
+};
+
 const PreviewPanel = ({ quiz }: { quiz: QuizGeneratorViewModel }) => {
   const questions = getSafeQuizDraftQuestions(quiz.draft.questions);
 
@@ -293,8 +417,12 @@ export const AiQuizGeneratorPage = ({
   status = "ready"
 }: AiQuizGeneratorPageProps) => {
   const [draft, setDraft] = useState(quiz.draft);
+  const [attemptAnswers, setAttemptAnswers] = useState<QuizAttemptAnswerMap>({});
+  const [attemptError, setAttemptError] = useState<string>();
+  const [attemptResult, setAttemptResult] = useState<QuizAttemptResult>();
+  const [attemptStatus, setAttemptStatus] = useState<AsyncActionStatus>("idle");
   const [generationError, setGenerationError] = useState<string>();
-  const [generationStatus, setGenerationStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [generationStatus, setGenerationStatus] = useState<AsyncActionStatus>("idle");
 
   if (status === "loading") {
     return (
@@ -338,6 +466,9 @@ export const AiQuizGeneratorPage = ({
     ...quiz,
     draft
   };
+  const activeQuestions = getSafeQuizDraftQuestions(activeQuiz.draft.questions);
+  const canAttemptQuiz =
+    activeQuiz.capabilities.canSubmitAttempt && activeQuiz.draft.status === "published" && activeQuestions.length > 0;
 
   const handleGenerateQuiz = async () => {
     setGenerationError(undefined);
@@ -365,7 +496,49 @@ export const AiQuizGeneratorPage = ({
         }
       })
     );
+    setAttemptAnswers({});
+    setAttemptError(undefined);
+    setAttemptResult(undefined);
+    setAttemptStatus("idle");
     setGenerationStatus("success");
+  };
+
+  const handleAttemptAnswerChange = (questionId: string, optionIndex: number) => {
+    setAttemptAnswers((currentAnswers) => ({
+      ...currentAnswers,
+      [questionId]: optionIndex
+    }));
+    setAttemptError(undefined);
+  };
+
+  const handleSubmitAttempt = async () => {
+    const answers = Object.fromEntries(
+      activeQuestions
+        .filter((question) => attemptAnswers[question.id] !== undefined)
+        .map((question) => [question.id, attemptAnswers[question.id]])
+    ) as QuizAttemptAnswerMap;
+
+    setAttemptError(undefined);
+    setAttemptStatus("submitting");
+
+    const result = await submitQuizAttempt({
+      answers,
+      examId: activeQuiz.draft.id
+    });
+
+    if (!result.ok) {
+      setAttemptError(result.message);
+      setAttemptStatus("error");
+      return;
+    }
+
+    setAttemptResult(
+      toQuizAttemptResult({
+        questions: activeQuestions,
+        submitResponse: result.submitResult
+      })
+    );
+    setAttemptStatus("success");
   };
 
   return (
@@ -409,14 +582,27 @@ export const AiQuizGeneratorPage = ({
           </Card>
         </div>
         <div className="grid min-w-0 gap-4 overflow-hidden">
-          <SettingsPanel
-            generationError={generationError}
-            generationStatus={generationStatus}
-            onGenerate={handleGenerateQuiz}
-            quiz={activeQuiz}
-            selectedSource={selectedSource}
-          />
+          {activeQuiz.capabilities.canGenerateQuiz ? (
+            <SettingsPanel
+              generationError={generationError}
+              generationStatus={generationStatus}
+              onGenerate={handleGenerateQuiz}
+              quiz={activeQuiz}
+              selectedSource={selectedSource}
+            />
+          ) : null}
           <PreviewPanel quiz={activeQuiz} />
+          {canAttemptQuiz ? (
+            <AttemptPanel
+              answers={attemptAnswers}
+              attemptError={attemptError}
+              attemptResult={attemptResult}
+              attemptStatus={attemptStatus}
+              onAnswerChange={handleAttemptAnswerChange}
+              onSubmit={handleSubmitAttempt}
+              questions={activeQuestions}
+            />
+          ) : null}
         </div>
       </section>
     </div>

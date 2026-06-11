@@ -3,8 +3,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AiQuizGeneratorPage } from "./AiQuizGeneratorPage";
 import { aiQuizGeneratorMock } from "./quizGeneratorData";
-import { backendGeneratedExamResponse } from "./quizGeneratorTestData";
+import { learnerExamResponseSchema } from "./quizGeneratorContract";
+import { toQuizGeneratorViewModel } from "./quizGeneratorMapper";
+import {
+  backendGeneratedExamResponse,
+  backendLearnerExamResponse,
+  backendQuizDocumentsResponse,
+  backendSubmitExamResponse
+} from "./quizGeneratorTestData";
 import type { QuizGeneratorViewModel } from "./types";
+import type { AuthSession } from "../auth/types";
 
 const emptyQuizMock: QuizGeneratorViewModel = {
   ...aiQuizGeneratorMock,
@@ -27,6 +35,22 @@ const nullDraftQuizMock = {
     questions: null
   }
 } as unknown as QuizGeneratorViewModel;
+
+const studentSession: AuthSession = {
+  mode: "http-only-cookie",
+  storesTokenInClient: false,
+  user: {
+    displayName: "Student One",
+    email: "student@example.com",
+    role: "student"
+  }
+};
+
+const learnerQuizMock = toQuizGeneratorViewModel({
+  documentsResponse: backendQuizDocumentsResponse,
+  examResponse: learnerExamResponseSchema.parse(backendLearnerExamResponse),
+  session: studentSession
+});
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -102,6 +126,58 @@ describe("AiQuizGeneratorPage", () => {
     expect(screen.getByRole("status")).toHaveTextContent("สร้างแบบร่างควิซสำเร็จ");
     expect(screen.queryByText("correct_index")).not.toBeInTheDocument();
     expect(screen.queryByText("The safety checklist is required before lab work.")).not.toBeInTheDocument();
+  });
+
+  it("submits a published learner quiz attempt and renders score feedback without exposing raw answer-key fields", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          submitResult: backendSubmitExamResponse
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json"
+          },
+          status: 200
+        }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<AiQuizGeneratorPage quiz={learnerQuizMock} />);
+
+    const attemptRegion = screen.getByRole("region", { name: "ทำควิซ" });
+    const submitButton = screen.getByRole("button", { name: "ส่งคำตอบ" });
+
+    expect(screen.queryByRole("button", { name: "สร้างควิซ" })).not.toBeInTheDocument();
+    expect(submitButton).toBeDisabled();
+    fireEvent.click(within(attemptRegion).getByRole("radio", { name: "Review the checklist" }));
+    expect(submitButton).toBeEnabled();
+
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/quiz/exam-learner/submit", {
+        body: JSON.stringify({
+          answers: {
+            "question-learner-1": 0
+          }
+        }),
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        method: "POST"
+      });
+    });
+
+    expect(await screen.findByText("คะแนน 100%")).toBeInTheDocument();
+    expect(screen.getByText("ถูก 1/1 ข้อ")).toBeInTheDocument();
+    expect(screen.getByText("Checklist review is required.")).toBeInTheDocument();
+    expect(screen.queryByText("correct_index")).not.toBeInTheDocument();
+    expect(screen.queryByText("เฉลยข้อที่ถูก")).not.toBeInTheDocument();
   });
 
   it("keeps the selected source visible and shows a safe error when quiz generation fails", async () => {
