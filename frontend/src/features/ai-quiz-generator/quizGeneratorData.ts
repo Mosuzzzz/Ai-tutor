@@ -1,6 +1,10 @@
 import type { QuizGeneratorViewModel } from "./types";
 
 export const aiQuizGeneratorMock: QuizGeneratorViewModel = {
+  capabilities: {
+    canGenerateQuiz: true,
+    canSubmitAttempt: true
+  },
   detailEndpointPattern: "/api/exams/{exam_id}",
   draft: {
     file_id: "doc-lab-safety",

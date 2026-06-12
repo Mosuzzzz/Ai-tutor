@@ -9,17 +9,20 @@ type QuizPageProps = {
   searchParams?:
     | Promise<{
         documentId?: string | string[];
+        examId?: string | string[];
       }>
     | {
         documentId?: string | string[];
+        examId?: string | string[];
       };
 };
 
 const QuizPage = async ({ searchParams }: QuizPageProps = {}) => {
   const session = await requirePageSession("/quiz");
-  const selectedDocumentId = await resolveSelectedDocumentId(searchParams);
+  const { selectedDocumentId, selectedExamId } = await resolveQuizSearchParams(searchParams);
   const quizResult = await loadQuizGeneratorForSession({
     ...(selectedDocumentId ? { selectedDocumentId } : {}),
+    ...(selectedExamId ? { selectedExamId } : {}),
     session
   });
 
@@ -37,10 +40,15 @@ const QuizPage = async ({ searchParams }: QuizPageProps = {}) => {
 
 export default QuizPage;
 
-const resolveSelectedDocumentId = async (searchParams: QuizPageProps["searchParams"]) => {
+const resolveQuizSearchParams = async (searchParams: QuizPageProps["searchParams"]) => {
   const params = await searchParams;
   const documentId = Array.isArray(params?.documentId) ? params.documentId[0] : params?.documentId;
+  const examId = Array.isArray(params?.examId) ? params.examId[0] : params?.examId;
   const normalizedDocumentId = documentId?.trim();
+  const normalizedExamId = examId?.trim();
 
-  return normalizedDocumentId || undefined;
+  return {
+    selectedDocumentId: normalizedDocumentId || undefined,
+    selectedExamId: normalizedExamId || undefined
+  };
 };

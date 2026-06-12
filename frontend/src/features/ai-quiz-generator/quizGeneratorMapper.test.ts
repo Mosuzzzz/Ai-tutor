@@ -5,10 +5,13 @@ import { trainerExamResponseSchema } from "./quizGeneratorContract";
 import {
   isQuizGeneratorEmpty,
   selectQuizSourceForGeneration,
+  toQuizAttemptResult,
   toQuizGeneratorViewModel
 } from "./quizGeneratorMapper";
 import {
   backendGeneratedExamResponse,
+  backendLearnerExamResponse,
+  backendSubmitExamResponse,
   backendQuizDocumentsResponse
 } from "./quizGeneratorTestData";
 
@@ -22,6 +25,16 @@ const teacherSession: AuthSession = {
   }
 };
 
+const studentSession: AuthSession = {
+  mode: "http-only-cookie",
+  storesTokenInClient: false,
+  user: {
+    displayName: "Student One",
+    email: "student@example.com",
+    role: "student"
+  }
+};
+
 describe("quizGeneratorMapper", () => {
   it("maps document dashboard data into quiz-ready sources and current-session labels", () => {
     const viewModel = toQuizGeneratorViewModel({
@@ -30,6 +43,10 @@ describe("quizGeneratorMapper", () => {
     });
 
     expect(viewModel.workspaceName).toBe("Teacher One's quiz workspace");
+    expect(viewModel.capabilities).toEqual({
+      canGenerateQuiz: true,
+      canSubmitAttempt: true
+    });
     expect(viewModel.workspaceName).not.toContain("teacher@example.com");
     expect(viewModel.sources).toHaveLength(2);
     expect(viewModel.sources[0]).toMatchObject({
@@ -64,6 +81,37 @@ describe("quizGeneratorMapper", () => {
       filename: "safety-handbook.pdf",
       matched_text: "safety-handbook.pdf section 2"
     });
+  });
+
+  it("maps a submitted learner attempt into score feedback without exposing raw answer-key fields", () => {
+    const viewModel = toQuizGeneratorViewModel({
+      documentsResponse: backendQuizDocumentsResponse,
+      examResponse: backendLearnerExamResponse,
+      session: studentSession
+    });
+
+    expect(viewModel.capabilities).toEqual({
+      canGenerateQuiz: false,
+      canSubmitAttempt: true
+    });
+    const result = toQuizAttemptResult({
+      questions: viewModel.draft.questions ?? [],
+      submitResponse: backendSubmitExamResponse
+    });
+
+    expect(result).toMatchObject({
+      correctAnswersLabel: "1/1 ข้อ",
+      passedLabel: "ผ่าน",
+      scoreLabel: "100%"
+    });
+    expect(result.items[0]).toMatchObject({
+      chosenOptionLabel: "Review the checklist",
+      correctOptionLabel: "Review the checklist",
+      explanation: "Checklist review is required.",
+      isCorrect: true,
+      questionId: "question-learner-1"
+    });
+    expect(JSON.stringify(result)).not.toContain("correct_index");
   });
 
   it("detects empty source lists and falls back only to ready sources", () => {

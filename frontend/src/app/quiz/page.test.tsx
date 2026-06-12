@@ -63,4 +63,19 @@ describe("quiz route", () => {
       session: teacherSession
     });
   });
+
+  it("passes an examId query param into the quiz generator loader for published quiz attempts", async () => {
+    render(
+      await QuizPage({
+        searchParams: Promise.resolve({
+          examId: "exam-learner"
+        })
+      })
+    );
+
+    expect(loadQuizGeneratorForSession).toHaveBeenCalledWith({
+      selectedExamId: "exam-learner",
+      session: teacherSession
+    });
+  });
 });

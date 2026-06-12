@@ -146,6 +146,10 @@ describe("protected app routes", () => {
     loadQuizGeneratorForSession.mockReset();
     loadQuizGeneratorForSession.mockResolvedValue({
       quiz: {
+        capabilities: {
+          canGenerateQuiz: true,
+          canSubmitAttempt: true
+        },
         detailEndpointPattern: "/api/exams/{exam_id}",
         draft: {
           file_id: "",

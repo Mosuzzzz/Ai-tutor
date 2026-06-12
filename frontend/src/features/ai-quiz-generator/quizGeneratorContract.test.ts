@@ -82,7 +82,7 @@ describe("quizGeneratorContract", () => {
     });
 
     expect(examSubmitResponseSchema.parse(backendSubmitExamResponse)).toMatchObject({
-      exam_id: "exam-1",
+      exam_id: "exam-learner",
       passed: true,
       score: 100
     });

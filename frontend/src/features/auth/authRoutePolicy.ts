@@ -21,6 +21,7 @@ export type AuthRouteDecision =
     };
 
 const ALL_AUTH_ROLES = ["student", "teacher", "tenant_admin", "global_admin"] as const;
+const LEARNER_QUIZ_ROLES = ["student", "teacher", "tenant_admin"] as const;
 const TEACHER_ROLES = ["teacher", "tenant_admin"] as const;
 
 export const protectedRouteRoles = {
@@ -29,7 +30,7 @@ export const protectedRouteRoles = {
   "/chat": ALL_AUTH_ROLES,
   "/courses": ALL_AUTH_ROLES,
   "/documents": ALL_AUTH_ROLES,
-  "/quiz": TEACHER_ROLES,
+  "/quiz": LEARNER_QUIZ_ROLES,
   "/settings": ALL_AUTH_ROLES,
   "/teacher": TEACHER_ROLES
 } satisfies Record<ProtectedRouteHref, readonly AuthRouteRole[]>;
