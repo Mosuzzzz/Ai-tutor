@@ -16,7 +16,8 @@ const emptyAnalyticsMock: LearningAnalyticsViewModel = {
     total_employees: 0,
     total_quizzes_taken: 0
   },
-  activities: []
+  activities: [],
+  recentScores: []
 };
 
 const partialEmptyAnalyticsMock: LearningAnalyticsViewModel = {
@@ -48,6 +49,7 @@ const metricsOnlyAnalyticsMock: LearningAnalyticsViewModel = {
     total_employees: 128,
     total_quizzes_taken: 34
   },
+  recentScores: [],
   workspaceName: "Global Admin"
 };
 
@@ -70,6 +72,12 @@ describe("LearningAnalyticsPage", () => {
     expect(screen.getByRole("img", { name: "แนวโน้มคะแนนเฉลี่ย 7 วันล่าสุด" })).toBeInTheDocument();
     const radar = screen.getByRole("region", { name: "เรดาร์ทักษะที่ควรทบทวน" });
     expect(radar).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "คะแนนควิซล่าสุด" })).toBeInTheDocument();
+    expect(screen.getByText("Laboratory Safety.pdf")).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "ดูควิซและคะแนน" })[0]).toHaveAttribute(
+      "href",
+      "/quiz?examId=activity-lab-quiz"
+    );
     expect(screen.getByRole("table", { name: "กิจกรรมการเรียนล่าสุด" })).toBeInTheDocument();
     expect(within(radar).getByText("เวกเตอร์และแรง")).toBeInTheDocument();
     expect(screen.getByText("สร้างควิซจากจุดอ่อน")).toHaveAttribute("href", "/quiz");
@@ -135,6 +143,7 @@ describe("LearningAnalyticsPage", () => {
     expect(screen.getByTestId("learning-score-trend-empty")).toHaveAttribute("role", "status");
     expect(screen.getByTestId("learning-skill-gaps-empty")).toHaveAttribute("role", "status");
     expect(screen.getByTestId("learning-activity-empty")).toHaveAttribute("role", "status");
+    expect(screen.getByTestId("learning-recent-scores-empty")).toHaveAttribute("role", "status");
   });
 
   it("renders loading, error, and empty states with explicit accessible semantics", () => {

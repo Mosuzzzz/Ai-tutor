@@ -29,6 +29,7 @@ import type {
   LearningActivityType,
   LearningAnalyticsDataSource,
   LearningAnalyticsMetric,
+  LearningRecentScore,
   LearningAnalyticsStatus,
   LearningAnalyticsViewModel,
   LearningSkillGap,
@@ -242,6 +243,47 @@ const DepartmentStatsPanel = ({ analytics }: { analytics: LearningAnalyticsViewM
   );
 };
 
+const RecentScoresPanel = ({ recentScores }: { recentScores: LearningRecentScore[] }) => {
+  return (
+    <Card className="min-w-0 overflow-hidden p-5">
+      <h3 className="text-headline-md text-on-surface">คะแนนควิซล่าสุด</h3>
+      <p className="mt-1 break-words text-body-md text-on-surface-variant">
+        ผลจากการส่งคำตอบจริงที่ถูกบันทึกกลับเข้า analytics
+      </p>
+      {recentScores.length > 0 ? (
+        <div className="mt-4 grid gap-3">
+          {recentScores.map((score) => (
+            <article
+              className="min-w-0 overflow-hidden rounded border border-outline-variant/40 bg-[#fbfcff] p-4"
+              key={score.id}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h4 className="break-words text-body-lg font-bold text-on-surface">{score.filename}</h4>
+                  <p className="mt-1 text-label-sm font-semibold text-on-surface-variant">
+                    {score.submittedAtLabel}
+                  </p>
+                </div>
+                <span className="rounded bg-[#e6f6ee] px-3 py-1 text-label-sm font-bold text-[#216148]">
+                  {formatAnalyticsPercent(score.scorePercent)}
+                </span>
+              </div>
+              <Link className={`${actionLinkClassName} mt-3`} href={score.examHref}>
+                ดูควิซและคะแนน
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              </Link>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className={emptyPanelClassName} data-testid="learning-recent-scores-empty" role="status">
+          ยังไม่มีคะแนนควิซล่าสุดจาก API
+        </div>
+      )}
+    </Card>
+  );
+};
+
 const LearningActivityTable = ({ activities }: { activities: LearningActivity[] }) => {
   if (activities.length === 0) {
     return (
@@ -334,6 +376,7 @@ export const LearningAnalyticsPage = ({
     analytics.apiResponse.score_trend.length > 0 ||
     analytics.apiResponse.skill_gaps.length > 0 ||
     analytics.activities.length > 0 ||
+    analytics.recentScores.length > 0 ||
     analytics.apiResponse.total_employees > 0 ||
     analytics.apiResponse.total_quizzes_taken > 0;
 
@@ -390,6 +433,8 @@ export const LearningAnalyticsPage = ({
         </div>
 
         <aside className="grid min-w-0 gap-4 overflow-hidden" data-testid="learning-analytics-side-panel">
+          <RecentScoresPanel recentScores={analytics.recentScores} />
+
           <Card className="min-w-0 overflow-hidden p-5">
             <h3 className="text-headline-md text-on-surface">Insight ถัดไป</h3>
             <div className="mt-4 grid gap-3">

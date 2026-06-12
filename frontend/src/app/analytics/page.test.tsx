@@ -43,6 +43,7 @@ describe("analytics route", () => {
         },
         generatedAtLabel: "5 Jun 2026, 10:00",
         learnerAnalyticsEndpoint: "/api/analytics/dashboard",
+        recentScores: [],
         trainerAnalyticsEndpoint: "/api/analytics/trainer",
         workspaceName: "Learner One"
       },

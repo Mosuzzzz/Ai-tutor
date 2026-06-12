@@ -188,6 +188,7 @@ describe("protected app routes", () => {
         },
         generatedAtLabel: "5 Jun 2026, 10:00",
         learnerAnalyticsEndpoint: "/api/analytics/dashboard",
+        recentScores: [],
         trainerAnalyticsEndpoint: "/api/analytics/trainer",
         workspaceName: "Learning Analytics"
       },
