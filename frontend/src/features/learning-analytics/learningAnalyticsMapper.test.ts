@@ -49,12 +49,22 @@ describe("learning analytics mapper", () => {
       { label: "read_documents_count", value: 5 },
       { label: "streak_days", value: 4 }
     ]);
+    expect(analytics.recentScores).toEqual([
+      expect.objectContaining({
+        examHref: "/quiz?examId=exam-1",
+        examId: "exam-1",
+        filename: "Laboratory Safety.pdf",
+        id: "score-1",
+        scorePercent: 92
+      })
+    ]);
     expect(analytics.activities[0]).toMatchObject({
       actorLabel: "Learner One",
       id: "learner-activity-0",
       type: "quiz"
     });
     expect(JSON.stringify(analytics)).not.toContain("learner@example.com");
+    expect(JSON.stringify(analytics)).not.toContain("user_id");
   });
 
   it("maps trainer analytics with student activity without leaking user ids in the view model", () => {
@@ -68,6 +78,7 @@ describe("learning analytics mapper", () => {
     expect(analytics.workspaceName).toBe("Trainer One");
     expect(analytics.apiResponse.total_employees).toBe(42);
     expect(analytics.apiResponse.skill_gaps[0]?.topic).toBe("Citation reasoning");
+    expect(analytics.recentScores).toEqual([]);
     expect(analytics.activities).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -120,6 +131,7 @@ describe("learning analytics mapper", () => {
     ]);
     expect(analytics.apiResponse.skill_gaps).toEqual([]);
     expect(analytics.activities).toHaveLength(2);
+    expect(analytics.recentScores).toEqual([]);
   });
 
   it("detects empty analytics for learner, trainer, and admin payload groups", () => {

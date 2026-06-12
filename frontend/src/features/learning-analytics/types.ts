@@ -37,6 +37,15 @@ export type LearningActivity = {
   scorePercent?: number;
 };
 
+export type LearningRecentScore = {
+  examHref: string;
+  examId: string;
+  filename: string;
+  id: string;
+  scorePercent: number;
+  submittedAtLabel: string;
+};
+
 export type LearningAnalyticsMetric = {
   id: string;
   label: string;
@@ -52,6 +61,7 @@ export type LearningAnalyticsViewModel = {
   learnerAnalyticsEndpoint: "/api/analytics/dashboard";
   apiResponse: LearningAnalyticsApiResponse;
   activities: LearningActivity[];
+  recentScores: LearningRecentScore[];
 };
 
 export type LearningAnalyticsDataSource = "api" | "api-ready-mock";

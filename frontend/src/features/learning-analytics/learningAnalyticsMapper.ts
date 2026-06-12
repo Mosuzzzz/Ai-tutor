@@ -11,6 +11,7 @@ import type {
   LearningActivityType,
   LearningAnalyticsApiResponse,
   LearningAnalyticsViewModel,
+  LearningRecentScore,
   LearningSkillGap
 } from "./types";
 
@@ -46,6 +47,7 @@ export const toLearningAnalyticsViewModel = ({
       apiResponse: buildAdminApiResponse(usage, auditLogs ?? []),
       generatedAtLabel: formatGeneratedAt(timestamp),
       learnerAnalyticsEndpoint: "/api/analytics/dashboard",
+      recentScores: [],
       trainerAnalyticsEndpoint: "/api/analytics/trainer",
       workspaceName: actorName
     };
@@ -67,6 +69,7 @@ export const toLearningAnalyticsViewModel = ({
       },
       generatedAtLabel: formatGeneratedAt(timestamp),
       learnerAnalyticsEndpoint: "/api/analytics/dashboard",
+      recentScores: [],
       trainerAnalyticsEndpoint: "/api/analytics/trainer",
       workspaceName: actorName
     };
@@ -81,6 +84,7 @@ export const toLearningAnalyticsViewModel = ({
     apiResponse: toLearnerApiResponse(learnerResponse),
     generatedAtLabel: formatGeneratedAt(timestamp),
     learnerAnalyticsEndpoint: "/api/analytics/dashboard",
+    recentScores: learnerResponse.recent_scores.map(toLearnerRecentScore),
     trainerAnalyticsEndpoint: "/api/analytics/trainer",
     workspaceName: actorName
   };
@@ -176,6 +180,19 @@ const toLearnerActivity = (
     occurredAtLabel: formatEventDate(activity.created_at),
     title: formatActionLabel(activity.action),
     type: inferActivityType(activity.action)
+  };
+};
+
+const toLearnerRecentScore = (
+  score: LearnerAnalyticsResponse["recent_scores"][number]
+): LearningRecentScore => {
+  return {
+    examHref: `/quiz?examId=${encodeURIComponent(score.exam_id)}`,
+    examId: score.exam_id,
+    filename: score.filename,
+    id: score.id,
+    scorePercent: normalizePercent(score.score),
+    submittedAtLabel: formatEventDate(score.submitted_at)
   };
 };
 

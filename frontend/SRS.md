@@ -508,6 +508,26 @@ Still out of scope:
 - Playwright E2E against a running Backend
 - Rate-limit-specific analytics error copy once Backend returns final error semantics
 
+### LearningAnalyticsFromRealEvents Update
+
+The `/analytics` workspace now surfaces real learner quiz-submit outcomes from Backend analytics payloads instead of only aggregate trend and activity data.
+
+Included:
+
+- Learner `/api/analytics/dashboard` `recent_scores` are mapped into `recentScores` view-model items with encoded `/quiz?examId={examId}` links.
+- The analytics UI renders a "คะแนนควิซล่าสุด" panel so learners can see saved attempt scores that came from the quiz submit flow.
+- Recent score panel has an explicit empty state for admin/trainer or no-score datasets.
+- Mapper keeps token, IP address, raw `user_id`, and raw endpoint strings out of the UI view model/DOM.
+- Existing role-aware endpoint selection remains unchanged: learners use dashboard analytics, trainers use trainer analytics/students, tenant admins add audit logs, and global admins use usage plus audit logs.
+- Tests cover learner recent score mapping, safe quiz score links, panel empty state, and the existing API loader role boundaries.
+
+Still out of scope:
+
+- Real-time streaming/polling refresh for analytics after a quiz submission.
+- Published quiz discovery/list page beyond direct `/quiz?examId=...` links.
+- Dedicated admin audit table UI beyond the shared activity-table projection.
+- Playwright E2E against a running Backend.
+
 ## 3. Route Map
 
 | Route | File | Status | Purpose |
@@ -1164,6 +1184,8 @@ Current coverage focus:
 - learning analytics role-aware endpoint selection for student, teacher, tenant admin, and global admin sessions
 - learning analytics session-based view-model mapping without token/IP/`user_id` leakage
 - learning analytics API empty/error state mapping
+- learning analytics learner `recent_scores` real-event mapping with encoded quiz score links
+- learning analytics recent score panel rendering and empty state
 - shared percent normalization helper behavior
 - production CSP script-src hardening while keeping dev/test compatibility
 
@@ -1183,7 +1205,7 @@ The following items should wait until Backend/API integration branches:
 - Document Summary delete/download BFF routes with CSRF/origin checks, POST recap generation, and export/share implementation
 - AI Chat streaming response UI, richer retry UX, rate-limit UX, and optional double-submit CSRF token
 - AI Quiz visible update/publish UI interactions, learner quiz discovery/list page, retake policy, and rate-limit UX
-- Learning Analytics real-time event stream mapping, richer admin audit UI, and Backend-backed E2E verification
+- Learning Analytics real-time refresh, richer admin audit UI, and Backend-backed E2E verification
 - Backend validation error mapping
 - Playwright E2E for real auth flow
 - Logout behavior
@@ -1199,26 +1221,21 @@ The following items can be done before Backend if needed:
 
 ## 11. Commit Scope Recommendation
 
-For the current SaveQuizAttemptAndScore commit, include:
+For the current LearningAnalyticsFromRealEvents commit, include:
 
 ```text
 frontend/SRS.md
-frontend/src/app/quiz/page.test.tsx
-frontend/src/app/quiz/page.tsx
-frontend/src/features/ai-quiz-generator/AiQuizGeneratorPage.test.tsx
-frontend/src/features/ai-quiz-generator/AiQuizGeneratorPage.tsx
-frontend/src/features/ai-quiz-generator/quizAttemptClient.test.ts
-frontend/src/features/ai-quiz-generator/quizAttemptClient.ts
-frontend/src/features/ai-quiz-generator/quizGeneratorContract.test.ts
-frontend/src/features/ai-quiz-generator/quizGeneratorMapper.test.ts
-frontend/src/features/ai-quiz-generator/quizGeneratorMapper.ts
-frontend/src/features/ai-quiz-generator/quizGeneratorTestData.ts
-frontend/src/features/ai-quiz-generator/types.ts
-frontend/src/features/auth/authRoutePolicy.test.ts
-frontend/src/features/auth/authRoutePolicy.ts
+frontend/src/app/analytics/page.test.tsx
+frontend/src/app/protected-routes.test.tsx
+frontend/src/features/learning-analytics/LearningAnalyticsPage.test.tsx
+frontend/src/features/learning-analytics/LearningAnalyticsPage.tsx
+frontend/src/features/learning-analytics/learningAnalyticsData.ts
+frontend/src/features/learning-analytics/learningAnalyticsMapper.test.ts
+frontend/src/features/learning-analytics/learningAnalyticsMapper.ts
+frontend/src/features/learning-analytics/types.ts
 ```
 
-This feature enables learner-safe published quiz attempts through `/quiz?examId={examId}`, submits answers through the existing HttpOnly cookie + same-origin BFF boundary, maps score feedback into safe UI copy, and keeps raw answer-key fields out of the DOM before and after submit.
+This feature makes Learning Analytics reflect saved learner quiz attempts from Backend `recent_scores`, renders a recent-score panel with safe `/quiz?examId=...` links, and keeps token/IP/`user_id`/endpoint details out of the DOM.
 
 Do not include unrelated local/backend files in this commit unless intentionally requested:
 

@@ -106,6 +106,24 @@ export const learningAnalyticsMock: LearningAnalyticsViewModel = {
   },
   generatedAtLabel: "อัปเดตล่าสุด 2 มิ.ย. 2026",
   learnerAnalyticsEndpoint: "/api/analytics/dashboard",
+  recentScores: [
+    {
+      examHref: "/quiz?examId=activity-lab-quiz",
+      examId: "activity-lab-quiz",
+      filename: "Laboratory Safety.pdf",
+      id: "score-lab-quiz",
+      scorePercent: 88,
+      submittedAtLabel: "Today 09:20"
+    },
+    {
+      examHref: "/quiz?examId=activity-citation-quiz",
+      examId: "activity-citation-quiz",
+      filename: "Citation Practice.pdf",
+      id: "score-citation-quiz",
+      scorePercent: 72,
+      submittedAtLabel: "31 May 2026"
+    }
+  ],
   trainerAnalyticsEndpoint: "/api/analytics/trainer",
   workspaceName: "Learning Analytics Workspace"
 };
