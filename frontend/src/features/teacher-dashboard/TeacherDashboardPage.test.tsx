@@ -49,6 +49,40 @@ describe("TeacherDashboardPage", () => {
     expect(screen.getByRole("status")).toHaveTextContent("ยังไม่มีข้อมูลผู้เรียน");
   });
 
+  it("renders first-run onboarding actions in the empty state", () => {
+    render(
+      <TeacherDashboardPage
+        dashboard={{
+          apiResponse: {
+            activities: [],
+            classes: [],
+            completion_rate: 0,
+            generated_quizzes: 0,
+            quizzes: [],
+            reviewed_documents: 0,
+            total_students: 0
+          },
+          generatedAtLabel: "5 เธกเธด.เธข. 2569 17:00",
+          teacherName: "Teacher One"
+        }}
+        dataSource="api"
+        status="empty"
+      />
+    );
+
+    expect(screen.getByRole("link", { name: /สร้างควิซแรก/ })).toHaveAttribute("href", "/quiz");
+    expect(screen.getByRole("link", { name: /เตรียมเอกสารสอน/ })).toHaveAttribute("href", "/documents");
+    expect(screen.getByRole("link", { name: /ดูสถิติหลังมีผู้เรียน/ })).toHaveAttribute("href", "/analytics");
+  });
+
+  it("uses the shared premium dashboard visual language", () => {
+    render(<TeacherDashboardPage />);
+
+    expect(screen.getByTestId("dashboard-hero")).toHaveAttribute("data-dashboard-surface", "teacher");
+    expect(screen.getAllByTestId("dashboard-metric-card")).toHaveLength(4);
+    expect(screen.getByText("พื้นที่จัดการชั้นเรียน")).toBeInTheDocument();
+  });
+
   it("renders class progress and quiz status summaries", () => {
     render(<TeacherDashboardPage />);
 

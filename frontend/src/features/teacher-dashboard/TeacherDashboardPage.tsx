@@ -121,7 +121,7 @@ export const TeacherDashboardPage = ({
       <div data-source={dataSource} data-testid="teacher-dashboard" className="space-y-6">
         <section className="rounded border border-outline-variant/40 bg-surface-container-lowest p-6 shadow-ambient">
           <div role="status">
-            <p className="text-label-sm font-semibold uppercase text-on-surface-variant">Teacher Dashboard</p>
+            <p className="text-label-sm font-semibold text-on-surface-variant">แดชบอร์ดครู</p>
             <h2 className="mt-2 text-headline-lg-mobile font-bold text-on-surface md:text-headline-lg">
               ยังไม่มีข้อมูลผู้เรียน
             </h2>
@@ -130,20 +130,34 @@ export const TeacherDashboardPage = ({
               เริ่มจากเพิ่มคอร์สหรือสร้างควิซแรกเพื่อให้ AI Tutor สร้างสถิติสำหรับครู
             </p>
           </div>
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <Link
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-[#f5b94f] px-4 py-2 text-label-md font-bold text-[#16233a] transition-colors hover:bg-[#ffd37a] focus:outline-none focus:ring-2 focus:ring-[#ffd37a] focus:ring-offset-2"
+              className="inline-flex min-h-12 items-center justify-between gap-2 rounded bg-[#f5b94f] px-4 py-2 text-label-md font-bold text-[#16233a] transition-colors hover:bg-[#ffd37a] focus:outline-none focus:ring-2 focus:ring-[#ffd37a] focus:ring-offset-2"
               href="/courses"
             >
               เปิดคอร์สเรียน
               <ArrowRight aria-hidden="true" className="h-5 w-5" />
             </Link>
             <Link
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-outline-variant/50 bg-white px-4 py-2 text-label-md font-bold text-primary transition-colors hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
+              className="inline-flex min-h-12 items-center justify-between gap-2 rounded border border-outline-variant/50 bg-white px-4 py-2 text-label-md font-bold text-primary transition-colors hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
               href="/quiz"
             >
               สร้างควิซแรก
               <PenLine aria-hidden="true" className="h-5 w-5" />
+            </Link>
+            <Link
+              className="inline-flex min-h-12 items-center justify-between gap-2 rounded border border-outline-variant/50 bg-white px-4 py-2 text-label-md font-bold text-primary transition-colors hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
+              href="/documents"
+            >
+              เตรียมเอกสารสอน
+              <FileText aria-hidden="true" className="h-5 w-5" />
+            </Link>
+            <Link
+              className="inline-flex min-h-12 items-center justify-between gap-2 rounded border border-outline-variant/50 bg-white px-4 py-2 text-label-md font-bold text-primary transition-colors hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2 sm:col-span-3"
+              href="/analytics"
+            >
+              ดูสถิติหลังมีผู้เรียน
+              <BarChart3 aria-hidden="true" className="h-5 w-5" />
             </Link>
           </div>
         </section>
@@ -188,7 +202,11 @@ export const TeacherDashboardPage = ({
   return (
     <div data-source={dataSource} data-testid="teacher-dashboard" className="space-y-6">
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-        <div className="overflow-hidden rounded border border-[#0e2d4f]/10 bg-[#173829] text-white shadow-ambient">
+        <div
+          className="overflow-hidden rounded border border-[#0e2d4f]/10 bg-[#173829] text-white shadow-ambient"
+          data-dashboard-surface="teacher"
+          data-testid="dashboard-hero"
+        >
           <div className="p-5 md:p-7">
             <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#ffd37a]">
               <ShieldCheck aria-hidden="true" className="h-4 w-4" />
@@ -245,6 +263,7 @@ export const TeacherDashboardPage = ({
           return (
             <div
               className="rounded border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-ambient"
+              data-testid="dashboard-metric-card"
               key={metric.id}
             >
               <div className="flex items-start justify-between gap-4">
