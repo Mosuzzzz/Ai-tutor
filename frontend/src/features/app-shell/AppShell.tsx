@@ -17,7 +17,13 @@ export const AppShell = ({ children, session }: AppShellProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-on-background lg:flex">
+    <div className="min-h-screen bg-background text-on-background lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
+      <a
+        className="sr-only z-50 rounded bg-primary px-4 py-3 text-label-md font-bold text-on-primary focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
+        href="#main-content"
+      >
+        ข้ามไปยังเนื้อหาหลัก
+      </a>
       <DesktopSidebar pathname={pathname} session={session} />
 
       {mobileNavigationOpen && (
@@ -31,7 +37,12 @@ export const AppShell = ({ children, session }: AppShellProps) => {
           session={session}
         />
 
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+        <main
+          aria-label="พื้นที่เนื้อหาหลัก"
+          className="flex-1 px-4 py-5 outline-none sm:px-6 md:px-8 md:py-8"
+          id="main-content"
+          tabIndex={-1}
+        >
           <div className="mx-auto w-full max-w-app">{children}</div>
         </main>
       </div>

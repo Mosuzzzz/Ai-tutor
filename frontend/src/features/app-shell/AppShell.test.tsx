@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppShell } from "./AppShell";
@@ -65,6 +65,80 @@ describe("AppShell navigation", () => {
     );
   });
 
+  it("renders premium shell landmarks with a skip link and labeled search", () => {
+    render(
+      <AppShell session={studentSession}>
+        <p>Route content</p>
+      </AppShell>
+    );
+
+    expect(screen.getByRole("link", { name: "ข้ามไปยังเนื้อหาหลัก" })).toHaveAttribute(
+      "href",
+      "#main-content"
+    );
+    expect(screen.getByRole("complementary", { name: "แถบนำทางหลัก" })).toBeInTheDocument();
+    expect(screen.getByRole("banner", { name: "แถบบนของแอป" })).toBeInTheDocument();
+    expect(screen.getByRole("main", { name: "พื้นที่เนื้อหาหลัก" })).toHaveAttribute(
+      "id",
+      "main-content"
+    );
+    expect(screen.getByRole("searchbox", { name: "ค้นหาคอร์สและบทเรียน" })).toBeInTheDocument();
+  });
+
+  it("shows account details in the top bar without duplicating them in the sidebar footer", () => {
+    render(
+      <AppShell session={studentSession}>
+        <p>Route content</p>
+      </AppShell>
+    );
+
+    const topBar = screen.getByRole("banner", { name: "แถบบนของแอป" });
+    const accountSummary = within(topBar).getByLabelText("บัญชีผู้ใช้ Student One");
+
+    expect(accountSummary).toHaveTextContent("Student One");
+    expect(accountSummary).toHaveTextContent("ผู้เรียน");
+    expect(screen.queryByLabelText("ข้อมูลผู้ใช้ Student One")).not.toBeInTheDocument();
+  });
+
+  it("keeps account identity out of the sidebar and mobile drawer", () => {
+    render(
+      <AppShell session={studentSession}>
+        <p>Route content</p>
+      </AppShell>
+    );
+
+    const topBar = screen.getByRole("banner");
+    const sidebar = screen.getByRole("complementary");
+
+    expect(within(topBar).getByText("Student One")).toBeInTheDocument();
+    expect(within(sidebar).queryByText("Student One")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { expanded: false }));
+
+    expect(within(screen.getByRole("dialog")).queryByText("Student One")).not.toBeInTheDocument();
+  });
+
+  it("keeps desktop navigation targets comfortable for pointer and touch users", () => {
+    render(
+      <AppShell session={studentSession}>
+        <p>Route content</p>
+      </AppShell>
+    );
+
+    expect(screen.getByRole("link", { name: /สรุปเอกสาร/ })).toHaveClass("min-h-11");
+    expect(screen.getByRole("button", { name: "การแจ้งเตือน" })).toHaveClass("min-h-11");
+  });
+
+  it("routes the primary learning action instead of rendering a dead button", () => {
+    render(
+      <AppShell session={studentSession}>
+        <p>Route content</p>
+      </AppShell>
+    );
+
+    expect(screen.getByRole("link", { name: "เริ่มเรียนเลย" })).toHaveAttribute("href", "/courses");
+  });
+
   it("opens mobile navigation from the top bar menu button", () => {
     render(
       <AppShell session={studentSession}>
@@ -76,6 +150,49 @@ describe("AppShell navigation", () => {
 
     expect(screen.getByRole("dialog", { name: "เมนูหลัก" })).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /แชท AI/ }).length).toBeGreaterThan(0);
+  });
+
+  it("closes mobile navigation with Escape and returns focus to the menu button", async () => {
+    render(
+      <AppShell session={studentSession}>
+        <p>Route content</p>
+      </AppShell>
+    );
+
+    const menuButton = screen.getByRole("button", { name: "เปิดเมนู" });
+    menuButton.focus();
+    fireEvent.click(menuButton);
+
+    expect(screen.getByRole("button", { name: "ปิดเมนู" })).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "เมนูหลัก" })).not.toBeInTheDocument();
+    });
+    expect(menuButton).toHaveFocus();
+  });
+
+  it("traps keyboard focus inside mobile navigation", () => {
+    render(
+      <AppShell session={studentSession}>
+        <p>Route content</p>
+      </AppShell>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "เปิดเมนู" }));
+
+    const dialog = screen.getByRole("dialog", { name: "เมนูหลัก" });
+    const closeButton = within(dialog).getByRole("button", { name: "ปิดเมนู" });
+    const logoutButton = within(dialog).getByRole("button", { name: "ออกจากระบบ" });
+
+    closeButton.focus();
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(logoutButton).toHaveFocus();
+
+    logoutButton.focus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(closeButton).toHaveFocus();
   });
 
   it("hides teacher-only navigation for learners", () => {
