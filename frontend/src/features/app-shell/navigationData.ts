@@ -32,6 +32,7 @@ export const secondaryNavigation = [
 ] satisfies NavigationItem[];
 
 export const aiAction = {
+  href: "/courses",
   icon: Sparkles,
   label: "เริ่มเรียนเลย"
 } satisfies ShellAction;

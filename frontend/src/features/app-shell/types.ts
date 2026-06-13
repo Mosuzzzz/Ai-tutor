@@ -16,6 +16,7 @@ export type NavigationItem = {
 };
 
 export type ShellAction = {
+  href: string;
   icon: LucideIcon;
   label: string;
 };
