@@ -54,6 +54,25 @@ const metricsOnlyAnalyticsMock: LearningAnalyticsViewModel = {
 };
 
 describe("LearningAnalyticsPage", () => {
+  it("uses the shared premium dashboard visual language and Thai-first labels", () => {
+    render(<LearningAnalyticsPage />);
+
+    expect(screen.getByTestId("dashboard-hero")).toHaveAttribute("data-dashboard-surface", "analytics");
+    expect(screen.getAllByTestId("dashboard-metric-card")).toHaveLength(4);
+    expect(screen.getByText("พื้นที่วิเคราะห์การเรียน")).toBeInTheDocument();
+    expect(screen.getAllByText("แนวโน้มคะแนน").length).toBeGreaterThan(0);
+    expect(screen.getByText("คำแนะนำถัดไป")).toBeInTheDocument();
+    expect(screen.queryByText("Score Trend")).not.toBeInTheDocument();
+    expect(screen.queryByText("Insight ถัดไป")).not.toBeInTheDocument();
+  });
+
+  it("renders first-run onboarding actions when analytics has no learning events", () => {
+    render(<LearningAnalyticsPage analytics={emptyAnalyticsMock} />);
+
+    expect(screen.getByRole("link", { name: /สร้างควิซแรกเพื่อเก็บคะแนน/ })).toHaveAttribute("href", "/quiz");
+    expect(screen.getByRole("link", { name: /เปิดเอกสารที่พร้อมทบทวน/ })).toHaveAttribute("href", "/documents");
+  });
+
   it("renders an API-ready Thai learning analytics workspace", () => {
     render(<LearningAnalyticsPage />);
 
@@ -61,7 +80,7 @@ describe("LearningAnalyticsPage", () => {
     expect(analytics).toHaveAttribute("data-source", "api-ready-mock");
     expect(analytics).not.toHaveAttribute("data-api-endpoint");
     expect(screen.getByRole("heading", { name: "สถิติการเรียน" })).toBeInTheDocument();
-    expect(screen.getByText("Learning Analytics Workspace")).toBeInTheDocument();
+    expect(screen.getByText("ภาพรวมการเรียนจากกิจกรรมจริง")).toBeInTheDocument();
     expect(screen.getByText("156")).toBeInTheDocument();
     expect(screen.getAllByText("84%").length).toBeGreaterThan(0);
   });

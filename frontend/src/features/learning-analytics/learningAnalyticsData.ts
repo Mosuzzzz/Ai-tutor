@@ -125,5 +125,5 @@ export const learningAnalyticsMock: LearningAnalyticsViewModel = {
     }
   ],
   trainerAnalyticsEndpoint: "/api/analytics/trainer",
-  workspaceName: "Learning Analytics Workspace"
+  workspaceName: "ภาพรวมการเรียนจากกิจกรรมจริง"
 };

@@ -71,7 +71,7 @@ const formatTrendDateLabel = (date: string) => {
 
 const MetricCard = ({ metric }: { metric: LearningAnalyticsMetric }) => {
   return (
-    <Card className="min-w-0 overflow-hidden">
+    <Card className="min-w-0 overflow-hidden" data-testid="dashboard-metric-card">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="break-words text-label-sm font-semibold uppercase text-on-surface-variant">
@@ -92,7 +92,7 @@ const ScoreTrendChart = ({ trend }: { trend: LearningTrendPoint[] }) => {
   if (trend.length === 0) {
     return (
       <Card className="min-w-0 overflow-hidden p-5">
-        <p className="text-label-sm font-semibold text-[#234c5c]">Score Trend</p>
+        <p className="text-label-sm font-semibold text-[#234c5c]">แนวโน้มคะแนน</p>
         <h3 className="mt-1 break-words text-headline-md text-on-surface">แนวโน้มคะแนนเฉลี่ย</h3>
         <div className={emptyPanelClassName} data-testid="learning-score-trend-empty" role="status">
           ยังไม่มีข้อมูลแนวโน้มคะแนนจาก API
@@ -105,7 +105,7 @@ const ScoreTrendChart = ({ trend }: { trend: LearningTrendPoint[] }) => {
     <Card className="min-w-0 overflow-hidden p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-label-sm font-semibold text-[#234c5c]">Score Trend</p>
+          <p className="text-label-sm font-semibold text-[#234c5c]">แนวโน้มคะแนน</p>
           <h3 className="mt-1 break-words text-headline-md text-on-surface">แนวโน้มคะแนนเฉลี่ย</h3>
         </div>
         <span className="rounded bg-[#e6f6ee] px-3 py-1 text-label-sm font-bold text-[#216148]">
@@ -391,6 +391,22 @@ export const LearningAnalyticsPage = ({
           <p className="mt-2 text-body-md text-on-surface-variant">
             เมื่อผู้เรียนทำควิซหรือใช้เอกสารแล้ว ระบบจะแสดงแนวโน้มคะแนนและจุดที่ควรทบทวน
           </p>
+          <div className="mx-auto mt-6 grid max-w-3xl gap-3 sm:grid-cols-2">
+            <Link
+              className="inline-flex min-h-12 items-center justify-between gap-2 rounded bg-[#f5b94f] px-4 py-2 text-label-md font-bold text-[#16233a] transition-colors hover:bg-[#ffd37a] focus:outline-none focus:ring-2 focus:ring-[#ffd37a] focus:ring-offset-2"
+              href="/quiz"
+            >
+              สร้างควิซแรกเพื่อเก็บคะแนน
+              <BookOpenCheck aria-hidden="true" className="h-5 w-5" />
+            </Link>
+            <Link
+              className="inline-flex min-h-12 items-center justify-between gap-2 rounded border border-outline-variant/50 bg-white px-4 py-2 text-label-md font-bold text-primary transition-colors hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
+              href="/documents"
+            >
+              เปิดเอกสารที่พร้อมทบทวน
+              <FileText aria-hidden="true" className="h-5 w-5" />
+            </Link>
+          </div>
         </Card>
       </div>
     );
@@ -402,12 +418,17 @@ export const LearningAnalyticsPage = ({
 
   return (
     <div className="space-y-6" data-source={dataSource} data-testid="learning-analytics">
-      <section className="overflow-hidden rounded border border-[#234c5c]/15 bg-[#153642] text-white shadow-ambient">
+      <section
+        className="overflow-hidden rounded border border-[#234c5c]/15 bg-[#153642] text-white shadow-ambient"
+        data-dashboard-surface="analytics"
+        data-testid="dashboard-hero"
+      >
         <div className="p-5 md:p-7">
           <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#ffd37a]">
             <Sparkles aria-hidden="true" className="h-4 w-4" />
-            {analytics.workspaceName}
+            พื้นที่วิเคราะห์การเรียน
           </div>
+          <p className="mt-3 text-label-sm font-semibold text-white/70">{analytics.workspaceName}</p>
           <h2 className="mt-5 text-headline-lg-mobile font-bold md:text-headline-lg">สถิติการเรียน</h2>
           <p className="mt-3 max-w-3xl break-words text-body-md text-white/80 md:text-body-lg">
             ดูแนวโน้มคะแนน จุดอ่อนรายทักษะ และกิจกรรมล่าสุด เพื่อวางแผนทบทวนจากข้อมูลควิซและเอกสาร
@@ -436,7 +457,7 @@ export const LearningAnalyticsPage = ({
           <RecentScoresPanel recentScores={analytics.recentScores} />
 
           <Card className="min-w-0 overflow-hidden p-5">
-            <h3 className="text-headline-md text-on-surface">Insight ถัดไป</h3>
+            <h3 className="text-headline-md text-on-surface">คำแนะนำถัดไป</h3>
             <div className="mt-4 grid gap-3">
               <div className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4">
                 <p className="text-label-sm font-bold text-[#216148]">แข็งแรงที่สุด</p>

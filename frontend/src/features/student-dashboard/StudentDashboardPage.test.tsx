@@ -52,6 +52,44 @@ describe("StudentDashboardPage", () => {
     expect(dashboard).toHaveAttribute("data-source", "api");
     expect(dashboard).not.toHaveAttribute("data-api-endpoint");
     expect(screen.getByRole("status")).toHaveTextContent("ยังไม่มีข้อมูลการเรียน");
+    expect(screen.getByTestId("dashboard-hero")).toHaveAttribute("data-dashboard-surface", "student");
+    expect(screen.getAllByTestId("dashboard-metric-card")).toHaveLength(4);
+    expect(screen.getByText("พื้นที่เรียนรู้จะเติมข้อมูลเองหลังเริ่มใช้งาน")).toBeInTheDocument();
+  });
+
+  it("renders first-run onboarding actions in the empty state", () => {
+    render(
+      <StudentDashboardPage
+        dashboard={{
+          ...studentDashboardMock,
+          apiResponse: {
+            average_score: 0,
+            completed_quizzes: 0,
+            read_documents_count: 0,
+            recent_scores: [],
+            score_trend: [],
+            streak_days: 0
+          },
+          assistantPrompts: [],
+          continueLearning: []
+        }}
+        dataSource="api"
+        status="empty"
+      />
+    );
+
+    expect(screen.getByRole("link", { name: /อัปโหลดเอกสารแรก/ })).toHaveAttribute("href", "/documents");
+    expect(screen.getByRole("link", { name: /สร้างควิซฝึกซ้อม/ })).toHaveAttribute("href", "/quiz");
+    expect(screen.getByRole("link", { name: /ดูสถิติหลังทำควิซ/ })).toHaveAttribute("href", "/analytics");
+    expect(screen.getByRole("link", { name: /เปิดหน้าแชต AI/ })).toHaveAttribute("href", "/chat");
+  });
+
+  it("uses the shared premium dashboard visual language", () => {
+    render(<StudentDashboardPage />);
+
+    expect(screen.getByTestId("dashboard-hero")).toHaveAttribute("data-dashboard-surface", "student");
+    expect(screen.getAllByTestId("dashboard-metric-card")).toHaveLength(4);
+    expect(screen.getByText("พื้นที่เรียนรู้ส่วนตัว")).toBeInTheDocument();
   });
 
   it("renders AI prompt and hero quick action links", () => {
