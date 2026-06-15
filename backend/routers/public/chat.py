@@ -19,8 +19,8 @@ def ask_ai_chatbot(
     db: Session = Depends(get_db)
 ):
     """
-    Handles secure, grounded chat queries from documents (FR-CHAT-01–05).
-    Vector search is tenant-scoped (FR-AUTH-02).
+    Handles grounded chat queries over the user's own documents.
+    Vector search is scoped to documents the current user owns.
     """
     if not request.prompt.strip():
         raise HTTPException(status_code=400, detail="Prompt query cannot be blank.")
@@ -28,9 +28,9 @@ def ask_ai_chatbot(
     # 1. Generate Query Vector
     query_vector = generate_embedding(request.prompt)
 
-    # 2. Fetch candidate chunks bounded to current user tenant (FR-AUTH-02)
-    # Filter by specific file if requested, otherwise search all tenant files
-    query_base = db.query(Embedding).join(File).filter(Embedding.tenant_id == current_user.tenant_id)
+    # 2. Fetch candidate chunks bounded to the current user's own documents.
+    # Filter by specific file if requested, otherwise search all of the user's files.
+    query_base = db.query(Embedding).join(File).filter(File.user_id == current_user.id)
     if request.file_id:
         query_base = query_base.filter(Embedding.file_id == request.file_id)
         
@@ -73,7 +73,6 @@ def ask_ai_chatbot(
     }
     
     audit = AuditLog(
-        tenant_id=current_user.tenant_id,
         user_id=current_user.id,
         action="CHAT_QUERY",
         details=json.dumps(log_details, ensure_ascii=False),
@@ -113,7 +112,6 @@ def get_chat_history(
     logs = (
         db.query(AuditLog)
         .filter(
-            AuditLog.tenant_id == current_user.tenant_id,
             AuditLog.user_id == current_user.id,
             AuditLog.action == "CHAT_QUERY",
         )

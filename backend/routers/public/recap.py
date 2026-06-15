@@ -10,13 +10,13 @@ from services.ai_service import generate_recap
 router = APIRouter(prefix="/recap", tags=["AI Recap - Document Summarization"])
 
 
-def _get_ready_file(file_id: str, tenant_id: str, db: Session) -> File:
+def _get_ready_file(file_id: str, user_id: str, db: Session) -> File:
     file_record = db.query(File).filter(
         File.id == file_id,
-        File.tenant_id == tenant_id,
+        File.user_id == user_id,
     ).first()
     if not file_record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found in your tenant workspace.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found in your workspace.")
     if file_record.status in ("pending", "processing"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -34,7 +34,7 @@ def get_document_recap_cached(
     db: Session = Depends(get_db),
 ):
     """Returns the cached summary for a document, or 404 if not yet generated."""
-    file_record = _get_ready_file(file_id, current_user.tenant_id, db)
+    file_record = _get_ready_file(file_id, current_user.id, db)
     if not file_record.summary_markdown:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -60,7 +60,7 @@ def generate_document_recap(
     Generates (or returns cached) a structured markdown recap for an uploaded document.
     Detail level: 'executive' (concise) or 'detailed' (comprehensive).
     """
-    file_record = _get_ready_file(file_id, current_user.tenant_id, db)
+    file_record = _get_ready_file(file_id, current_user.id, db)
 
     if file_record.summary_markdown:
         return schemas.RecapResponse(

@@ -11,7 +11,7 @@ from config import settings
 import routers.public.auth as auth
 import routers.public.files as files
 import routers.public.recap as recap
-import routers.tenant.exams as exams
+import routers.public.exams as exams
 import routers.public.chat as chat
 import routers.admin.analytics as analytics
 
@@ -19,9 +19,9 @@ import routers.admin.analytics as analytics
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Enterprise AI Knowledge & Upskilling Platform API",
-    description="Multi-tenant B2B SaaS Backend with SAML SSO, Async Ingestion, RAG, and Skill-Gap analytics.",
-    version="2.0.0"
+    title="AI Tutor API",
+    description="Personal AI Study Workspace backend: document ingestion, RAG chat, personal review quizzes, and personal learning analytics.",
+    version="3.0.0"
 )
 
 __all__ = ["app"]
@@ -54,7 +54,7 @@ def health_check():
     """System health check endpoint."""
     return {
         "status": "healthy",
-        "service": "Enterprise AI Knowledge Platform Backend",
+        "service": "AI Tutor Backend",
         "timestamp": Base.metadata.schema or "standard-schema"
     }
 
