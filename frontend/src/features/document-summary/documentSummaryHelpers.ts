@@ -87,7 +87,7 @@ const cleanMarkdownLine = (line: string) => {
 export const parseSummaryMarkdown = (markdown: string): ParsedSummarySection[] => {
   const lines = markdown.split(/\r?\n/);
   const sections: ParsedSummarySection[] = [];
-  let currentTitle = "Executive Summary";
+  let currentTitle = "สรุปภาพรวม";
   let currentBody: string[] = [];
 
   const pushSection = () => {

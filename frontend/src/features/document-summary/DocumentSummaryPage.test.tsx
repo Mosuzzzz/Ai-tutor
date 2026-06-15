@@ -1,5 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DocumentSummaryPage } from "./DocumentSummaryPage";
 import { documentSummaryMock } from "./documentSummaryData";
@@ -21,6 +21,11 @@ const emptyDocumentSummary: DocumentSummaryViewModel = {
   selectedDocumentId: ""
 };
 
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
 describe("DocumentSummaryPage", () => {
   it("renders an API-ready Thai document summary workspace", () => {
     render(<DocumentSummaryPage />);
@@ -41,13 +46,26 @@ describe("DocumentSummaryPage", () => {
     expect(screen.getByText("กำลังประมวลผล")).toBeInTheDocument();
     expect(screen.getByText("มีปัญหา")).toBeInTheDocument();
 
-    expect(screen.getByRole("link", { name: /สร้างควิซจากสรุปนี้/ })).toHaveAttribute("href", "/quiz");
+    expect(screen.getByRole("link", { name: /สร้างควิซจากสรุปนี้/ })).toHaveAttribute(
+      "href",
+      "/quiz?documentId=doc-lab-safety"
+    );
     expect(screen.getByRole("link", { name: /ถาม AI จากเอกสารนี้/ })).toHaveAttribute(
       "href",
       "/chat?documentId=doc-lab-safety"
     );
     expect(screen.getByRole("button", { name: "ส่งออกสรุป" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "แชร์สรุป" })).toBeDisabled();
+  });
+
+  it("keeps core AI flow actions scoped and resilient for long filenames", () => {
+    render(<DocumentSummaryPage />);
+
+    expect(screen.getByTestId("document-summary-hero")).toHaveClass("min-w-0", "overflow-hidden");
+    expect(screen.getByTestId("document-summary-selected-card")).toHaveClass("min-w-0", "overflow-hidden");
+    expect(screen.getByText("1 อัปโหลดเอกสาร")).toBeInTheDocument();
+    expect(screen.getByText("2 อ่านสรุป")).toBeInTheDocument();
+    expect(screen.getByText("3 ถาม AI หรือสร้างควิซ")).toBeInTheDocument();
   });
 
   it("does not expose backend endpoint details in the DOM", () => {
@@ -73,7 +91,10 @@ describe("DocumentSummaryPage", () => {
     render(<DocumentSummaryPage dashboard={emptyDocumentSummary} />);
 
     expect(screen.getByRole("status")).toHaveTextContent("ยังไม่มีเอกสารที่พร้อมสรุป");
-    expect(screen.getByText("อัปโหลดเอกสารหรือรอให้ pipeline ประมวลผลเสร็จก่อน")).toBeInTheDocument();
+    expect(screen.getByText(/รอให้ระบบประมวลผลเสร็จก่อน/)).toBeInTheDocument();
+    expect(screen.getByText(/รอครูแชร์เอกสารประกอบบทเรียน/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "ดูคอร์สเรียน" })).toHaveAttribute("href", "/courses");
+    expect(screen.getByRole("link", { name: "กลับแดชบอร์ด" })).toHaveAttribute("href", "/");
     expect(screen.queryByRole("link", { name: /สร้างควิซจากสรุปนี้/ })).not.toBeInTheDocument();
   });
 
@@ -88,5 +109,106 @@ describe("DocumentSummaryPage", () => {
       "href",
       "/documents/doc-ai-ethics"
     );
+  });
+
+  it("shows only the two latest uploaded documents in the sidebar and opens all documents in a popup", () => {
+    const latestDocuments = [...documentSummaryMock.apiResponse.documents].sort(
+      (left, right) => Date.parse(right.created_at) - Date.parse(left.created_at)
+    );
+
+    render(<DocumentSummaryPage canUploadDocuments dashboard={documentSummaryMock} selectedDocumentId="doc-lab-safety" />);
+
+    const libraryPreview = screen.getByRole("region", { name: "เอกสารล่าสุดในคลัง" });
+
+    expect(within(libraryPreview).getAllByRole("article")).toHaveLength(2);
+    expect(within(libraryPreview).getByText(latestDocuments[0].filename)).toBeInTheDocument();
+    expect(within(libraryPreview).getByText(latestDocuments[1].filename)).toBeInTheDocument();
+    expect(within(libraryPreview).queryByText(latestDocuments[2].filename)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "ดูเอกสารทั้งหมดในคลัง" }));
+
+    const libraryDialog = screen.getByRole("dialog", { name: "เอกสารทั้งหมดในคลัง" });
+
+    expect(within(libraryDialog).getAllByRole("article")).toHaveLength(latestDocuments.length);
+    expect(within(libraryDialog).getByText(latestDocuments[2].filename)).toBeInTheDocument();
+    expect(within(libraryDialog).getByText(`รวม ${latestDocuments.length} รายการ เรียงจากล่าสุดก่อน`)).toBeInTheDocument();
+
+    fireEvent.click(within(libraryDialog).getByRole("button", { name: "ปิดคลังเอกสารทั้งหมด" }));
+
+    expect(screen.queryByRole("dialog", { name: "เอกสารทั้งหมดในคลัง" })).not.toBeInTheDocument();
+  });
+
+  it("lets teachers delete an uploaded document from the library after confirmation", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const fetchMock = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          document: {
+            id: "doc-ai-ethics"
+          },
+          message: "ลบเอกสารออกจากคลังแล้ว",
+          ok: true
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json"
+          },
+          status: 200
+        }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DocumentSummaryPage canUploadDocuments dashboard={documentSummaryMock} selectedDocumentId="doc-lab-safety" />);
+
+    const documentCard = screen.getByRole("article", {
+      name: "เอกสารในคลัง แนวทางจริยธรรม AI สำหรับห้องเรียน.pdf"
+    });
+    fireEvent.click(within(documentCard).getByRole("button", { name: "ลบเอกสาร แนวทางจริยธรรม AI สำหรับห้องเรียน.pdf" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/documents/doc-ai-ethics", {
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json"
+        },
+        method: "DELETE"
+      });
+    });
+
+    expect(confirmSpy).toHaveBeenCalledWith("ต้องการลบเอกสาร \"แนวทางจริยธรรม AI สำหรับห้องเรียน.pdf\" ออกจากคลังใช่ไหม?");
+    expect(screen.queryByRole("article", { name: "เอกสารในคลัง แนวทางจริยธรรม AI สำหรับห้องเรียน.pdf" })).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("ลบเอกสารออกจากคลังแล้ว");
+  });
+
+  it("keeps a document visible and shows a safe error when delete fails", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        return new Response(
+          JSON.stringify({
+            message: "บัญชีนี้ไม่มีสิทธิ์ลบเอกสารนี้",
+            ok: false
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json"
+            },
+            status: 403
+          }
+        );
+      })
+    );
+
+    render(<DocumentSummaryPage canUploadDocuments dashboard={documentSummaryMock} selectedDocumentId="doc-lab-safety" />);
+
+    const documentCard = screen.getByRole("article", {
+      name: "เอกสารในคลัง แนวทางจริยธรรม AI สำหรับห้องเรียน.pdf"
+    });
+    fireEvent.click(within(documentCard).getByRole("button", { name: "ลบเอกสาร แนวทางจริยธรรม AI สำหรับห้องเรียน.pdf" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("บัญชีนี้ไม่มีสิทธิ์ลบเอกสารนี้");
+    expect(screen.getByRole("article", { name: "เอกสารในคลัง แนวทางจริยธรรม AI สำหรับห้องเรียน.pdf" })).toBeInTheDocument();
   });
 });

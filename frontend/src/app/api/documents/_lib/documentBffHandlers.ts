@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import {
   DOCUMENT_UPLOAD_API_PATH,
+  documentDeleteApiPath,
   fileStatusApiPath,
   fileStatusResponseSchema,
   fileUploadResponseSchema,
@@ -74,6 +75,33 @@ export const createDocumentRouteHandlers = ({
   };
 
   return {
+    delete: async (request: Request, { fileId }: DocumentRouteContext) => {
+      try {
+        assertRequestOrigin(request);
+        const accessToken = readAccessToken(request);
+        const safeFileId = z.string().trim().min(1).max(200).parse(fileId);
+
+        await jsonRequest({
+          accessToken,
+          method: "DELETE",
+          path: documentDeleteApiPath(safeFileId),
+          schema: z.unknown()
+        });
+
+        return createDocumentSuccessResponse(
+          {
+            document: {
+              id: safeFileId
+            },
+            message: "ลบเอกสารออกจากคลังแล้ว",
+            ok: true
+          },
+          200
+        );
+      } catch (error) {
+        return createDocumentErrorResponse(error);
+      }
+    },
     status: async (request: Request, { fileId }: DocumentRouteContext) => {
       try {
         const accessToken = readAccessToken(request);

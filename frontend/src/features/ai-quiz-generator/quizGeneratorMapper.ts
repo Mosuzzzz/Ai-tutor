@@ -1,4 +1,5 @@
 import type { AuthSession } from "../auth/types";
+import { localizeKnownAiText } from "../core-ai/aiThaiText";
 import type { DocumentLibraryResponse } from "../document-summary/documentSummaryContract";
 import { aiQuizGeneratorMock } from "./quizGeneratorData";
 import type { ExamResponse, ExamSubmitResponse, TrainerExamQuestion } from "./quizGeneratorContract";
@@ -28,9 +29,9 @@ type QuizGeneratorViewModelInput = {
 };
 
 const DEFAULT_QUIZ_INSTRUCTIONS = [
-  "Use scenario-based questions grounded in the selected document.",
-  "Keep every option clear and distinct.",
-  "Do not expose answer keys in learner-facing previews."
+  "คำถามที่ผูกกับสถานการณ์จากเอกสารที่เลือก",
+  "ตัวเลือกต้องชัดเจนและไม่ชี้นำคำตอบ",
+  "ยังไม่แสดงเฉลยในหน้าผู้เรียนก่อนส่งคำตอบ"
 ];
 
 export const toGeneratedQuizDraft = ({
@@ -53,7 +54,7 @@ export const toGeneratedQuizDraft = ({
       })
     ),
     status: toQuizDraftStatus(examResponse.status),
-    title: source ? `Quiz draft for ${source.filename}` : `Quiz draft ${examResponse.id}`
+    title: source ? `แบบร่างควิซจาก ${source.filename}` : `แบบร่างควิซ ${examResponse.id}`
   };
 };
 
@@ -84,21 +85,21 @@ export const toQuizGeneratorViewModel = ({
     instructions,
     metrics: [
       {
-        helper: "Backend-supported range for AI-generated quizzes",
+        helper: "ตามจำนวนคำถามที่ระบบรองรับ",
         id: "question-count",
-        label: "Question count",
+        label: "คำถามในชุด",
         value: String(questionCount)
       },
       {
-        helper: "Estimated learner completion time",
+        helper: "เวลาเฉลี่ยสำหรับผู้เรียนทำควิซ",
         id: "duration",
-        label: "Estimated time",
+        label: "เวลาโดยประมาณ",
         value: estimateQuizDuration(questionCount)
       },
       {
-        helper: "Documents ready for quiz generation",
+        helper: "เอกสารที่พร้อมสร้างแบบทดสอบ",
         id: "ready-sources",
-        label: "Ready sources",
+        label: "แหล่งพร้อมใช้",
         value: String(sources.filter((source) => source.status === "ready").length)
       }
     ],
@@ -140,7 +141,7 @@ export const toQuizAttemptResult = ({
         explanation: normalizeOptionalText(result.explanation),
         isCorrect: result.chosen !== undefined && result.chosen !== null && result.chosen === result.correct_index,
         questionId: result.question_id,
-        questionText: question?.question_text ?? "คำถามจาก Backend"
+        questionText: question?.question_text ? localizeKnownAiText(question.question_text) : "คำถามจากระบบ"
       };
     }),
     passedLabel: submitResponse.passed ? "ผ่าน" : "ยังไม่ผ่าน",
@@ -202,11 +203,11 @@ const buildDraft = ({
   if (!examResponse) {
     return {
       file_id: selectedSource?.id ?? "",
-      generatedAtLabel: "No generated quiz draft yet",
+      generatedAtLabel: "ยังไม่มีแบบร่างควิซ",
       id: "",
       questions: [],
       status: "draft",
-      title: selectedSource ? `Quiz draft for ${selectedSource.filename}` : "Quiz draft"
+      title: selectedSource ? `แบบร่างควิซจาก ${selectedSource.filename}` : "แบบร่างควิซ"
     };
   }
 
@@ -235,15 +236,15 @@ const toQuizQuestionPreview = ({
     citation: {
       chunk_index: 0,
       file_id: source?.id ?? "",
-      filename: source?.filename ?? "Selected document",
-      matched_text: fullQuestion.citation ?? "Citation is available after generation."
+      filename: source?.filename ?? "เอกสารที่เลือก",
+      matched_text: fullQuestion.citation ? localizeKnownAiText(fullQuestion.citation) : "ระบบจะแสดงอ้างอิงหลังสร้างคำถามสำเร็จ"
     },
     id: question.id,
     options: question.options.map((option, index) => ({
       id: `${question.id}-option-${index}`,
-      label: option
+      label: localizeKnownAiText(option)
     })),
-    question_text: question.question_text
+    question_text: localizeKnownAiText(question.question_text)
   };
 };
 
@@ -270,11 +271,11 @@ const resolveOptionLabel = (
 const normalizeOptionalText = (value: string | null | undefined) => {
   const normalized = value?.trim();
 
-  return normalized || undefined;
+  return normalized ? localizeKnownAiText(normalized) : undefined;
 };
 
 const summarizeMarkdown = (markdown: string) => {
-  return markdown
+  return localizeKnownAiText(markdown)
     .replace(/^#{1,6}\s+/gm, "")
     .replace(/^[-*]\s+/gm, "")
     .split(/\r?\n/)
@@ -286,24 +287,24 @@ const summarizeMarkdown = (markdown: string) => {
 
 const buildDocumentStatusSummary = (status: DocumentLibraryItem["status"]) => {
   if (status === "processing" || status === "pending") {
-    return "Document is still processing before AI quiz generation is available.";
+    return "เอกสารยังประมวลผลอยู่ จึงยังสร้างควิซไม่ได้";
   }
 
   if (status === "error") {
-    return "Document ingestion failed and cannot be used for quiz generation yet.";
+    return "ระบบอ่านเอกสารไม่สำเร็จ กรุณาอัปโหลดไฟล์ใหม่ก่อนสร้างควิซ";
   }
 
-  return "Summary is not available yet.";
+  return "ยังไม่มีสรุปพร้อมใช้สำหรับสร้างควิซ";
 };
 
 const buildWorkspaceName = (session: AuthSession) => {
   const displayName = session.user.displayName?.trim();
 
   if (displayName) {
-    return `${displayName}'s quiz workspace`;
+    return `พื้นที่สร้างควิซของ ${displayName}`;
   }
 
-  return "AI Tutor quiz workspace";
+  return "พื้นที่สร้างควิซ";
 };
 
 const canGenerateQuiz = (session: AuthSession) => {
@@ -318,7 +319,7 @@ const formatDateLabel = (dateValue: string) => {
   const timestamp = new Date(dateValue);
 
   if (Number.isNaN(timestamp.getTime())) {
-    return "Updated from Backend";
+    return "อัปเดตจากระบบ";
   }
 
   return new Intl.DateTimeFormat("th-TH", {

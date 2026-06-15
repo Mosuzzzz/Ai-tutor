@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const DOCUMENTS_DASHBOARD_API_PATH = "/api/files/dashboard";
 export const DOCUMENT_UPLOAD_API_PATH = "/api/files/upload";
+export const documentDeleteApiPath = (fileId: string) => `/api/files/${encodeURIComponent(fileId)}`;
 export const documentDetailApiPath = (fileId: string) => `/api/files/${encodeURIComponent(fileId)}/detail`;
 export const fileStatusApiPath = (fileId: string) => `/api/files/${encodeURIComponent(fileId)}/status`;
 export const recapApiPath = (fileId: string) => `/api/recap/${encodeURIComponent(fileId)}`;

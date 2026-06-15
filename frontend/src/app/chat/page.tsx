@@ -29,6 +29,7 @@ const ChatPage = async ({ searchParams }: ChatPageProps = {}) => {
         chat={"chat" in chatResult ? chatResult.chat : undefined}
         dataSource="api"
         errorMessage={"errorMessage" in chatResult ? chatResult.errorMessage : undefined}
+        selectedDocumentId={selectedDocumentId}
         status={chatResult.status}
       />
     </AppShell>

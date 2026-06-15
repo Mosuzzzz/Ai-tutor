@@ -65,6 +65,9 @@ describe("AiQuizGeneratorPage", () => {
     expect(screen.getByText("คู่มือความปลอดภัยห้องปฏิบัติการ.pdf")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "ตั้งค่าควิซ" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "แบบร่างคำถาม" })).toBeInTheDocument();
+    expect(screen.queryByText("QUESTION COUNT")).not.toBeInTheDocument();
+    expect(screen.queryByText("ESTIMATED TIME")).not.toBeInTheDocument();
+    expect(screen.queryByText("READY SOURCES")).not.toBeInTheDocument();
   });
 
   it("renders source selection, backend-shaped request settings, and generation actions", () => {
@@ -80,7 +83,10 @@ describe("AiQuizGeneratorPage", () => {
     expect(screen.getByText("ความยาก")).toBeInTheDocument();
     expect(screen.getByText("ปานกลาง")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "สร้างควิซ" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "เผยแพร่แบบทดสอบ" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "เผยแพร่ควิซ" })).toBeEnabled();
+    expect(screen.getByText("คำถามที่ผูกกับสถานการณ์จากเอกสารที่เลือก")).toBeInTheDocument();
+    expect(screen.getByText("ตัวเลือกต้องชัดเจนและไม่ชี้นำคำตอบ")).toBeInTheDocument();
+    expect(screen.getByText("ยังไม่แสดงเฉลยในหน้าผู้เรียนก่อนส่งคำตอบ")).toBeInTheDocument();
   });
 
   it("generates a quiz draft from the selected document through the BFF without exposing answer keys", async () => {
@@ -121,11 +127,69 @@ describe("AiQuizGeneratorPage", () => {
       });
     });
 
-    expect(await screen.findByText("What should learners review before entering the lab?")).toBeInTheDocument();
-    expect(screen.getByText("Review the safety checklist")).toBeInTheDocument();
+    expect(await screen.findByText("ผู้เรียนควรทบทวนอะไรก่อนเข้าห้องปฏิบัติการ")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("สร้างแบบร่างควิซสำเร็จ");
     expect(screen.queryByText("correct_index")).not.toBeInTheDocument();
+    expect(screen.queryByText("Review the safety checklist")).not.toBeInTheDocument();
     expect(screen.queryByText("The safety checklist is required before lab work.")).not.toBeInTheDocument();
+  });
+
+  it("publishes a generated quiz draft before enabling learner attempts", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            exam: backendGeneratedExamResponse,
+            ok: true
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json"
+            },
+            status: 200
+          }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            ok: true,
+            publishResult: {
+              id: backendGeneratedExamResponse.id,
+              published_at: "2026-06-13T08:00:00.000Z",
+              status: "published"
+            }
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json"
+            },
+            status: 200
+          }
+        )
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<AiQuizGeneratorPage quiz={emptyDraftQuizMock} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "สร้างควิซ" }));
+    expect(await screen.findByText("ผู้เรียนควรทบทวนอะไรก่อนเข้าห้องปฏิบัติการ")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "เผยแพร่ควิซ" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenLastCalledWith(`/api/quiz/${backendGeneratedExamResponse.id}/publish`, {
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json"
+        },
+        method: "POST"
+      });
+    });
+
+    expect(await screen.findByText("ควิซพร้อมให้ทำแล้ว")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "ส่งคำตอบ" })).toBeDisabled();
   });
 
   it("submits a published learner quiz attempt and renders score feedback without exposing raw answer-key fields", async () => {
@@ -152,7 +216,7 @@ describe("AiQuizGeneratorPage", () => {
 
     expect(screen.queryByRole("button", { name: "สร้างควิซ" })).not.toBeInTheDocument();
     expect(submitButton).toBeDisabled();
-    fireEvent.click(within(attemptRegion).getByRole("radio", { name: "Review the checklist" }));
+    fireEvent.click(within(attemptRegion).getByRole("radio", { name: "ทบทวนรายการตรวจสอบ" }));
     expect(submitButton).toBeEnabled();
 
     fireEvent.click(submitButton);
@@ -175,7 +239,7 @@ describe("AiQuizGeneratorPage", () => {
 
     expect(await screen.findByText("คะแนน 100%")).toBeInTheDocument();
     expect(screen.getByText("ถูก 1/1 ข้อ")).toBeInTheDocument();
-    expect(screen.getByText("Checklist review is required.")).toBeInTheDocument();
+    expect(screen.getByText("ต้องทบทวนรายการตรวจสอบก่อนเริ่มงาน")).toBeInTheDocument();
     expect(screen.queryByText("correct_index")).not.toBeInTheDocument();
     expect(screen.queryByText("เฉลยข้อที่ถูก")).not.toBeInTheDocument();
   });
@@ -226,6 +290,35 @@ describe("AiQuizGeneratorPage", () => {
     expect(screen.getByTestId("ai-quiz-workspace-grid")).toHaveClass("items-start", "xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]");
     expect(screen.getByTestId("ai-quiz-source-panel")).toHaveClass("min-w-0", "overflow-hidden");
     expect(screen.getByTestId("ai-quiz-preview-panel")).toHaveClass("min-w-0", "overflow-hidden");
+  });
+
+  it("keeps quiz attempt and score copy Thai-first with a clear analytics next step", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          submitResult: backendSubmitExamResponse
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json"
+          },
+          status: 200
+        }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<AiQuizGeneratorPage quiz={learnerQuizMock} />);
+
+    expect(screen.getByText("ทำควิซ")).toBeInTheDocument();
+    expect(screen.queryByText("Learner attempt")).not.toBeInTheDocument();
+
+    const attemptRegion = screen.getByRole("region", { name: "ทำควิซ" });
+    fireEvent.click(within(attemptRegion).getByRole("radio", { name: "ทบทวนรายการตรวจสอบ" }));
+    fireEvent.click(screen.getByRole("button", { name: "ส่งคำตอบ" }));
+
+    expect(await screen.findByRole("link", { name: /ดูสถิติการเรียน/ })).toHaveAttribute("href", "/analytics");
   });
 
   it("does not expose backend endpoint details in the DOM", () => {

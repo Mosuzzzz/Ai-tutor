@@ -73,9 +73,9 @@ export const aiQuizGeneratorMock: QuizGeneratorViewModel = {
   },
   generateEndpoint: "/api/exams/generate",
   instructions: [
-    "เน้นคำถามที่วัดความเข้าใจ ไม่ใช่ท่องจำคำจากเอกสาร",
-    "ทุกคำถามต้องผูกกับ citation จากเอกสาร",
-    "ไม่แสดงเฉลยในหน้าผู้เรียนก่อนตรวจสิทธิ์"
+    "คำถามที่ผูกกับสถานการณ์จากเอกสารที่เลือก",
+    "ตัวเลือกต้องชัดเจนและไม่ชี้นำคำตอบ",
+    "ยังไม่แสดงเฉลยในหน้าผู้เรียนก่อนส่งคำตอบ"
   ],
   metrics: [
     {
@@ -136,5 +136,5 @@ export const aiQuizGeneratorMock: QuizGeneratorViewModel = {
       updatedAtLabel: "กำลังประมวลผล"
     }
   ],
-  workspaceName: "AI Quiz Workspace"
+  workspaceName: "พื้นที่สร้างควิซ"
 };

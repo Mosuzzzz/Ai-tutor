@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ArrowRight,
   Bot,
@@ -9,10 +11,13 @@ import {
   MessageSquareText,
   Share2,
   Sparkles,
-  TriangleAlert
+  Trash2,
+  TriangleAlert,
+  X
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -24,13 +29,16 @@ import {
   parseSummaryMarkdown,
   sortDocumentsByReadiness
 } from "./documentSummaryHelpers";
+import { deleteDocumentFromLibrary } from "./documentDeleteClient";
 import { DocumentUploadPanel } from "./DocumentUploadPanel";
 import { documentSummaryMock } from "./documentSummaryData";
 import type {
+  DocumentLibraryItem,
   DocumentProcessingStatus,
   DocumentSummaryDetail,
   DocumentSummaryStatus,
-  DocumentSummaryViewModel
+  DocumentSummaryViewModel,
+  DocumentStatusCounts
 } from "./types";
 
 type DocumentSummaryPageProps = {
@@ -65,6 +73,31 @@ const getDetailByDocumentId = (
   return details.find((detail) => detail.id === documentId) ?? details[0];
 };
 
+const countDocumentStatuses = (documents: DocumentLibraryItem[]): DocumentStatusCounts => {
+  return documents.reduce<DocumentStatusCounts>(
+    (counts, document) => {
+      counts[document.status] += 1;
+      return counts;
+    },
+    {
+      error: 0,
+      pending: 0,
+      processing: 0,
+      ready: 0
+    }
+  );
+};
+
+const getDocumentCreatedTime = (document: DocumentLibraryItem) => {
+  const createdTime = Date.parse(document.created_at);
+
+  return Number.isNaN(createdTime) ? 0 : createdTime;
+};
+
+const sortDocumentsByLatestUpload = (documents: DocumentLibraryItem[]) => {
+  return [...documents].sort((left, right) => getDocumentCreatedTime(right) - getDocumentCreatedTime(left));
+};
+
 export const DocumentSummaryPage = ({
   canUploadDocuments = false,
   dashboard = documentSummaryMock,
@@ -73,6 +106,12 @@ export const DocumentSummaryPage = ({
   selectedDocumentId,
   status = "ready"
 }: DocumentSummaryPageProps) => {
+  const [removedDocumentIds, setRemovedDocumentIds] = useState<Set<string>>(() => new Set());
+  const [deletePendingId, setDeletePendingId] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteMessage, setDeleteMessage] = useState("");
+  const [isLibraryDialogOpen, setIsLibraryDialogOpen] = useState(false);
+
   if (status === "loading") {
     return (
       <Card className="text-body-md text-on-surface-variant" role="status">
@@ -92,12 +131,16 @@ export const DocumentSummaryPage = ({
     );
   }
 
-  const sortedDocuments = sortDocumentsByReadiness(dashboard.apiResponse.documents);
+  const visibleDocuments = dashboard.apiResponse.documents.filter((document) => !removedDocumentIds.has(document.id));
+  const visibleDocumentDetails = dashboard.documentDetails.filter((detail) => !removedDocumentIds.has(detail.id));
+  const sortedDocuments = sortDocumentsByReadiness(visibleDocuments);
+  const latestDocuments = sortDocumentsByLatestUpload(sortedDocuments);
+  const previewDocuments = latestDocuments.slice(0, 2);
   const selectedDocument = getSelectedDocument(
     sortedDocuments,
     selectedDocumentId ?? dashboard.selectedDocumentId
   );
-  const selectedDetail = getDetailByDocumentId(dashboard.documentDetails, selectedDocument?.id);
+  const selectedDetail = getDetailByDocumentId(visibleDocumentDetails, selectedDocument?.id);
 
   if (!selectedDetail) {
     return (
@@ -113,8 +156,24 @@ export const DocumentSummaryPage = ({
           </div>
           <h2 className="mt-4 text-headline-md text-on-surface">ยังไม่มีเอกสารที่พร้อมสรุป</h2>
           <p className="mt-2 text-body-md text-on-surface-variant">
-            อัปโหลดเอกสารหรือรอให้ pipeline ประมวลผลเสร็จก่อน
+            อัปโหลดเอกสารหรือรอให้ระบบประมวลผลเสร็จก่อน หากเป็นผู้เรียน ให้รอครูแชร์เอกสารประกอบบทเรียนหรือกลับไปดูคอร์สเรียน
           </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <Link
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-primary-container/20 bg-surface-container-low px-4 py-2 text-label-md font-bold text-primary transition-colors hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
+              href="/courses"
+            >
+              ดูคอร์สเรียน
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+            <Link
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-primary-container/20 bg-surface-container-low px-4 py-2 text-label-md font-bold text-primary transition-colors hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
+              href="/"
+            >
+              กลับแดชบอร์ด
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+          </div>
         </Card>
       </div>
     );
@@ -122,6 +181,38 @@ export const DocumentSummaryPage = ({
 
   const parsedSections = parseSummaryMarkdown(selectedDetail.summaryMarkdown);
   const encodedDocumentId = encodeURIComponent(selectedDetail.id);
+  const visibleStatusCounts = countDocumentStatuses(sortedDocuments);
+
+  const handleDeleteDocument = async (document: DocumentLibraryItem) => {
+    if (!canUploadDocuments || deletePendingId) {
+      return;
+    }
+
+    setDeleteError("");
+    setDeleteMessage("");
+
+    const confirmed = window.confirm(`ต้องการลบเอกสาร "${document.filename}" ออกจากคลังใช่ไหม?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletePendingId(document.id);
+    const result = await deleteDocumentFromLibrary(document.id);
+    setDeletePendingId("");
+
+    if (result.ok) {
+      setRemovedDocumentIds((currentIds) => {
+        const nextIds = new Set(currentIds);
+        nextIds.add(result.document.id);
+        return nextIds;
+      });
+      setDeleteMessage(result.message);
+      return;
+    }
+
+    setDeleteError(result.message);
+  };
 
   const metrics: SummaryMetric[] = [
     {
@@ -130,7 +221,7 @@ export const DocumentSummaryPage = ({
       id: "total-documents",
       label: "เอกสารทั้งหมด",
       tone: "bg-[#eaf3ff] text-[#24527a]",
-      value: String(dashboard.apiResponse.total_documents)
+      value: String(sortedDocuments.length)
     },
     {
       helper: "ใช้ต่อยอดเป็นควิซหรือแชทได้ทันที",
@@ -138,15 +229,15 @@ export const DocumentSummaryPage = ({
       id: "ready-summaries",
       label: "พร้อมสรุป",
       tone: "bg-[#e6f6ee] text-[#216148]",
-      value: String(countAvailableSummaries(dashboard.apiResponse.documents))
+      value: String(countAvailableSummaries(sortedDocuments))
     },
     {
-      helper: "รอ pipeline อ่านเนื้อหาให้ครบ",
+      helper: "รอระบบอ่านเนื้อหาให้ครบ",
       icon: Clock3,
       id: "processing-documents",
       label: "กำลังประมวลผล",
       tone: "bg-[#fff3d8] text-[#8a5a00]",
-      value: String(dashboard.apiResponse.status_counts.processing)
+      value: String(visibleStatusCounts.processing)
     },
     {
       helper: "ต้องอัปโหลดใหม่หรือตรวจชนิดไฟล์",
@@ -154,14 +245,17 @@ export const DocumentSummaryPage = ({
       id: "error-documents",
       label: "มีปัญหา",
       tone: "bg-[#ffe9df] text-[#9a3b18]",
-      value: String(dashboard.apiResponse.status_counts.error)
+      value: String(visibleStatusCounts.error)
     }
   ];
 
   return (
     <div className="space-y-6" data-source={dataSource} data-testid="document-summary">
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-        <div className="overflow-hidden rounded border border-[#0e2d4f]/10 bg-[#24344d] text-white shadow-ambient">
+        <div
+          className="min-w-0 overflow-hidden rounded border border-[#0e2d4f]/10 bg-[#24344d] text-white shadow-ambient"
+          data-testid="document-summary-hero"
+        >
           <div className="p-5 md:p-7">
             <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#ffd37a]">
               <Sparkles aria-hidden="true" className="h-4 w-4" />
@@ -176,7 +270,7 @@ export const DocumentSummaryPage = ({
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-[#f5b94f] px-4 py-2 text-label-md font-bold text-[#16233a] transition-colors hover:bg-[#ffd37a] focus:outline-none focus:ring-2 focus:ring-[#ffd37a] focus:ring-offset-2 focus:ring-offset-[#24344d]"
-                href="/quiz"
+                href={`/quiz?documentId=${encodedDocumentId}`}
               >
                 สร้างควิซจากสรุปนี้
                 <Bot aria-hidden="true" className="h-5 w-5" />
@@ -189,15 +283,25 @@ export const DocumentSummaryPage = ({
                 <MessageSquareText aria-hidden="true" className="h-5 w-5" />
               </Link>
             </div>
+            <ol
+              aria-label="ลำดับการใช้งาน AI จากเอกสาร"
+              className="mt-6 grid gap-2 text-label-sm font-semibold text-white/80 sm:grid-cols-3"
+            >
+              {["1 อัปโหลดเอกสาร", "2 อ่านสรุป", "3 ถาม AI หรือสร้างควิซ"].map((step) => (
+                <li className="rounded border border-white/15 bg-white/10 px-3 py-2" key={step}>
+                  {step}
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
 
-        <Card>
+        <Card className="min-w-0 overflow-hidden" data-testid="document-summary-selected-card">
           <div className="flex items-center gap-2 text-label-sm font-semibold text-[#24527a]">
             <FileSearch aria-hidden="true" className="h-4 w-4" />
             เอกสารที่เลือก
           </div>
-          <h3 className="mt-3 text-headline-md text-on-surface">{selectedDetail.filename}</h3>
+          <h3 className="mt-3 break-words text-headline-md text-on-surface">{selectedDetail.filename}</h3>
           <p className="mt-2 text-body-md text-on-surface-variant">{selectedDetail.uploadedByLabel}</p>
           <p className="mt-1 text-body-md text-on-surface-variant">{selectedDetail.generatedAtLabel}</p>
           <div className="mt-5 flex flex-wrap gap-2">
@@ -350,26 +454,148 @@ export const DocumentSummaryPage = ({
 
           <Card>
             <h3 className="text-headline-md text-on-surface">เอกสารในคลัง</h3>
-            <div className="mt-4 grid gap-3">
-              {sortedDocuments.map((document) => (
-                <article className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4" key={document.id}>
-                  <div className="flex items-start justify-between gap-3">
+            {deleteMessage && (
+              <p className="mt-3 rounded border border-[#b7dfc8] bg-[#eefaf3] px-3 py-2 text-label-sm font-semibold text-[#216148]" role="status">
+                {deleteMessage}
+              </p>
+            )}
+            {deleteError && (
+              <p className="mt-3 rounded border border-[#f2b8b5] bg-[#fff8f7] px-3 py-2 text-label-sm font-semibold text-[#8c1d18]" role="alert">
+                {deleteError}
+              </p>
+            )}
+            <section aria-label="เอกสารล่าสุดในคลัง" className="mt-4 grid gap-3">
+              {previewDocuments.map((document) => (
+                <article
+                  aria-label={`เอกสารในคลัง ${document.filename}`}
+                  className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4"
+                  key={document.id}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-body-md font-bold text-on-surface">{document.filename}</p>
                       <p className="mt-1 text-label-sm text-on-surface-variant">
                         โดย {document.uploaded_by} - ควิซ {document.related_exams_count} ชุด
                       </p>
                     </div>
-                    <span className={`shrink-0 rounded px-3 py-1 text-label-sm font-bold ${statusToneClassNames[document.status]}`}>
-                      สถานะ: {formatDocumentStatus(document.status)}
-                    </span>
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      <span className={`rounded px-3 py-1 text-label-sm font-bold ${statusToneClassNames[document.status]}`}>
+                        สถานะ: {formatDocumentStatus(document.status)}
+                      </span>
+                      {canUploadDocuments && (
+                        <Button
+                          aria-label={`ลบเอกสาร ${document.filename}`}
+                          className="min-h-9 px-3 py-1 text-label-sm"
+                          disabled={deletePendingId === document.id}
+                          onClick={() => {
+                            void handleDeleteDocument(document);
+                          }}
+                          variant="danger"
+                        >
+                          <Trash2 aria-hidden="true" className="h-4 w-4" />
+                          {deletePendingId === document.id ? "กำลังลบ" : "ลบ"}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </article>
               ))}
-            </div>
+            </section>
+            {latestDocuments.length > 2 && (
+              <Button
+                className="mt-4 w-full justify-between"
+                onClick={() => {
+                  setIsLibraryDialogOpen(true);
+                }}
+                variant="secondary"
+              >
+                ดูเอกสารทั้งหมดในคลัง
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              </Button>
+            )}
           </Card>
         </aside>
       </section>
+
+      {isLibraryDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#07111f]/55 p-4"
+          onClick={() => {
+            setIsLibraryDialogOpen(false);
+          }}
+        >
+          <section
+            aria-labelledby="document-library-dialog-title"
+            aria-modal="true"
+            className="max-h-[min(720px,90vh)] w-full max-w-3xl overflow-hidden rounded-xl border border-outline-variant/50 bg-surface-container-lowest shadow-ambient"
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+            role="dialog"
+          >
+            <header className="flex flex-wrap items-start justify-between gap-4 border-b border-outline-variant/40 p-5">
+              <div className="min-w-0">
+                <p className="text-label-sm font-semibold text-[#24527a]">คลังเอกสาร</p>
+                <h3 id="document-library-dialog-title" className="mt-1 text-headline-md text-on-surface">
+                  เอกสารทั้งหมดในคลัง
+                </h3>
+                <p className="mt-1 text-body-md text-on-surface-variant">
+                  รวม {latestDocuments.length} รายการ เรียงจากล่าสุดก่อน
+                </p>
+              </div>
+              <Button
+                aria-label="ปิดคลังเอกสารทั้งหมด"
+                className="min-h-10 px-3"
+                onClick={() => {
+                  setIsLibraryDialogOpen(false);
+                }}
+                variant="ghost"
+              >
+                <X aria-hidden="true" className="h-5 w-5" />
+              </Button>
+            </header>
+            <div className="max-h-[60vh] overflow-y-auto p-5">
+              <div className="grid gap-3">
+                {latestDocuments.map((document) => (
+                  <article
+                    aria-label={`เอกสารทั้งหมดในคลัง ${document.filename}`}
+                    className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4"
+                    key={`dialog-${document.id}`}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-body-md font-bold text-on-surface">{document.filename}</p>
+                        <p className="mt-1 text-label-sm text-on-surface-variant">
+                          โดย {document.uploaded_by} - ควิซ {document.related_exams_count} ชุด
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        <span className={`rounded px-3 py-1 text-label-sm font-bold ${statusToneClassNames[document.status]}`}>
+                          สถานะ: {formatDocumentStatus(document.status)}
+                        </span>
+                        {canUploadDocuments && (
+                          <Button
+                            aria-label={`ลบเอกสาร ${document.filename}`}
+                            className="min-h-9 px-3 py-1 text-label-sm"
+                            disabled={deletePendingId === document.id}
+                            onClick={() => {
+                              void handleDeleteDocument(document);
+                            }}
+                            variant="danger"
+                          >
+                            <Trash2 aria-hidden="true" className="h-4 w-4" />
+                            {deletePendingId === document.id ? "กำลังลบ" : "ลบ"}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 };

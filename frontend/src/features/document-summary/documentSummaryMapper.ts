@@ -1,4 +1,5 @@
 import type { AuthSession } from "../auth/types";
+import { localizeKnownAiText } from "../core-ai/aiThaiText";
 import { documentSummaryMock } from "./documentSummaryData";
 import { buildDocumentDetailHref, parseSummaryMarkdown } from "./documentSummaryHelpers";
 import type {
@@ -85,7 +86,9 @@ const toDocumentSummaryDetail = ({
   recap?: RecapResponse;
 }): DocumentSummaryDetail => {
   const libraryDocument = dashboard.documents.find((document) => document.id === detail.id);
-  const summaryMarkdown = detail.summary_markdown ?? recap?.summary_markdown ?? libraryDocument?.summary_markdown ?? buildStatusSummary(detail.status);
+  const summaryMarkdown = localizeKnownAiText(
+    detail.summary_markdown ?? recap?.summary_markdown ?? libraryDocument?.summary_markdown ?? buildStatusSummary(detail.status)
+  );
   const sections = parseSummaryMarkdown(summaryMarkdown);
 
   return {
@@ -95,9 +98,9 @@ const toDocumentSummaryDetail = ({
     id: detail.id,
     keyTopics: buildKeyTopics(sections, detail.filename),
     relatedDocuments: buildRelatedDocuments(dashboard, detail.id),
-    sourcePreview: detail.extracted_text_preview,
+    sourcePreview: localizeKnownAiText(detail.extracted_text_preview),
     summaryMarkdown,
-    uploadedByLabel: `Uploaded by ${libraryDocument?.uploaded_by ?? detail.uploaded_by}`
+    uploadedByLabel: `อัปโหลดโดย ${libraryDocument?.uploaded_by ?? detail.uploaded_by}`
   };
 };
 
@@ -107,9 +110,9 @@ const buildBreakdown = (
 ): DocumentBreakdownItem[] => {
   const sourceSections = sections.length > 0 ? sections : [
     {
-      body: extractedTextPreview || "Summary is not available yet.",
+      body: extractedTextPreview || "ยังไม่มีสรุปพร้อมแสดง",
       id: "document-preview",
-      title: "Document preview"
+      title: "ตัวอย่างเอกสาร"
     }
   ];
 
@@ -150,28 +153,28 @@ const buildRelatedDocuments = (
 
 const buildStatusSummary = (status: DocumentDetailResponse["status"]) => {
   if (status === "processing") {
-    return "## Processing\nThis document is still being processed. Please check back when ingestion is complete.";
+    return "## กำลังประมวลผล\nเอกสารนี้ยังอยู่ระหว่างประมวลผล กรุณากลับมาตรวจอีกครั้งเมื่อระบบอ่านไฟล์เสร็จ";
   }
 
   if (status === "pending") {
-    return "## Pending\nThis document is waiting for the ingestion pipeline.";
+    return "## รอประมวลผล\nเอกสารนี้กำลังรอเข้าคิวอ่านเนื้อหา";
   }
 
   if (status === "error") {
-    return "## Error\nDocument ingestion failed. Please upload a clean file or contact the workspace owner.";
+    return "## มีปัญหา\nระบบอ่านเอกสารไม่สำเร็จ กรุณาอัปโหลดไฟล์ใหม่หรือติดต่อเจ้าของพื้นที่";
   }
 
-  return "## Summary\nNo summary has been generated for this document yet.";
+  return "## สรุป\nยังไม่มีสรุปสำหรับเอกสารนี้";
 };
 
 const buildWorkspaceName = (session: AuthSession) => {
   const displayName = session.user.displayName?.trim();
 
   if (displayName) {
-    return `${displayName}'s document workspace`;
+    return `คลังเอกสารของ ${displayName}`;
   }
 
-  return "AI Tutor document workspace";
+  return "คลังเอกสาร AI Tutor";
 };
 
 const formatGeneratedAt = (timestamp: Date) => {
@@ -186,7 +189,7 @@ const formatDocumentGeneratedAt = (dateValue: string) => {
   const timestamp = new Date(dateValue);
 
   if (Number.isNaN(timestamp.getTime())) {
-    return "Updated from Backend";
+    return "อัปเดตจากระบบ";
   }
 
   return new Intl.DateTimeFormat("th-TH", {

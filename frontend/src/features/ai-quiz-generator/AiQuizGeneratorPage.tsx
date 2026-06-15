@@ -19,6 +19,7 @@ import { Card } from "../../components/ui/Card";
 import { cn } from "../../lib/cn";
 import { submitQuizAttempt } from "./quizAttemptClient";
 import { generateQuizDraft } from "./quizGenerationClient";
+import { publishQuizDraft } from "./quizPublishClient";
 import { aiQuizGeneratorMock } from "./quizGeneratorData";
 import {
   buildQuizCitationLabel,
@@ -61,7 +62,7 @@ const sourceStatusToneClassNames: Record<QuizSourceStatus, string> = {
 
 const sourceModeItems = [
   {
-    helper: "ต่อยอดจากสรุปและ citation",
+    helper: "ต่อยอดจากสรุปและอ้างอิง",
     id: "document",
     label: "เอกสาร"
   },
@@ -121,6 +122,15 @@ const SourcePanel = ({
               <p className="mt-2 text-label-sm font-semibold text-on-surface-variant">
                 {source.updatedAtLabel} · แนะนำ {source.questionCountRecommendation} ข้อ
               </p>
+              <div className="mt-4">
+                <Link
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded border border-[#3f5d2f]/15 bg-white px-3 py-2 text-label-sm font-bold text-[#355526] transition-colors hover:bg-[#f0f7e8] focus:outline-none focus:ring-2 focus:ring-[#8ab86f] focus:ring-offset-2"
+                  href={`/quiz?documentId=${encodeURIComponent(source.id)}`}
+                >
+                  {isSelected ? "กำลังใช้แหล่งนี้" : "เลือกแหล่งนี้"}
+                  <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                </Link>
+              </div>
             </article>
           );
         })}
@@ -266,10 +276,10 @@ const AttemptPanel = ({
       <Card className="min-w-0 overflow-hidden p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-label-sm font-semibold text-[#355526]">Learner attempt</p>
+            <p className="text-label-sm font-semibold text-[#355526]">ทำควิซ</p>
             <h3 className="mt-1 break-words text-headline-md text-on-surface">ทำควิซและบันทึกคะแนน</h3>
             <p className="mt-2 break-words text-body-md text-on-surface-variant">
-              เลือกคำตอบให้ครบทุกข้อ แล้วส่งผ่าน Backend เพื่อบันทึกคะแนนกลับไปยัง analytics
+              เลือกคำตอบให้ครบทุกข้อ แล้วระบบจะบันทึกคะแนนกลับไปยังสถิติการเรียน
             </p>
           </div>
           {attemptResult ? (
@@ -334,6 +344,13 @@ const AttemptPanel = ({
               <p className="text-headline-md font-bold text-[#216148]">คะแนน {attemptResult.scoreLabel}</p>
               <p className="text-body-md font-semibold text-[#216148]">ถูก {attemptResult.correctAnswersLabel}</p>
             </div>
+            <Link
+              className="mt-4 inline-flex min-h-12 max-w-full items-center justify-center gap-2 rounded border border-[#216148]/20 bg-white px-4 py-2 text-label-md font-bold text-[#216148] transition-colors hover:bg-[#effaf3] focus:outline-none focus:ring-2 focus:ring-[#216148]/30 focus:ring-offset-2"
+              href="/analytics"
+            >
+              ดูสถิติการเรียน
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
             <div className="mt-4 grid gap-3">
               {attemptResult.items.map((item) => (
                 <article className="rounded border border-[#b8dfc8] bg-white p-3" key={item.questionId}>
@@ -394,18 +411,84 @@ const PreviewPanel = ({ quiz }: { quiz: QuizGeneratorViewModel }) => {
             ยังไม่มีคำถามในแบบร่าง รอผลลัพธ์จาก AI หรือลองเลือกแหล่งข้อมูลใหม่
           </div>
         )}
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Button disabled variant="secondary">
-            เผยแพร่แบบทดสอบ
-            <ClipboardCheck aria-hidden="true" className="h-4 w-4" />
-          </Button>
-          <Link className={actionLinkClassName} href="/documents">
-            ดูสรุปเอกสาร
-            <ArrowRight aria-hidden="true" className="h-4 w-4" />
-          </Link>
-        </div>
       </Card>
     </section>
+  );
+};
+
+const PublishPanel = ({
+  onPublish,
+  publishError,
+  publishStatus,
+  quiz
+}: {
+  onPublish: () => void;
+  publishError?: string;
+  publishStatus: AsyncActionStatus;
+  quiz: QuizGeneratorViewModel;
+}) => {
+  const questions = getSafeQuizDraftQuestions(quiz.draft.questions);
+  const hasDraftReady = Boolean(quiz.draft.id) && questions.length > 0;
+  const isPublished = quiz.draft.status === "published";
+  const isPublishing = publishStatus === "submitting";
+
+  return (
+    <Card className="min-w-0 overflow-hidden p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-label-sm font-semibold text-[#355526]">ขั้นตอนถัดไป</p>
+          <h3 className="mt-1 break-words text-headline-md text-on-surface">
+            {isPublished ? "ควิซพร้อมให้ทำแล้ว" : "ตรวจแบบร่างก่อนเผยแพร่"}
+          </h3>
+          <p className="mt-2 break-words text-body-md text-on-surface-variant">
+            {isPublished
+              ? "ผู้เรียนสามารถทำควิซและส่งคะแนนกลับไปยังสถิติการเรียนได้"
+              : "ตรวจคำถามและอ้างอิงให้เรียบร้อยก่อนเปิดให้ผู้เรียนทำควิซ"}
+          </p>
+        </div>
+        <span
+          className={cn(
+            "rounded px-3 py-1 text-label-sm font-bold",
+            isPublished ? "bg-[#e6f6ee] text-[#216148]" : "bg-[#fff3d8] text-[#8a5a00]"
+          )}
+        >
+          {formatQuizDraftStatus(quiz.draft.status)}
+        </span>
+      </div>
+
+      <div className="mt-5 flex flex-wrap gap-3">
+        <Button disabled={!hasDraftReady || isPublished || isPublishing} onClick={onPublish} variant="secondary">
+          {isPublishing ? "กำลังเผยแพร่ควิซ" : isPublished ? "เผยแพร่แล้ว" : "เผยแพร่ควิซ"}
+          <ClipboardCheck aria-hidden="true" className="h-4 w-4" />
+        </Button>
+        <Link className={actionLinkClassName} href="/documents">
+          ดูสรุปเอกสาร
+          <ArrowRight aria-hidden="true" className="h-4 w-4" />
+        </Link>
+      </div>
+
+      {!hasDraftReady ? (
+        <div className="mt-4 rounded border border-outline-variant/40 bg-[#fbfcff] p-3 text-body-md text-on-surface-variant" role="status">
+          สร้างแบบร่างควิซจากเอกสารก่อน จึงจะเผยแพร่ให้ผู้เรียนทำได้
+        </div>
+      ) : null}
+      {publishStatus === "success" ? (
+        <div
+          className="mt-4 rounded border border-[#b8dfc8] bg-[#effaf3] p-3 text-body-md font-semibold text-[#216148]"
+          role="status"
+        >
+          เผยแพร่ควิซสำเร็จ ตอนนี้สามารถลองทำควิซและบันทึกคะแนนได้แล้ว
+        </div>
+      ) : null}
+      {publishStatus === "error" && publishError ? (
+        <div
+          className="mt-4 rounded border border-[#f2b8b5] bg-[#fff8f7] p-3 text-body-md font-semibold text-[#8c1d18]"
+          role="alert"
+        >
+          {publishError}
+        </div>
+      ) : null}
+    </Card>
   );
 };
 
@@ -423,6 +506,8 @@ export const AiQuizGeneratorPage = ({
   const [attemptStatus, setAttemptStatus] = useState<AsyncActionStatus>("idle");
   const [generationError, setGenerationError] = useState<string>();
   const [generationStatus, setGenerationStatus] = useState<AsyncActionStatus>("idle");
+  const [publishError, setPublishError] = useState<string>();
+  const [publishStatus, setPublishStatus] = useState<AsyncActionStatus>("idle");
 
   if (status === "loading") {
     return (
@@ -455,8 +540,18 @@ export const AiQuizGeneratorPage = ({
           </div>
           <h2 className="mt-4 text-headline-md text-on-surface">ยังไม่มีแหล่งข้อมูลที่พร้อมสร้างควิซ</h2>
           <p className="mt-2 text-body-md text-on-surface-variant">
-            รอเอกสารหรือคอร์สเรียนที่ประมวลผลเสร็จก่อนสร้างแบบทดสอบ
+            รอเอกสารหรือคอร์สเรียนที่ประมวลผลเสร็จก่อนสร้างแบบทดสอบ หากเพิ่งอัปโหลดเอกสาร ให้กลับไปคลังเอกสารเพื่อตรวจสถานะก่อน
           </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <Link className={actionLinkClassName} href="/documents">
+              ไปคลังเอกสาร
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+            <Link className={actionLinkClassName} href="/courses">
+              ดูคอร์สเรียน
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+          </div>
         </Card>
       </div>
     );
@@ -487,20 +582,46 @@ export const AiQuizGeneratorPage = ({
       return;
     }
 
-    setDraft(
-      toGeneratedQuizDraft({
+    setDraft({
+      ...toGeneratedQuizDraft({
         examResponse: result.exam,
         source: {
           filename: selectedSource.title,
           id: selectedSource.id
         }
-      })
-    );
+      }),
+      status: "ready_to_publish"
+    });
     setAttemptAnswers({});
     setAttemptError(undefined);
     setAttemptResult(undefined);
     setAttemptStatus("idle");
+    setPublishError(undefined);
+    setPublishStatus("idle");
     setGenerationStatus("success");
+  };
+
+  const handlePublishQuiz = async () => {
+    setPublishError(undefined);
+    setPublishStatus("submitting");
+
+    const result = await publishQuizDraft(activeQuiz.draft.id);
+
+    if (!result.ok) {
+      setPublishError(result.message);
+      setPublishStatus("error");
+      return;
+    }
+
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      status: result.status
+    }));
+    setAttemptAnswers({});
+    setAttemptError(undefined);
+    setAttemptResult(undefined);
+    setAttemptStatus("idle");
+    setPublishStatus("success");
   };
 
   const handleAttemptAnswerChange = (questionId: string, optionIndex: number) => {
@@ -551,7 +672,7 @@ export const AiQuizGeneratorPage = ({
           </div>
           <h2 className="mt-5 text-headline-lg-mobile font-bold md:text-headline-lg">สร้างควิซด้วย AI</h2>
           <p className="mt-3 max-w-3xl text-body-md text-white/80 md:text-body-lg">
-            เลือกแหล่งข้อมูล กำหนดจำนวนข้อและความยาก แล้วดูแบบร่างคำถามพร้อม citation ก่อนเผยแพร่
+            เลือกแหล่งข้อมูล กำหนดจำนวนข้อและความยาก แล้วดูแบบร่างคำถามพร้อมอ้างอิงก่อนเผยแพร่
           </p>
         </div>
       </section>
@@ -592,6 +713,12 @@ export const AiQuizGeneratorPage = ({
             />
           ) : null}
           <PreviewPanel quiz={activeQuiz} />
+          <PublishPanel
+            onPublish={handlePublishQuiz}
+            publishError={publishError}
+            publishStatus={publishStatus}
+            quiz={activeQuiz}
+          />
           {canAttemptQuiz ? (
             <AttemptPanel
               answers={attemptAnswers}
