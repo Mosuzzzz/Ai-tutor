@@ -142,7 +142,7 @@ export const DocumentUploadPanel = ({
           <div className="min-w-0">
             <h3 className="text-headline-sm text-on-surface">อัปโหลดเอกสารประกอบการเรียน</h3>
             <p className="mt-2 text-body-md text-on-surface-variant">
-              รองรับ PDF, Word, PowerPoint และรูปภาพ ขนาดไม่เกิน 50 MB หลังอัปโหลดระบบจะเริ่ม pipeline อัตโนมัติ
+              รองรับ PDF, Word, PowerPoint และรูปภาพ ขนาดไม่เกิน 50 MB หลังอัปโหลดระบบจะเริ่มประมวลผลอัตโนมัติ
             </p>
           </div>
         </div>

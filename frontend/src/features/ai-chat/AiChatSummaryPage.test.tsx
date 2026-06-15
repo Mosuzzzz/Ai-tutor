@@ -26,6 +26,8 @@ describe("AiChatSummaryPage", () => {
     expect(screen.getAllByText("คู่มือความปลอดภัยห้องปฏิบัติการ.pdf").length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: "บทสนทนาอ้างอิงเอกสาร" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "สรุปประกอบคำตอบ" })).toBeInTheDocument();
+    expect(screen.getByText("แชทจากเอกสารเดียวกัน")).toBeInTheDocument();
+    expect(screen.queryByText("Grounded RAG Chat")).not.toBeInTheDocument();
   });
 
   it("renders document list, selected summary, grounded messages, and citations", () => {
@@ -45,8 +47,11 @@ describe("AiChatSummaryPage", () => {
   it("renders safe next-step actions and an enabled document-context composer", () => {
     render(<AiChatSummaryPage />);
 
-    expect(screen.getByRole("link", { name: /ดูสรุปเอกสาร/ })).toHaveAttribute("href", "/documents");
-    expect(screen.getByRole("link", { name: /สร้างควิซจากคำตอบนี้/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /ดูสรุปเอกสาร/ })).toHaveAttribute(
+      "href",
+      "/documents/doc-lab-safety"
+    );
+    expect(screen.getByRole("link", { name: /สร้างควิซจากเอกสารนี้/ })).toHaveAttribute(
       "href",
       "/quiz?documentId=doc-lab-safety"
     );
@@ -97,7 +102,7 @@ describe("AiChatSummaryPage", () => {
     });
 
     expect(await screen.findByText("ควรสรุปประเด็นไหนก่อนทำควิซ")).toBeInTheDocument();
-    expect(screen.getByText("Report incidents immediately and notify the trainer.")).toBeInTheDocument();
+    expect(screen.getByText("รายงานเหตุผิดปกติทันทีและแจ้งครูผู้สอน")).toBeInTheDocument();
     expect(screen.getByText("safety-handbook.pdf · ส่วนที่ 4")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("ส่งคำถามถึง AI สำเร็จ");
     expect(screen.getByRole("textbox", { name: "คำถามถึง AI Tutor" })).toHaveValue("");
@@ -145,6 +150,17 @@ describe("AiChatSummaryPage", () => {
     expect(screen.getByTestId("ai-chat-summary-panel")).toHaveClass("min-w-0", "overflow-hidden");
   });
 
+  it("keeps visible chat metrics and mapper-driven labels Thai-first", () => {
+    render(<AiChatSummaryPage />);
+
+    expect(screen.getByText("คำตอบอ้างอิง")).toBeInTheDocument();
+    expect(screen.getByText("เอกสารพร้อมถาม")).toBeInTheDocument();
+    expect(screen.getByText("ประวัติสนทนา")).toBeInTheDocument();
+    expect(screen.queryByText("Grounded answers")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ready documents")).not.toBeInTheDocument();
+    expect(screen.queryByText("History items")).not.toBeInTheDocument();
+  });
+
   it("does not expose backend endpoint details in the DOM", () => {
     render(<AiChatSummaryPage />);
 
@@ -166,6 +182,8 @@ describe("AiChatSummaryPage", () => {
     rerender(<AiChatSummaryPage chat={emptyChatMock} />);
 
     expect(screen.getByRole("status")).toHaveTextContent("ยังไม่มีเอกสารที่พร้อมให้ถาม AI");
+    expect(screen.getByRole("link", { name: "ไปคลังเอกสาร" })).toHaveAttribute("href", "/documents");
+    expect(screen.getByRole("link", { name: "ดูคอร์สเรียน" })).toHaveAttribute("href", "/courses");
     expect(screen.queryByRole("textbox", { name: "คำถามถึง AI Tutor" })).not.toBeInTheDocument();
   });
 

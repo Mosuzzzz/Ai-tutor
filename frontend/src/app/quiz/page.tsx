@@ -32,6 +32,7 @@ const QuizPage = async ({ searchParams }: QuizPageProps = {}) => {
         dataSource="api"
         errorMessage={"errorMessage" in quizResult ? quizResult.errorMessage : undefined}
         quiz={"quiz" in quizResult ? quizResult.quiz : undefined}
+        selectedSourceId={selectedDocumentId}
         status={quizResult.status}
       />
     </AppShell>

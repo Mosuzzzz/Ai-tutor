@@ -99,6 +99,15 @@ const DocumentSelector = ({
               <p className="mt-2 text-label-sm font-semibold text-on-surface-variant">
                 {document.updatedAtLabel} · {document.topicCount} หัวข้อ
               </p>
+              <div className="mt-4">
+                <Link
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded border border-[#2d5f72]/15 bg-white px-3 py-2 text-label-sm font-bold text-[#2d5f72] transition-colors hover:bg-[#edf6f8] focus:outline-none focus:ring-2 focus:ring-[#5ba8b5] focus:ring-offset-2"
+                  href={`/chat?documentId=${encodeURIComponent(document.id)}`}
+                >
+                  {isSelected ? "กำลังใช้เอกสารนี้" : "เลือกเอกสารนี้"}
+                  <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                </Link>
+              </div>
             </article>
           );
         })}
@@ -112,11 +121,11 @@ const ChatThread = ({ messages }: { messages: ChatMessage[] }) => {
     <Card className="min-w-0 overflow-hidden p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-label-sm font-semibold text-[#2d5f72]">Grounded RAG Chat</p>
+          <p className="text-label-sm font-semibold text-[#2d5f72]">แชทจากเอกสารเดียวกัน</p>
           <h3 className="mt-1 break-words text-headline-md text-on-surface">บทสนทนาอ้างอิงเอกสาร</h3>
         </div>
         <span className="rounded bg-[#e6f6ee] px-3 py-1 text-label-sm font-bold text-[#216148]">
-          {countGroundedAssistantMessages(messages)} คำตอบมี citation
+          {countGroundedAssistantMessages(messages)} คำตอบมีอ้างอิง
         </span>
       </div>
 
@@ -173,12 +182,12 @@ const SummaryPanel = ({ chat, selectedDocument }: { chat: AiChatSummaryViewModel
         <h3 className="mt-3 break-words text-headline-md text-on-surface">{selectedDocument.filename}</h3>
         <p className="mt-3 break-words text-body-md text-on-surface-variant">{selectedDocument.summary}</p>
         <div className="mt-5 flex flex-wrap gap-3">
-          <Link className={linkClassName} href="/documents">
+          <Link className={linkClassName} href={`/documents/${selectedDocumentQuery}`}>
             ดูสรุปเอกสาร
             <ArrowRight aria-hidden="true" className="h-4 w-4" />
           </Link>
           <Link className={linkClassName} href={`/quiz?documentId=${selectedDocumentQuery}`}>
-            สร้างควิซจากคำตอบนี้
+            สร้างควิซจากเอกสารนี้
             <Bot aria-hidden="true" className="h-4 w-4" />
           </Link>
         </div>
@@ -322,8 +331,18 @@ export const AiChatSummaryPage = ({
           </div>
           <h2 className="mt-4 text-headline-md text-on-surface">ยังไม่มีเอกสารที่พร้อมให้ถาม AI</h2>
           <p className="mt-2 text-body-md text-on-surface-variant">
-            รอเอกสารที่มีสรุปพร้อมใช้งานก่อนเริ่มบทสนทนาแบบอ้างอิงหลักฐาน
+            รอเอกสารที่มีสรุปพร้อมใช้งานก่อนเริ่มบทสนทนาแบบอ้างอิงหลักฐาน หรือกลับไปตรวจคลังเอกสารเพื่ออัปโหลดและรอให้ระบบประมวลผลเสร็จ
           </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <Link className={linkClassName} href="/documents">
+              ไปคลังเอกสาร
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+            <Link className={linkClassName} href="/courses">
+              ดูคอร์สเรียน
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+          </div>
         </Card>
       </div>
     );
@@ -374,7 +393,7 @@ export const AiChatSummaryPage = ({
           </div>
           <h2 className="mt-5 text-headline-lg-mobile font-bold md:text-headline-lg">แชท AI กับเอกสาร</h2>
           <p className="mt-3 max-w-3xl text-body-md text-white/80 md:text-body-lg">
-            ถามต่อจากสรุปเอกสาร ดูคำตอบพร้อม citation และเตรียมต่อยอดไปควิซจากหลักฐานเดียวกัน
+            ถามต่อจากสรุปเอกสาร ดูคำตอบพร้อมอ้างอิง และต่อยอดไปควิซจากหลักฐานเดียวกัน
           </p>
         </div>
       </section>

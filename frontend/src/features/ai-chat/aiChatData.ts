@@ -31,7 +31,7 @@ export const aiChatSummaryMock: AiChatSummaryViewModel = {
       id: "doc-digestive-system",
       ownerLabel: "อัปโหลดโดย อาจารย์มนัส",
       status: "processing",
-      summary: "รอ pipeline อ่านเนื้อหาให้ครบก่อนเปิดให้ถาม AI",
+      summary: "รอระบบอ่านเนื้อหาให้ครบก่อนเปิดให้ถาม AI",
       summaryAvailable: false,
       topicCount: 0,
       updatedAt: "2026-05-30T08:00:00.000Z",
@@ -95,22 +95,22 @@ export const aiChatSummaryMock: AiChatSummaryViewModel = {
   ],
   metrics: [
     {
-      helper: "คำตอบ AI ที่มี citation จากเอกสาร",
+      helper: "คำตอบ AI ที่มีอ้างอิงจากเอกสาร",
       id: "grounded-answers",
       label: "คำตอบอ้างอิง",
       value: "2"
     },
     {
-      helper: "เอกสารที่พร้อมใช้กับ RAG chat",
+      helper: "เอกสารที่พร้อมใช้ถาม AI พร้อมอ้างอิง",
       id: "ready-documents",
       label: "เอกสารพร้อมถาม",
       value: "2"
     },
     {
-      helper: "คำถามตัวอย่างสำหรับต่อยอดบทสนทนา",
-      id: "prompt-count",
-      label: "คำถามแนะนำ",
-      value: "3"
+      helper: "จำนวนรอบสนทนาที่อ้างอิงเอกสารนี้",
+      id: "history-count",
+      label: "ประวัติสนทนา",
+      value: "2"
     }
   ],
   selectedDocumentId: "doc-lab-safety",
@@ -138,5 +138,5 @@ export const aiChatSummaryMock: AiChatSummaryViewModel = {
     ],
     title: "สรุปประกอบคำตอบ"
   },
-  workspaceName: "AI Tutor Chat Workspace"
+  workspaceName: "พื้นที่แชทกับเอกสาร"
 };

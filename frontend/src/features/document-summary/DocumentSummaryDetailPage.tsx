@@ -84,7 +84,7 @@ export const DocumentSummaryDetailPage = ({
           </div>
           <h1 className="mt-4 text-headline-md text-on-surface">ยังไม่มีรายละเอียดสรุปสำหรับเอกสารนี้</h1>
           <p className="mt-2 text-body-md text-on-surface-variant">
-            กลับไปเลือกเอกสารที่ประมวลผลเสร็จแล้ว หรือรอให้ pipeline สร้างสรุปให้เรียบร้อยก่อน
+            กลับไปเลือกเอกสารที่ประมวลผลเสร็จแล้ว หรือรอให้ระบบสร้างสรุปให้เรียบร้อยก่อน
           </p>
         </Card>
       </div>
@@ -111,7 +111,7 @@ export const DocumentSummaryDetailPage = ({
           <div className="min-w-0">
             <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#ffd37a]">
               <Sparkles aria-hidden="true" className="h-4 w-4" />
-              Document Summary Detail
+              รายละเอียดสรุปเอกสาร
             </div>
             <h1 className="mt-5 break-words text-headline-lg-mobile font-bold md:text-headline-lg">
               {selectedDetail.filename}
@@ -168,7 +168,7 @@ export const DocumentSummaryDetailPage = ({
         >
           <div className="flex items-center gap-2 text-label-sm font-semibold text-[#24527a]">
             <FileText aria-hidden="true" className="h-4 w-4" />
-            Summary
+            สรุปจาก AI
           </div>
           <h2 className="mt-2 text-headline-md text-on-surface">สรุปเอกสาร</h2>
           <div className="mt-5 grid gap-4">

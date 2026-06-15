@@ -33,6 +33,10 @@ describe("DocumentSummaryDetailPage", () => {
     expect(screen.getByRole("heading", { level: 1, name: "safety-handbook.pdf" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "สรุปเอกสาร" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "หัวข้อสำคัญ" })).toBeInTheDocument();
+    expect(screen.getByText("รายละเอียดสรุปเอกสาร")).toBeInTheDocument();
+    expect(screen.getByText("สรุปจาก AI")).toBeInTheDocument();
+    expect(screen.queryByText("Document Summary Detail")).not.toBeInTheDocument();
+    expect(screen.queryByText("Summary")).not.toBeInTheDocument();
   });
 
   it("keeps document-context actions scoped to the selected document id", () => {
@@ -53,8 +57,8 @@ describe("DocumentSummaryDetailPage", () => {
 
     const summaryRegion = screen.getByRole("region", { name: "สรุปเอกสาร safety-handbook.pdf" });
 
-    expect(within(summaryRegion).getByText("Overview")).toBeInTheDocument();
-    expect(within(summaryRegion).getByText(/Review safety checklist/)).toBeInTheDocument();
+    expect(within(summaryRegion).getByText("ภาพรวม")).toBeInTheDocument();
+    expect(within(summaryRegion).getByText(/ทบทวนรายการความปลอดภัย/)).toBeInTheDocument();
     expect(screen.getAllByRole("progressbar").length).toBeGreaterThan(0);
     expect(screen.queryByText("/api/files/dashboard")).not.toBeInTheDocument();
     expect(screen.queryByText("/api/files/file-ready/detail")).not.toBeInTheDocument();

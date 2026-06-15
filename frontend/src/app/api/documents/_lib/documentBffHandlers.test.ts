@@ -74,6 +74,31 @@ const createStatusRequest = (cookie: string | null = "server-cookie-token") => {
   });
 };
 
+const createDeleteRequest = ({
+  cookie = "server-cookie-token",
+  origin = "http://frontend.test"
+}: {
+  cookie?: string | null;
+  origin?: string | null;
+} = {}) => {
+  const headers = new Headers({
+    host: "frontend.test"
+  });
+
+  if (origin !== null) {
+    headers.set("origin", origin);
+  }
+
+  if (cookie) {
+    headers.set("cookie", `${AUTH_COOKIE_NAMES.accessToken}=${encodeURIComponent(cookie)}`);
+  }
+
+  return new Request("http://frontend.test/api/documents/file-ready", {
+    headers,
+    method: "DELETE"
+  });
+};
+
 describe("document BFF route handlers", () => {
   it("uploads a safe document to Backend with the HttpOnly access cookie", async () => {
     const backendFormDataRequest = vi.fn(async () => backendUploadResponse) as unknown as ReturnType<typeof vi.fn> &
@@ -166,6 +191,52 @@ describe("document BFF route handlers", () => {
         path: "/api/files/file-ready/status"
       })
     );
+  });
+
+  it("deletes a document through the server-side access cookie without leaking backend details", async () => {
+    const backendJsonRequest = vi.fn(async () => null) as unknown as ReturnType<typeof vi.fn> &
+      DocumentJsonBackendRequest;
+    const handlers = createDocumentRouteHandlers({
+      backendFormDataRequest: vi.fn() as unknown as DocumentFormBackendRequest,
+      backendJsonRequest
+    });
+
+    const response = await handlers.delete(createDeleteRequest(), { fileId: "file-ready" });
+    const body = await response.json();
+
+    expect(response.status, JSON.stringify(body)).toBe(200);
+    expect(body).toEqual({
+      document: {
+        id: "file-ready"
+      },
+      message: "ลบเอกสารออกจากคลังแล้ว",
+      ok: true
+    });
+    expect(JSON.stringify(body)).not.toContain("server-cookie-token");
+    expect(backendJsonRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accessToken: "server-cookie-token",
+        method: "DELETE",
+        path: "/api/files/file-ready"
+      })
+    );
+  });
+
+  it("rejects cross-origin and missing-cookie document delete attempts before Backend", async () => {
+    const backendJsonRequest = vi.fn() as unknown as DocumentJsonBackendRequest;
+    const handlers = createDocumentRouteHandlers({
+      backendFormDataRequest: vi.fn() as unknown as DocumentFormBackendRequest,
+      backendJsonRequest
+    });
+
+    const crossOrigin = await handlers.delete(createDeleteRequest({ origin: "https://evil.example.com" }), {
+      fileId: "file-ready"
+    });
+    const missingCookie = await handlers.delete(createDeleteRequest({ cookie: null }), { fileId: "file-ready" });
+
+    expect(crossOrigin.status).toBe(403);
+    expect(missingCookie.status).toBe(401);
+    expect(backendJsonRequest).not.toHaveBeenCalled();
   });
 
   it("maps Backend upload errors to safe BFF responses", async () => {

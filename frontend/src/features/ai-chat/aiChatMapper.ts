@@ -1,4 +1,5 @@
 import type { AuthSession } from "../auth/types";
+import { localizeKnownAiText } from "../core-ai/aiThaiText";
 import type { DocumentLibraryResponse } from "../document-summary/documentSummaryContract";
 import { aiChatSummaryMock } from "./aiChatData";
 import type { ChatHistoryResponse, ChatQueryResponse } from "./aiChatContract";
@@ -42,21 +43,21 @@ export const toAiChatSummaryViewModel = ({
     messages,
     metrics: [
       {
-        helper: "AI answers that include document citations",
+        helper: "คำตอบ AI ที่มีอ้างอิงจากเอกสาร",
         id: "grounded-answers",
-        label: "Grounded answers",
+        label: "คำตอบอ้างอิง",
         value: String(history.filter((item) => item.citations.length > 0).length)
       },
       {
-        helper: "Documents available for RAG chat",
+        helper: "เอกสารที่พร้อมใช้ถาม AI พร้อมอ้างอิง",
         id: "ready-documents",
-        label: "Ready documents",
+        label: "เอกสารพร้อมถาม",
         value: String(readyDocuments.length)
       },
       {
-        helper: "Recent chat turns loaded from Backend",
+        helper: "จำนวนรอบสนทนาที่โหลดจากระบบ",
         id: "history-count",
-        label: "History items",
+        label: "ประวัติสนทนา",
         value: String(history.length)
       }
     ],
@@ -112,11 +113,12 @@ export const toDocumentContextChatMessages = ({
       role: "learner"
     },
     {
-      body: response.response_text,
+      body: localizeKnownAiText(response.response_text),
       citations: response.citations.map((citation) => ({
         ...citation,
         file_id: citation.file_id || document.id,
-        filename: citation.filename || document.filename
+        filename: citation.filename || document.filename,
+        matched_text: citation.matched_text ? localizeKnownAiText(citation.matched_text) : citation.matched_text
       })),
       createdAtLabel,
       id: `${response.chat_history_id}-assistant`,
@@ -128,9 +130,9 @@ export const toDocumentContextChatMessages = ({
 const toChatDocument = (document: DocumentLibraryItem): ChatDocument => ({
   filename: document.filename,
   id: document.id,
-  ownerLabel: `Uploaded by ${document.uploaded_by}`,
+  ownerLabel: `อัปโหลดโดย ${document.uploaded_by}`,
   status: toChatDocumentStatus(document.status),
-  summary: document.summary_markdown ? summarizeMarkdown(document.summary_markdown) : buildDocumentStatusSummary(document.status),
+  summary: document.summary_markdown ? summarizeMarkdown(localizeKnownAiText(document.summary_markdown)) : buildDocumentStatusSummary(document.status),
   summaryAvailable: document.summary_available,
   topicCount: document.summary_markdown ? countMarkdownSections(document.summary_markdown) : 0,
   updatedAt: document.created_at,
@@ -150,15 +152,18 @@ const toChatMessages = (historyItem: ChatHistoryResponse[number]): ChatMessage[]
 
   return [
     {
-      body: historyItem.query,
+      body: localizeKnownAiText(historyItem.query),
       citations: [],
       createdAtLabel,
       id: `${historyItem.id}-learner`,
       role: "learner"
     },
     {
-      body: historyItem.response,
-      citations: historyItem.citations,
+      body: localizeKnownAiText(historyItem.response),
+      citations: historyItem.citations.map((citation) => ({
+        ...citation,
+        matched_text: citation.matched_text ? localizeKnownAiText(citation.matched_text) : citation.matched_text
+      })),
       createdAtLabel,
       id: `${historyItem.id}-assistant`,
       role: "assistant"
@@ -171,12 +176,14 @@ const buildSummaryPanel = (
   history: ChatHistoryResponse
 ) => {
   const latestAnswer = [...history].reverse().find((item) => item.response)?.response;
-  const summary = latestAnswer ?? selectedDocument?.summary_markdown ?? "No AI answer history is available for this document yet.";
+  const summary = localizeKnownAiText(
+    latestAnswer ?? selectedDocument?.summary_markdown ?? "ยังไม่มีประวัติคำตอบจาก AI สำหรับเอกสารนี้"
+  );
 
   return {
     summary: summarizeMarkdown(summary),
     takeaways: buildTakeaways(summary),
-    title: "Answer Summary"
+    title: "สรุปประกอบคำตอบ"
   };
 };
 
@@ -186,11 +193,11 @@ const buildTakeaways = (value: string) => {
     .map((line) => line.replace(/^[-*#\s]+/, "").trim())
     .filter(Boolean);
 
-  return lines.slice(0, 3).length > 0 ? lines.slice(0, 3) : ["No key takeaway is available from the chat history yet."];
+  return lines.slice(0, 3).length > 0 ? lines.slice(0, 3) : ["ยังไม่มีประเด็นสำคัญจากบทสนทนา"];
 };
 
 const summarizeMarkdown = (markdown: string) => {
-  return markdown
+  return localizeKnownAiText(markdown)
     .replace(/^#{1,6}\s+/gm, "")
     .replace(/^[-*]\s+/gm, "")
     .split(/\r?\n/)
@@ -207,35 +214,35 @@ const countMarkdownSections = (markdown: string) => {
 
 const buildDocumentStatusSummary = (status: DocumentLibraryItem["status"]) => {
   if (status === "pending") {
-    return "Document is waiting for ingestion before AI chat is available.";
+    return "เอกสารกำลังรอเข้าคิวประมวลผลก่อนเปิดให้ถาม AI";
   }
 
   if (status === "processing") {
-    return "Document is still processing before AI chat is available.";
+    return "เอกสารยังประมวลผลอยู่ จึงยังถาม AI จากไฟล์นี้ไม่ได้";
   }
 
   if (status === "error") {
-    return "Document ingestion failed and cannot be used for grounded chat yet.";
+    return "ระบบอ่านเอกสารไม่สำเร็จ กรุณาอัปโหลดไฟล์ใหม่ก่อนถาม AI";
   }
 
-  return "Summary is not available yet.";
+  return "ยังไม่มีสรุปพร้อมใช้สำหรับเอกสารนี้";
 };
 
 const buildWorkspaceName = (session: AuthSession) => {
   const displayName = session.user.displayName?.trim();
 
   if (displayName) {
-    return `${displayName}'s AI chat workspace`;
+    return `พื้นที่แชทของ ${displayName}`;
   }
 
-  return "AI Tutor chat workspace";
+  return "พื้นที่แชทกับเอกสาร";
 };
 
 const formatDateLabel = (dateValue: string) => {
   const timestamp = new Date(dateValue);
 
   if (Number.isNaN(timestamp.getTime())) {
-    return "Updated from Backend";
+    return "อัปเดตจากระบบ";
   }
 
   return new Intl.DateTimeFormat("th-TH", {
@@ -248,7 +255,7 @@ const formatTimeLabel = (dateValue: string) => {
   const timestamp = new Date(dateValue);
 
   if (Number.isNaN(timestamp.getTime())) {
-    return "Backend";
+    return "จากระบบ";
   }
 
   return new Intl.DateTimeFormat("th-TH", {
