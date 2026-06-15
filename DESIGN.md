@@ -4,9 +4,9 @@
 
 ## Product Direction
 
-AI Tutor จะเป็น **Personal AI Study Workspace** สำหรับผู้ใช้คนเดียว ไม่แยกประสบการณ์หลักเป็นครู/นักเรียน
+AI Tutor คือ **Personal AI Study Workspace** สำหรับผู้ใช้คนเดียว ไม่แยกประสบการณ์หลักเป็นครู/นักเรียน
 
-Flow หลัก:
+ผู้ใช้ทุกคนใน core flow ควรทำสิ่งนี้ได้ในพื้นที่ของตัวเอง:
 
 ```text
 Register/Login
@@ -14,19 +14,44 @@ Register/Login
   -> Upload Document
   -> Summary Detail
   -> Chat with Document
-  -> Generate Personal Quiz
+  -> Generate Personal Review Quiz
   -> Take Quiz
   -> Personal Learning Analytics
 ```
 
-หลักการออกแบบ:
+หลักการสำคัญ:
 
 - Thai-first: copy หลักเป็นภาษาไทย
 - Personal-first: ทุกหน้าตอบว่า "ฉันจะทบทวนต่อยังไง"
 - No role confusion: UI หลักไม่ถามว่าผู้ใช้เป็นครูหรือนักเรียน
-- API-ready ไม่หลอกผู้ใช้: ถ้า Backend ยังตอบไม่สมบูรณ์ ต้องแสดง state ตามจริง
+- API-honest: ถ้า Backend ยังตอบไม่สมบูรณ์ ต้องแสดง state ตามจริง
 - Security-first: ใช้ HttpOnly cookie/session ผ่าน BFF, ไม่เก็บ token ใน `localStorage` หรือ `sessionStorage`
 - Premium learning product: สงบ น่าเชื่อถือ อ่านง่าย ไม่ฉูดฉาด และไม่เหมือน generic AI dashboard
+
+## Product Vocabulary
+
+ใช้คำเหล่านี้เป็น vocabulary กลางของทุก branch ต่อไป:
+
+| Concept | Copy หลัก |
+| --- | --- |
+| Workspace | พื้นที่เรียนของฉัน |
+| Dashboard | แดชบอร์ดของฉัน |
+| Documents | เอกสารของฉัน |
+| Summary | สรุปเอกสาร |
+| Chat | แชทกับเอกสาร |
+| Quiz | ควิซทบทวน |
+| Score | คะแนนของฉัน |
+| Analytics | สถิติการทบทวน |
+
+หลีกเลี่ยงใน core UI:
+
+- แดชบอร์ดครู
+- แดชบอร์ดนักเรียน
+- ผู้สอนเท่านั้น
+- รอครูแชร์
+- เผยแพร่ให้นักเรียน
+- ภาพรวมห้องเรียน
+- รายชื่อนักเรียน
 
 ## Verification ทุก Branch
 
@@ -48,30 +73,15 @@ npm audit --audit-level=high
 - ตรวจ contrast และ disabled state
 - ใช้ `$impeccable critique` และ `$impeccable audit` ตาม scope ของ branch
 
-## Current Codebase Cleanup Map
-
-จุดที่ยังต้องเปลี่ยนให้ตรงกับ direction ใหม่:
-
-- `frontend/src/features/auth/`: register ยังมี role selector และ copy นักเรียน/ผู้สอน
-- `frontend/src/features/auth/authRoutePolicy.ts`: route policy ยังแยก student/teacher
-- `frontend/src/features/app-shell/`: navigation ยังมีแดชบอร์ดครูและ role-based item
-- `frontend/src/app/page.tsx`: ยังใช้ student dashboard เป็นหน้า `/`
-- `frontend/src/app/teacher/page.tsx`: ยังมี teacher dashboard แยก
-- `frontend/src/features/student-dashboard/` และ `frontend/src/features/teacher-dashboard/`: ต้องรวมเป็น dashboard ส่วนตัวเดียว
-- `frontend/src/features/document-summary/`: copy และ permission บางส่วนยังพูดถึงผู้สอน/แอดมิน/รอครูแชร์
-- `frontend/src/features/ai-chat/`: ต้องทำให้ชัดว่าแชทกับเอกสารของผู้ใช้เอง
-- `frontend/src/features/ai-quiz-generator/`: ยังมี publish/share/teacher mental model และ permission generate quiz ที่ผูกกับ role
-- `frontend/src/features/learning-analytics/`: ต้องเป็นสถิติส่วนตัว ไม่ใช่ภาพรวมห้องเรียน/นักเรียน
-- `PRODUCT.md` และ `frontend/SRS.md`: ควรอัปเดตให้สอดคล้องกับ single-user product
-
 ## Branch Rules
 
 - สร้าง branch ใหม่จาก `main` ล่าสุด
-- ทำตามลำดับด้านล่าง เพราะ branch หลังจะพึ่ง mental model จาก branch ก่อน
+- ทำตามลำดับด้านล่าง เพราะ branch หลังพึ่ง mental model จาก branch ก่อน
 - ถ้าเปลี่ยน behavior ให้ปรับ/เพิ่ม test ก่อน
 - ถ้าแตะ UX/UI ให้ใช้ Impeccable command ที่ระบุ
 - ไม่รวมหลาย branch เข้าด้วยกันถ้าทำให้ review ยาก
 - ไม่แก้ auth/session security แบบเดาสุ่มนอก contract ของ Backend
+- ไม่ commit `.agents/`, `.codex/`, `.impeccable/`, ไฟล์ backend ที่ไม่เกี่ยวข้อง หรือ env/local generated files
 
 ---
 
@@ -83,7 +93,8 @@ npm audit --audit-level=high
 
 - ปรับเอกสาร product ให้เป็น personal AI study workspace
 - เลิกใช้คำอธิบาย core flow แบบครูสร้างให้นักเรียน
-- สร้าง vocabulary เดียวสำหรับ branch ต่อไป เช่น "พื้นที่เรียนของฉัน", "เอกสารของฉัน", "ควิซทบทวน", "สถิติของฉัน"
+- สร้าง vocabulary เดียวสำหรับ branch ต่อไป
+- ทำให้ `PRODUCT.md`, `DESIGN.md`, และ `frontend/SRS.md` เป็น source of truth เดียวกัน
 
 Files:
 
@@ -103,6 +114,7 @@ Acceptance:
 - เอกสารไม่สื่อว่า core flow ต้องมีครูแชร์ให้นักเรียน
 - ทีมอ่านแล้วเข้าใจว่า product หลักเป็น single-user
 - คำศัพท์หลักพร้อมให้ branch อื่นใช้ต่อ
+- Scope ที่ไม่เกี่ยวข้องถูกย้ายไป out-of-core/backlog แทนการเป็น core flow
 
 ## 5.5.1 `UnifiedAuthAndSession`
 
@@ -110,7 +122,7 @@ Acceptance:
 
 - Register ไม่ถาม role ครู/นักเรียน
 - Login redirect ไป `/` สำหรับ user ปกติ
-- ถ้า Backend ยังต้องการ role ให้ Frontend/BFF ส่ง default role ตาม contract โดยซ่อนจาก UI
+- ถ้า Backend ยังต้องการ role ให้ BFF ส่ง default ตาม contract โดยซ่อนจาก UI
 - รักษา HttpOnly cookie/session security ตาม `AGENTS_FRONTEND.md`
 
 Files:
