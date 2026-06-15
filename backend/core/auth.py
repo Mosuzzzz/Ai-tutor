@@ -108,21 +108,20 @@ def get_current_user(
         )
     
     user_id: str = payload.get("user_id")
-    tenant_id: str = payload.get("tenant_id")
     email: str = payload.get("email")
-    
-    if not user_id or not tenant_id or not email:
+
+    if not user_id or not email:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token payload is invalid",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        
-    user = db.query(User).filter(User.id == user_id, User.tenant_id == tenant_id).first()
+
+    user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found or does not belong to active tenant",
+            detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
         

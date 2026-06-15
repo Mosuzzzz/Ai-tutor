@@ -3,37 +3,48 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session
 from database import get_db
-from auth import get_current_user, require_role
+from auth import get_current_user
 from models import Exam, File, User, AuditLog
 import schemas
-import uuid
 from services import ai_service
 
-router = APIRouter(prefix="/exams", tags=["Tenant Exam Management"])
+router = APIRouter(prefix="/exams", tags=["Personal Review Quiz"])
+
+
+def _mask_questions(questions: list) -> list:
+    """Hide the answer key until the owner submits their attempt."""
+    masked = []
+    for q in questions:
+        q_copy = copy.deepcopy(q)
+        q_copy.pop("correct_index", None)
+        q_copy.pop("explanation", None)
+        q_copy.pop("citation", None)
+        masked.append(q_copy)
+    return masked
 
 
 @router.post("/generate")
 def generate_exam(
     request: schemas.ExamCreateRequest,
-    current_user: User = Depends(require_role(["trainer", "tenant_admin"])),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Generate an exam from a document using AI (trainer only)."""
+    """Generate a personal review quiz from one of the user's own documents."""
     file_record = db.query(File).filter(
         File.id == request.file_id,
-        File.tenant_id == current_user.tenant_id,
+        File.user_id == current_user.id,
     ).first()
     if not file_record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found in your tenant workspace.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found in your workspace.")
     if file_record.status != "ready":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File is not ready for quiz generation (status: {file_record.status}).",
+            detail=f"Document is not ready for quiz generation (status: {file_record.status}).",
         )
     if not file_record.extracted_text:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="File has no extracted text. Cannot generate quiz.",
+            detail="Document has no extracted text. Cannot generate quiz.",
         )
 
     questions = ai_service.generate_quiz(
@@ -46,94 +57,72 @@ def generate_exam(
 
     exam = Exam(
         file_id=request.file_id,
-        tenant_id=current_user.tenant_id,
         user_id=current_user.id,
         questions=questions,
-        status="draft",
     )
     db.add(exam)
     db.commit()
     db.refresh(exam)
 
     db.add(AuditLog(
-        tenant_id=current_user.tenant_id,
         user_id=current_user.id,
         action="EXAM_GENERATED",
         details=f"Generated exam {exam.id} from file {request.file_id} ({len(questions)} questions, difficulty={request.difficulty})",
     ))
     db.commit()
 
+    # Newly generated quiz: return the full questions so the owner can preview, but
+    # the answer key is masked until they submit.
     return {
         "id": exam.id,
         "file_id": exam.file_id,
-        "tenant_id": exam.tenant_id,
-        "questions": exam.questions,
-        "status": exam.status,
+        "questions": _mask_questions(exam.questions),
+        "taken_at": None,
     }
 
 
 @router.get("/{exam_id}")
 def get_exam(exam_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    exam = db.query(Exam).filter(Exam.id == exam_id, Exam.tenant_id == current_user.tenant_id).first()
+    exam = db.query(Exam).filter(Exam.id == exam_id, Exam.user_id == current_user.id).first()
     if not exam:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exam not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
 
-    if exam.status == "draft" and current_user.role == "learner":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Exam is draft and not visible to learners")
-
-    questions = exam.questions
-    if current_user.role == "learner":
-        masked = []
-        for q in questions:
-            q_copy = copy.deepcopy(q)
-            q_copy.pop("correct_index", None)
-            q_copy.pop("explanation", None)
-            q_copy.pop("citation", None)
-            masked.append(q_copy)
-        questions = masked
+    # Answer key is only revealed after the owner has submitted their attempt.
+    questions = exam.questions if exam.taken_at else _mask_questions(exam.questions)
 
     return {
         "id": exam.id,
         "file_id": exam.file_id,
-        "tenant_id": exam.tenant_id,
         "questions": questions,
-        "status": exam.status,
+        "score": exam.score,
+        "taken_at": exam.taken_at.isoformat() if exam.taken_at else None,
     }
 
 
 @router.put("/{exam_id}")
-def update_exam_questions(exam_id: str, questions: list = Body(...), current_user: User = Depends(require_role(["trainer", "tenant_admin"])), db: Session = Depends(get_db)):
-    exam = db.query(Exam).filter(Exam.id == exam_id, Exam.tenant_id == current_user.tenant_id).first()
+def update_exam_questions(exam_id: str, questions: list = Body(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    exam = db.query(Exam).filter(Exam.id == exam_id, Exam.user_id == current_user.id).first()
     if not exam:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exam not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
+    if exam.taken_at:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Quiz already submitted and cannot be edited")
     exam.questions = questions
     db.commit()
     db.refresh(exam)
     return {
         "id": exam.id,
-        "questions": exam.questions,
-        "status": exam.status,
+        "questions": _mask_questions(exam.questions),
+        "taken_at": None,
     }
-
-
-@router.post("/{exam_id}/publish")
-def publish_exam(exam_id: str, current_user: User = Depends(require_role(["trainer", "tenant_admin"])), db: Session = Depends(get_db)):
-    exam = db.query(Exam).filter(Exam.id == exam_id, Exam.tenant_id == current_user.tenant_id).first()
-    if not exam:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exam not found")
-    exam.status = "published"
-    db.commit()
-    db.refresh(exam)
-    return {"id": exam.id, "status": exam.status}
 
 
 @router.post("/{exam_id}/submit")
 def submit_exam(exam_id: str, payload: schemas.ExamSubmitRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    exam = db.query(Exam).filter(Exam.id == exam_id, Exam.tenant_id == current_user.tenant_id).first()
+    exam = db.query(Exam).filter(Exam.id == exam_id, Exam.user_id == current_user.id).first()
     if not exam:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exam not found")
-    if exam.status != "published":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Exam not published")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found")
+    if exam.taken_at:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Quiz already submitted")
 
     answers = payload.answers
     total = len(exam.questions)
@@ -160,12 +149,10 @@ def submit_exam(exam_id: str, payload: schemas.ExamSubmitRequest, current_user: 
     exam.user_answers = answers
     exam.score = score
     exam.taken_at = datetime.utcnow()
-    exam.submitted_by = current_user.id
     db.commit()
     db.refresh(exam)
 
     db.add(AuditLog(
-        tenant_id=current_user.tenant_id,
         user_id=current_user.id,
         action="EXAM_SUBMIT",
         details=f"Submitted exam {exam.id}, score={score}%, passed={passed}",

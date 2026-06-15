@@ -19,6 +19,39 @@ Register/Login
   -> Personal Learning Analytics
 ```
 
+## เปลี่ยนจาก Role-based ไปเป็น Single-User
+
+เอกสารนี้คือการ reset product จาก mental model เดิมที่แยกครู/นักเรียน ไปเป็น personal study workspace
+
+จากเดิม (role-based):
+
+```text
+ครูอัปโหลดเอกสาร -> สรุป -> สร้างควิซ -> แชร์ให้นักเรียน -> นักเรียนทำควิซ
+```
+
+เปลี่ยนเป็น (single-user):
+
+```text
+ผู้ใช้คนเดียว (ไม่แยก role)
+  -> อัปโหลดเอกสารของตัวเอง
+  -> AI สรุป
+  -> แชทกับเอกสาร
+  -> สร้างควิซไว้ทบทวนเอง
+  -> ทำควิซและดูผล/สถิติของตัวเอง
+```
+
+product statement: **"AI Tutor ส่วนตัวสำหรับอ่าน สรุป ถาม และทบทวนจากเอกสารของเราเอง"**
+
+ผลกระทบหลักของการเปลี่ยน direction:
+
+- ไม่มี Teacher Dashboard กับ Student Dashboard แยกแบบเดิม รวมเป็น dashboard ส่วนตัวเดียว
+- ไม่มี flow publish/share/assign quiz ให้คนอื่นใน core flow
+- ไม่มี RBAC หนัก ๆ สำหรับครู/นักเรียนใน UI หลัก
+- Sidebar เป็นของผู้ใช้ทั่วไป: แดชบอร์ด, เอกสาร, แชท AI, สร้างควิซ, สถิติการเรียน
+- Quiz คือ "แบบฝึกทบทวนส่วนตัว" ไม่ใช่ "แบบทดสอบที่ครูแจก"
+- เอกสารทุกอย่างเป็น personal workspace ของผู้ใช้
+- Auth ยังจำเป็น แต่ role เหลือแค่ user/admin และไม่โชว์ role ใน core UI
+
 หลักการสำคัญ:
 
 - Thai-first: copy หลักเป็นภาษาไทย
@@ -52,6 +85,21 @@ Register/Login
 - เผยแพร่ให้นักเรียน
 - ภาพรวมห้องเรียน
 - รายชื่อนักเรียน
+
+## Legacy ที่ต้องลบระหว่าง Reset
+
+โค้ดปัจจุบันยังมีของเดิมจาก mental model ครู/นักเรียนค้างอยู่ แต่ละ branch ด้านล่างต้องลบส่วนที่เกี่ยวข้องออก ไม่ใช่แค่ซ่อน:
+
+| Legacy ในโค้ด | ลบ/ย้ายใน branch |
+| --- | --- |
+| `frontend/src/app/teacher/` route | 5.5.2 `UnifiedAppShellNavigation` |
+| `frontend/src/features/student-dashboard/` | 5.5.3 `UnifiedStudyDashboard` |
+| `frontend/src/features/teacher-dashboard/` | 5.5.3 `UnifiedStudyDashboard` |
+| `frontend/src/app/api/quiz/[examId]/publish/` | 5.5.6 `PersonalQuizReviewFlow` |
+| copy "ผู้สอนเท่านั้น"/"รอครูแชร์" ใน document UI | 5.5.4 `PersonalDocumentWorkspace` |
+| role badge ครู/นักเรียนใน app shell | 5.5.2 `UnifiedAppShellNavigation` |
+
+หมายเหตุ Backend: endpoint ฝั่ง backend ยังจัดกลุ่มเป็น `routers/tenant/` และ `routers/admin/analytics.py` (trainer/students) การ reset frontend ไม่ต้องรอ backend rename แต่ core UI ต้องไม่ผูกกับ concept เหล่านี้ และต้องคุย contract ตามหัวข้อท้ายเอกสาร
 
 ## Verification ทุก Branch
 
@@ -87,7 +135,7 @@ npm audit --audit-level=high
 
 # Phase 5.5: Single-User Reset
 
-## 5.5.0 `ProductDirectionSingleUser`
+## 5.5.0 `ProductDirectionSingleUser` — DONE (PR #40)
 
 เป้าหมาย:
 
@@ -102,19 +150,7 @@ Files:
 - `DESIGN.md`
 - `frontend/SRS.md`
 
-Impeccable:
-
-```text
-$impeccable clarify PRODUCT.md DESIGN.md frontend/SRS.md
-$impeccable distill PRODUCT.md DESIGN.md
-```
-
-Acceptance:
-
-- เอกสารไม่สื่อว่า core flow ต้องมีครูแชร์ให้นักเรียน
-- ทีมอ่านแล้วเข้าใจว่า product หลักเป็น single-user
-- คำศัพท์หลักพร้อมให้ branch อื่นใช้ต่อ
-- Scope ที่ไม่เกี่ยวข้องถูกย้ายไป out-of-core/backlog แทนการเป็น core flow
+Status: merge แล้วผ่าน PR #40 (`ProductDirectionSingleUser`) เอกสารหลักสะท้อน single-user direction แล้ว
 
 ## 5.5.1 `UnifiedAuthAndSession`
 
@@ -153,7 +189,7 @@ Acceptance:
 เป้าหมาย:
 
 - Sidebar/topbar เป็น navigation เดียวสำหรับทุก user
-- ไม่มีเมนูแดชบอร์ดครูใน core navigation
+- ไม่มีเมนูแดชบอร์ดครูใน core navigation และลบ `frontend/src/app/teacher/` ออก
 - Primary action พาไปเริ่มที่ `/documents`
 - User badge ไม่แสดง role ครู/นักเรียนใน core UI
 
@@ -161,6 +197,7 @@ Files:
 
 - `frontend/src/features/app-shell/`
 - `frontend/src/features/auth/authRoutePolicy.ts`
+- `frontend/src/app/teacher/` (ลบ)
 - route/app shell tests
 
 Impeccable:
@@ -176,7 +213,7 @@ $impeccable audit frontend/src/features/app-shell
 
 Acceptance:
 
-- Navigation เดียวกันทุก user
+- Navigation เดียวกันทุก user: แดชบอร์ด, เอกสาร, แชท AI, สร้างควิซ, สถิติการเรียน
 - `/teacher` ไม่ใช่ route หลักใน product อีกต่อไป
 - Mobile/desktop navigation สอดคล้องกัน
 - Test/lint/build/audit ผ่าน
@@ -185,13 +222,15 @@ Acceptance:
 
 เป้าหมาย:
 
-- รวม student/teacher dashboard เป็น dashboard ส่วนตัวเดียว
+- รวม student/teacher dashboard เป็น dashboard ส่วนตัวเดียว และลบ feature เดิมทั้งสอง
 - หน้า `/` แสดง next action ชัด: อัปโหลดเอกสาร, เปิดสรุปล่าสุด, ถาม AI, ทำควิซ, ดูสถิติ
 - Empty state ดูตั้งใจ ไม่เหมือนหน้าว่าง
 
 Files:
 
 - `frontend/src/features/study-dashboard/`
+- `frontend/src/features/student-dashboard/` (ลบ)
+- `frontend/src/features/teacher-dashboard/` (ลบ)
 - `frontend/src/app/page.tsx`
 - legacy dashboard imports/tests ที่เกี่ยวข้อง
 
@@ -211,6 +250,7 @@ Acceptance:
 
 - `/` คือ dashboard ส่วนตัวเดียว
 - ไม่มีคำว่าแดชบอร์ดครู/แดชบอร์ดผู้เรียนใน core page
+- ไม่มี feature `student-dashboard`/`teacher-dashboard` เหลือใน codebase
 - ผู้ใช้ใหม่เข้าใจว่าควรเริ่มจากเอกสาร
 - Test/lint/build/audit ผ่าน
 
@@ -300,14 +340,15 @@ Backend ที่ต้องคุย:
 
 เป้าหมาย:
 
-- `/quiz` คือควิซทบทวนส่วนตัว
-- ไม่มี publish/share/assign ใน core UI
+- `/quiz` คือควิซทบทวนส่วนตัว ("แบบฝึกทบทวนส่วนตัว" ไม่ใช่ "แบบทดสอบที่ครูแจก")
+- ไม่มี publish/share/assign ใน core UI และลบ BFF route `quiz/[examId]/publish` ออกจาก core flow
 - ผู้ใช้สร้างควิซจากเอกสาร -> ทำควิซ -> ส่งคำตอบ -> เห็นคะแนนและ feedback
 - ห้ามโชว์เฉลยก่อนส่งคำตอบ
 
 Files:
 
 - `frontend/src/features/ai-quiz-generator/`
+- `frontend/src/app/api/quiz/[examId]/publish/` (ลบออกจาก core flow)
 - quiz tests
 
 Impeccable:
@@ -326,6 +367,7 @@ Acceptance:
 
 - Copy เป็น "ควิซทบทวน" หรือ "แบบฝึกทบทวนส่วนตัว"
 - User ปกติสร้างควิซได้ถ้า Backend contract อนุญาต
+- ไม่มี publish/share/assign ใน core quiz UI
 - Answer key ไม่แสดงก่อน submit
 - Attempt/score flow ชัด
 - Test/lint/build/audit ผ่าน
@@ -405,6 +447,7 @@ Acceptance:
 
 - ตรวจรอบสุดท้ายทั้ง product หลัง unify แล้ว
 - แก้ responsive, overflow, focus, empty states, loading states และ copy หลุด
+- ยืนยันว่าไม่มี legacy ครู/นักเรียนหลงเหลือใน codebase
 
 Files:
 
@@ -425,6 +468,7 @@ Acceptance:
 - Desktop/mobile ไม่แตก
 - Dialog/popup focus ใช้งานด้วย keyboard ได้
 - ไม่มี copy role-based หลุดใน core UI
+- ไม่มี feature/route/copy ครู-นักเรียนเหลือใน frontend
 - Test/lint/build/audit ผ่าน
 
 ---
@@ -495,24 +539,25 @@ $impeccable audit
 
 ถามทีม Backend ก่อนหรือระหว่าง branch ที่เกี่ยวข้อง:
 
-- Auth: register user ปกติต้องส่ง role หรือไม่ และ default role คืออะไร
+- Auth: register user ปกติต้องส่ง role หรือไม่ และ default role คืออะไร (เป้าหมาย: role เหลือ user/admin, ไม่โชว์ใน UI)
 - Documents: upload/delete/status/summary/title/OCR รองรับอะไรแล้วบ้าง
 - Chat: ต้องส่ง `file_id` เสมอไหม, citation shape คืออะไร, บังคับตอบไทยได้ไหม
-- Quiz: user ปกติ generate quiz ได้ไหม, submit attempt/score shape คืออะไร, answer key แยกจาก learner view อย่างไร
-- Analytics: personal analytics endpoint ใช้ข้อมูลจาก document/chat/quiz attempt อะไรบ้าง
+- Quiz: user ปกติ generate quiz ได้ไหม, submit attempt/score shape คืออะไร, answer key แยกจาก learner view อย่างไร, มี endpoint publish ที่ core flow ต้องเลิกใช้ไหม
+- Analytics: personal analytics endpoint ใช้ข้อมูลจาก document/chat/quiz attempt อะไรบ้าง (ต้องไม่พึ่ง admin/trainer analytics)
 
 # Recommended Sequence
 
-1. Commit branch เอกสารนี้
-2. `ProductDirectionSingleUser`
-3. `UnifiedAuthAndSession`
-4. `UnifiedAppShellNavigation`
-5. `UnifiedStudyDashboard`
-6. `PersonalDocumentWorkspace`
-7. `PersonalChatWorkspace`
-8. `PersonalQuizReviewFlow`
-9. `PersonalLearningAnalytics`
-10. `UnifiedCoursesAndSettingsPlaceholders`
-11. `SingleUserResponsiveA11yFinal`
+1. ~~`ProductDirectionSingleUser`~~ — DONE (PR #40)
+2. `UnifiedAuthAndSession`
+3. `UnifiedAppShellNavigation`
+4. `UnifiedStudyDashboard`
+5. `PersonalDocumentWorkspace`
+6. `PersonalChatWorkspace`
+7. `PersonalQuizReviewFlow`
+8. `PersonalLearningAnalytics`
+9. `UnifiedCoursesAndSettingsPlaceholders`
+10. `SingleUserResponsiveA11yFinal`
 
-เหตุผลของลำดับนี้: ต้องเปลี่ยน mental model, auth, route และ navigation ก่อน ไม่อย่างนั้น Documents, Chat, Quiz และ Analytics จะยังแบก logic/copy ครู-นักเรียนเดิมติดไปเรื่อย ๆ
+เหตุผลของลำดับนี้: ต้องเปลี่ยน auth, route และ navigation ก่อน ไม่อย่างนั้น Documents, Chat, Quiz และ Analytics จะยังแบก logic/copy ครู-นักเรียนเดิมติดไปเรื่อย ๆ
+</content>
+</invoke>

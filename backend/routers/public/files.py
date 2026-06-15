@@ -1,7 +1,6 @@
 import os
 import shutil
 import uuid
-from datetime import datetime, timedelta
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File as FastAPIFile, BackgroundTasks, Request
 from fastapi.responses import FileResponse as FastAPIFileResponse
@@ -9,49 +8,48 @@ from sqlalchemy.orm import Session
 from database import get_db, SessionLocal
 from models import File as DBFile, User, Embedding, AuditLog
 import schemas
-from auth import get_current_user, require_role
+from auth import get_current_user
 from config import settings
 from services.document_processor import extract_text_from_file, chunk_text
 from services.ai_service import generate_recap
 from services.embedding_service import generate_embedding
 
-router = APIRouter(prefix="/files", tags=["Enterprise Classroom - Document Library"])
+router = APIRouter(prefix="/files", tags=["Personal Document Library"])
 
-# Allowed corporate file extensions (2.4 Assumptions)
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".pptx", ".ppt", ".png", ".jpg", ".jpeg", ".webp"}
-MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024 # 50 Megabytes (2.4 Assumptions)
+MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 Megabytes
+
 
 def process_document_pipeline(file_id: str):
-    """Background worker task to extract, chunk, and embed documents (FR-FILE-03, FR-FILE-04)."""
+    """Background worker task to extract, chunk, and embed an uploaded document."""
     db = SessionLocal()
     try:
         file_record = db.query(DBFile).filter(DBFile.id == file_id).first()
         if not file_record:
             return
-            
+
         file_record.status = "processing"
         db.commit()
-        
+
         # 1. Text Extraction
         local_path = file_record.storage_url
         extracted_text = extract_text_from_file(local_path)
         file_record.extracted_text = extracted_text
-        
+
         # 2. Text Chunking (~800 characters)
         chunks = chunk_text(extracted_text, chunk_size=800, overlap=150)
-        
+
         # 3. Vector Embedding generation & Save (pgvector / SQLite fallback)
         for idx, chunk in enumerate(chunks):
             vector = generate_embedding(chunk)
             embedding_record = Embedding(
                 file_id=file_id,
-                tenant_id=file_record.tenant_id,
                 chunk_text=chunk,
                 embedding=vector,
-                chunk_index=idx
+                chunk_index=idx,
             )
             db.add(embedding_record)
-            
+
         file_record.status = "ready"
         db.commit()
 
@@ -63,7 +61,7 @@ def process_document_pipeline(file_id: str):
                 db.commit()
         except Exception:
             pass
-    except Exception as e:
+    except Exception:
         db.rollback()
         file_record = db.query(DBFile).filter(DBFile.id == file_id).first()
         if file_record:
@@ -78,7 +76,6 @@ def _serialize_related_exams(file_record: DBFile) -> list[dict[str, object]]:
     return [
         {
             "id": exam.id,
-            "status": exam.status,
             "score": exam.score,
             "taken_at": exam.taken_at.isoformat() if exam.taken_at else None,
             "created_at": exam.created_at.isoformat(),
@@ -87,74 +84,65 @@ def _serialize_related_exams(file_record: DBFile) -> list[dict[str, object]]:
     ]
 
 
-
 @router.post("/upload", response_model=schemas.FileResponse, status_code=status.HTTP_201_CREATED)
 async def upload_file(
     background_tasks: BackgroundTasks,
     req_meta: Request,
     file: UploadFile = FastAPIFile(...),
-    current_user: User = Depends(require_role(["trainer", "tenant_admin", "global_admin"])),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """
-    Uploads training manual, validates size/mime, and queues for ingestion (FR-FILE-01, FR-FILE-02).
-    Access restricted to Corporate Trainers & Admins (FR-AUTH-04).
-    """
+    """Uploads a document to the user's personal workspace and queues it for ingestion."""
     # Verify file extension
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported file format '{ext}'. Allowed: {ALLOWED_EXTENSIONS}"
+            detail=f"Unsupported file format '{ext}'. Allowed: {ALLOWED_EXTENSIONS}",
         )
-        
+
     # Check file size (Read chunks to avoid storing huge files in memory)
     file.file.seek(0, 2)
     file_size = file.file.tell()
-    file.file.seek(0) # Reset pointer
-    
+    file.file.seek(0)  # Reset pointer
+
     if file_size > MAX_FILE_SIZE_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File exceeds maximum enterprise threshold of 50 MB (Actual: {file_size / (1024*1024):.2f} MB)."
+            detail=f"File exceeds the maximum threshold of 50 MB (Actual: {file_size / (1024 * 1024):.2f} MB).",
         )
 
-    # Secure storage locally (simulating AWS S3 bucket storage FR-FILE-02)
+    # Secure local storage (simulating object storage)
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     unique_filename = f"{uuid.uuid4()}{ext}"
     local_storage_path = os.path.join(settings.UPLOAD_DIR, unique_filename)
-    
+
     with open(local_storage_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-        
-    # Create DB record (Row-level security bounded to current user tenant_id)
+
+    # Create DB record owned by the current user
     db_file = DBFile(
-        tenant_id=current_user.tenant_id,
-        uploaded_by=current_user.id,
+        user_id=current_user.id,
         filename=file.filename,
         storage_url=local_storage_path,
-        status="pending"
+        status="pending",
     )
     db.add(db_file)
     db.commit()
     db.refresh(db_file)
 
-    # Log security audit log
-    audit = AuditLog(
-        tenant_id=current_user.tenant_id,
+    db.add(AuditLog(
         user_id=current_user.id,
         action="FILE_UPLOAD",
         details=f"Uploaded file '{file.filename}' (Size: {file_size} bytes). Status: Pending ingestion.",
-        ip_address=req_meta.client.host if req_meta.client else "127.0.0.1"
-    )
-    db.add(audit)
+        ip_address=req_meta.client.host if req_meta.client else "127.0.0.1",
+    ))
     db.commit()
 
-    # Trigger async parsing process (FR-FILE-03, FR-FILE-04)
+    # Trigger async parsing process
     background_tasks.add_task(process_document_pipeline, db_file.id)
 
     return db_file
-
 
 
 @router.get("/", response_model=List[schemas.FileResponse])
@@ -164,11 +152,11 @@ def list_files(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Lists files for the user's corporate tenant workspace (Enforces RLS FR-AUTH-02, FR-FILE-05)."""
+    """Lists documents owned by the current user."""
     limit = min(limit, 100)
     files = (
         db.query(DBFile)
-        .filter(DBFile.tenant_id == current_user.tenant_id)
+        .filter(DBFile.user_id == current_user.id)
         .order_by(DBFile.created_at.desc())
         .offset(skip)
         .limit(limit)
@@ -185,7 +173,7 @@ def documents_dashboard(
     """Returns a document-library summary for the documents page."""
     files = (
         db.query(DBFile)
-        .filter(DBFile.tenant_id == current_user.tenant_id)
+        .filter(DBFile.user_id == current_user.id)
         .order_by(DBFile.created_at.desc())
         .all()
     )
@@ -200,7 +188,6 @@ def documents_dashboard(
                 "filename": file_record.filename,
                 "status": file_record.status,
                 "created_at": file_record.created_at.isoformat(),
-                "uploaded_by": file_record.uploader.full_name or file_record.uploader.email,
                 "summary_available": bool(file_record.summary_markdown),
                 "summary_markdown": file_record.summary_markdown,
                 "related_exams_count": len(file_record.exams),
@@ -221,14 +208,13 @@ def document_detail(
     db: Session = Depends(get_db),
 ):
     """Returns a single document detail payload including recap and related exams."""
-    file_record = db.query(DBFile).filter(DBFile.id == file_id, DBFile.tenant_id == current_user.tenant_id).first()
+    file_record = db.query(DBFile).filter(DBFile.id == file_id, DBFile.user_id == current_user.id).first()
     if not file_record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found in your tenant workspace.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found in your workspace.")
 
     return {
         "id": file_record.id,
-        "tenant_id": file_record.tenant_id,
-        "uploaded_by": file_record.uploaded_by,
+        "user_id": file_record.user_id,
         "filename": file_record.filename,
         "storage_url": file_record.storage_url,
         "status": file_record.status,
@@ -249,10 +235,10 @@ def file_status(
     """Lightweight endpoint for polling document processing status."""
     file_record = db.query(DBFile).filter(
         DBFile.id == file_id,
-        DBFile.tenant_id == current_user.tenant_id,
+        DBFile.user_id == current_user.id,
     ).first()
     if not file_record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found in your tenant workspace.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found in your workspace.")
     return schemas.FileStatusResponse(
         file_id=file_record.id,
         filename=file_record.filename,
@@ -265,32 +251,29 @@ def file_status(
 def download_file(
     file_id: str,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """
-    Downloads file securely. Verifies tenant boundaries before serving (NFR-SEC-04).
-    Simulates signed access verification.
-    """
+    """Downloads a document the user owns."""
     file_record = db.query(DBFile).filter(
-        DBFile.id == file_id, 
-        DBFile.tenant_id == current_user.tenant_id
+        DBFile.id == file_id,
+        DBFile.user_id == current_user.id,
     ).first()
-    
+
     if not file_record:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="File not found in your tenant workspace."
+            detail="Document not found in your workspace.",
         )
-        
+
     if not os.path.exists(file_record.storage_url):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Physical file missing from secure vault."
+            detail="Physical file missing from storage.",
         )
-        
+
     return FastAPIFileResponse(
         path=file_record.storage_url,
-        filename=file_record.filename
+        filename=file_record.filename,
     )
 
 
@@ -298,22 +281,19 @@ def download_file(
 def delete_file(
     file_id: str,
     req_meta: Request,
-    current_user: User = Depends(require_role(["trainer", "tenant_admin", "global_admin"])),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """
-    Deletes the document and purges all derived text chunks/vector embeddings (FR-FILE-06).
-    Restricted to Trainers & Admins.
-    """
+    """Deletes a document the user owns and purges its derived chunks/embeddings."""
     file_record = db.query(DBFile).filter(
         DBFile.id == file_id,
-        DBFile.tenant_id == current_user.tenant_id
+        DBFile.user_id == current_user.id,
     ).first()
-    
+
     if not file_record:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="File not found in your tenant workspace."
+            detail="Document not found in your workspace.",
         )
 
     # Remove physical file
@@ -323,18 +303,15 @@ def delete_file(
         except Exception:
             pass
 
-    # Audit log
-    audit = AuditLog(
-        tenant_id=current_user.tenant_id,
+    db.add(AuditLog(
         user_id=current_user.id,
         action="FILE_DELETE",
         details=f"Deleted file '{file_record.filename}' and all associated vector embeddings.",
-        ip_address=req_meta.client.host if req_meta.client else "127.0.0.1"
-    )
-    db.add(audit)
-    
-    # DB Delete cascade removes related Chunks/Embeddings automatically
+        ip_address=req_meta.client.host if req_meta.client else "127.0.0.1",
+    ))
+
+    # DB cascade removes related chunks/embeddings/exams automatically
     db.delete(file_record)
     db.commit()
-    
+
     return

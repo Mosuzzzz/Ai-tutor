@@ -6,7 +6,8 @@ import sys
 # Ensure backend/ is on sys.path when tests run so local modules import correctly
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from database import Base, engine
+from database import Base, engine, SessionLocal
+from models import User
 from main import app
 
 
@@ -18,24 +19,38 @@ def reset_db():
     Base.metadata.create_all(bind=engine)
 
 
+def register_and_login(email: str, password: str, full_name: str = "Test User") -> str:
+    """Register, verify email, and log in. Returns the access token."""
+    register_resp = client.post(
+        "/api/auth/register",
+        json={"full_name": full_name, "email": email, "password": password},
+    )
+    assert register_resp.status_code == 200, register_resp.text
+    dev_token = register_resp.json()["dev_token"]
+    assert dev_token
+
+    verify_resp = client.post("/api/auth/verify-email", json={"token": dev_token})
+    assert verify_resp.status_code == 200
+
+    login_resp = client.post("/api/auth/login", json={"email": email, "password": password})
+    assert login_resp.status_code == 200
+    return login_resp.json()["access_token"]
+
+
 def run_auth_flow():
     email = "new.user@example.com"
     password = "StrongPass123!"
 
     register_resp = client.post(
         "/api/auth/register",
-        json={
-            "full_name": "New User",
-            "email": email,
-            "password": password,
-            "role": "student",
-            "company_name": "Example Workspace",
-        },
+        json={"full_name": "New User", "email": email, "password": password},
     )
     assert register_resp.status_code == 200
     register_data = register_resp.json()
     assert register_data["requires_email_verification"] is True
     assert register_data["dev_token"]
+    # No tenant concept in the single-user product.
+    assert "tenant_id" not in register_data or register_data["tenant_id"] is None
 
     login_before_verify = client.post("/api/auth/login", json={"email": email, "password": password})
     assert login_before_verify.status_code == 403
@@ -54,6 +69,7 @@ def run_auth_flow():
     me_resp = client.get("/api/auth/me", headers={"Authorization": f"Bearer {access_token}"})
     assert me_resp.status_code == 200
     assert me_resp.json()["email"] == email
+    assert me_resp.json()["role"] == "user"
 
     logout_resp = client.post("/api/auth/logout", headers={"Authorization": f"Bearer {access_token}"})
     assert logout_resp.status_code == 200
@@ -87,48 +103,46 @@ def test_auth_flow():
     run_auth_flow()
 
 
-def test_role_based_access_and_session_payload():
+def test_two_role_access_and_session_payload():
     reset_db()
 
-    seed_resp = client.post("/api/auth/seed-sandbox")
-    assert seed_resp.status_code == 200
-    seed_data = seed_resp.json()
+    user_token = register_and_login("regular@example.com", "StrongPass123!", "Regular User")
+    admin_token = register_and_login("ops@example.com", "StrongPass123!", "Ops Admin")
 
-    trainer_user = next(user for user in seed_data["users"] if user["role"] == "trainer")
-    learner_user = next(user for user in seed_data["users"] if user["role"] == "learner")
-    admin_user = next(user for user in seed_data["users"] if user["role"] == "tenant_admin")
+    # Promote the second account to admin directly (no self-service admin signup).
+    db = SessionLocal()
+    admin = db.query(User).filter(User.email == "ops@example.com").first()
+    admin.role = "admin"
+    db.commit()
+    db.close()
 
-    trainer_token = client.post("/api/auth/sso/login", json={"email": trainer_user["email"]}).json()["access_token"]
-    learner_token = client.post("/api/auth/sso/login", json={"email": learner_user["email"]}).json()["access_token"]
-    admin_token = client.post("/api/auth/sso/login", json={"email": admin_user["email"]}).json()["access_token"]
-
-    trainer_headers = {"Authorization": f"Bearer {trainer_token}"}
-    learner_headers = {"Authorization": f"Bearer {learner_token}"}
+    user_headers = {"Authorization": f"Bearer {user_token}"}
     admin_headers = {"Authorization": f"Bearer {admin_token}"}
 
-    trainer_session = client.get("/api/auth/session", headers=trainer_headers)
-    assert trainer_session.status_code == 200
-    assert trainer_session.json()["can_manage_users"] is False
-    assert "trainer-analytics" in trainer_session.json()["accessible_route_groups"]
-
-    learner_session = client.get("/api/auth/session", headers=learner_headers)
-    assert learner_session.status_code == 200
-    assert learner_session.json()["can_manage_users"] is False
-    assert "admin" not in learner_session.json()["accessible_route_groups"]
+    # Session payload reflects the two-role model.
+    user_session = client.get("/api/auth/session", headers=user_headers)
+    assert user_session.status_code == 200
+    assert user_session.json()["is_admin"] is False
+    assert "admin" not in user_session.json()["accessible_route_groups"]
 
     admin_session = client.get("/api/auth/session", headers=admin_headers)
     assert admin_session.status_code == 200
-    assert admin_session.json()["can_manage_users"] is True
-    assert admin_session.json()["can_view_admin_analytics"] is False
+    assert admin_session.json()["is_admin"] is True
+    assert "admin" in admin_session.json()["accessible_route_groups"]
 
-    learner_file_payload = {"file": ("blocked.pdf", io.BytesIO(b"blocked"), "application/pdf")}
-    assert client.post("/api/files/upload", files=learner_file_payload, headers=learner_headers).status_code == 403
-    assert client.post("/api/exams/generate", headers=learner_headers, json={"file_id": "file-1", "num_questions": 5}).status_code == 403
-    assert client.get("/api/analytics/usage", headers=learner_headers).status_code == 403
-    assert client.get("/api/analytics/usage", headers=trainer_headers).status_code == 403
-    assert client.get("/api/analytics/usage", headers=admin_headers).status_code == 403
+    # Admin-only analytics endpoints are gated.
+    assert client.get("/api/analytics/usage", headers=user_headers).status_code == 403
+    assert client.get("/api/analytics/audit-logs", headers=user_headers).status_code == 403
+    assert client.get("/api/analytics/usage", headers=admin_headers).status_code == 200
+    assert client.get("/api/analytics/audit-logs", headers=admin_headers).status_code == 200
 
-    print("native auth flow passed")
+    # Any user can upload to their own workspace (no trainer role required).
+    user_file_payload = {"file": ("notes.pdf", io.BytesIO(b"%PDF-1.4 minimal"), "application/pdf")}
+    upload = client.post("/api/files/upload", files=user_file_payload, headers=user_headers)
+    assert upload.status_code == 201
+
+    # The personal dashboard is reachable by a regular user.
+    assert client.get("/api/analytics/dashboard", headers=user_headers).status_code == 200
 
 
 if __name__ == "__main__":

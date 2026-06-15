@@ -1,5 +1,8 @@
 """
-Moved auth router into routers.public
+Authentication router for the single-user AI Tutor.
+
+Only two roles exist: ``user`` (everyone in the core study flow) and ``admin``
+(system operators). There is no tenant/organization concept and no SSO.
 """
 from datetime import datetime, timedelta
 from typing import Dict, Any
@@ -16,72 +19,26 @@ from auth import (
     resolve_refresh_token,
 )
 from database import get_db
-from models import Tenant, User, AuditLog, RefreshToken
+from models import User, AuditLog, RefreshToken
 import schemas
 
 import services.email_service as email_service
 from config import settings
 
-router = APIRouter(prefix="/auth", tags=["Authentication & SSO"])
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 VERIFICATION_TOKEN_EXPIRES_MINUTES = 60 * 24
 RESET_TOKEN_EXPIRES_MINUTES = 60
 MAGIC_LINK_TOKEN_EXPIRES_MINUTES = 15
 
-ROLE_ACCESS = {
-    "learner": {
-        "accessible_route_groups": ["dashboard", "documents", "chat", "quiz"],
-        "protected_routes": ["/api/files/upload", "/api/files/{file_id}", "/api/exams/generate", "/api/analytics/usage", "/api/analytics/trainer"],
-        "can_manage_users": False,
-        "can_view_admin_analytics": False,
-    },
-    "trainer": {
-        "accessible_route_groups": ["dashboard", "documents", "chat", "quiz", "trainer-analytics"],
-        "protected_routes": ["/api/analytics/usage", "/api/analytics/audit-logs"],
-        "can_manage_users": False,
-        "can_view_admin_analytics": False,
-    },
-    "tenant_admin": {
-        "accessible_route_groups": ["dashboard", "documents", "chat", "quiz", "trainer-analytics", "admin"],
-        "protected_routes": ["/api/analytics/usage", "/api/analytics/audit-logs", "/api/files/upload", "/api/exams/generate"],
-        "can_manage_users": True,
-        "can_view_admin_analytics": False,
-    },
-    "global_admin": {
-        "accessible_route_groups": ["dashboard", "documents", "chat", "quiz", "trainer-analytics", "admin"],
-        "protected_routes": ["/api/analytics/usage", "/api/analytics/audit-logs", "/api/files/upload", "/api/exams/generate"],
-        "can_manage_users": True,
-        "can_view_admin_analytics": True,
-    },
-}
-
-
-def normalize_native_role(role: str) -> str:
-    alias_map = {
-        "student": "learner",
-        "teacher": "trainer",
-        "learner": "learner",
-        "trainer": "trainer",
-        "tenant_admin": "tenant_admin",
-        "global_admin": "global_admin",
-    }
-    normalized = alias_map.get((role or "learner").strip().lower())
-    if not normalized:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
-    return normalized
-
-
-def build_personal_workspace_name(full_name: str, email: str) -> str:
-    if full_name.strip():
-        return f"{full_name.strip()} Workspace"
-    local_part = email.split("@")[0].strip().replace(".", " ").replace("_", " ")
-    return f"{local_part.title()} Workspace" if local_part else "Personal Workspace"
+# Route groups each role may reach. Kept intentionally small for a personal product.
+USER_ROUTE_GROUPS = ["dashboard", "documents", "chat", "quiz", "analytics"]
+ADMIN_ROUTE_GROUPS = USER_ROUTE_GROUPS + ["admin"]
 
 
 def build_user_payload(user: User) -> Dict[str, Any]:
     return {
         "user_id": user.id,
-        "tenant_id": user.tenant_id,
         "email": user.email,
         "role": user.role,
     }
@@ -90,7 +47,6 @@ def build_user_payload(user: User) -> Dict[str, Any]:
 def serialize_user(user: User) -> schemas.UserResponse:
     return schemas.UserResponse(
         id=user.id,
-        tenant_id=user.tenant_id,
         email=user.email,
         full_name=user.full_name,
         role=user.role,
@@ -100,14 +56,12 @@ def serialize_user(user: User) -> schemas.UserResponse:
 
 
 def build_session_response(user: User) -> schemas.SessionResponse:
-    access = ROLE_ACCESS.get(user.role, ROLE_ACCESS["learner"])
+    is_admin = user.role == "admin"
     return schemas.SessionResponse(
         authenticated=True,
         user=serialize_user(user),
-        accessible_route_groups=access["accessible_route_groups"],
-        protected_routes=access["protected_routes"],
-        can_manage_users=access["can_manage_users"],
-        can_view_admin_analytics=access["can_view_admin_analytics"],
+        accessible_route_groups=ADMIN_ROUTE_GROUPS if is_admin else USER_ROUTE_GROUPS,
+        is_admin=is_admin,
     )
 
 
@@ -126,24 +80,15 @@ def load_user_by_token(db: Session, token_field: str, token: str) -> User | None
 
 @router.post("/register", response_model=schemas.AuthActionResponse)
 def register_user(request: schemas.RegisterRequest, db: Session = Depends(get_db)):
-    """Explicit email/password registration. This does not auto-login the user."""
+    """Self-service email/password registration. Every account is a ``user``."""
     existing_user = db.query(User).filter(User.email == request.email).first()
     if existing_user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="An account with this email already exists")
 
-    tenant = Tenant(
-        company_name=((request.company_name or "").strip() or build_personal_workspace_name(request.full_name, request.email)),
-        sso_domain=None,
-    )
-    db.add(tenant)
-    db.commit()
-    db.refresh(tenant)
-
     user = User(
-        tenant_id=tenant.id,
         email=request.email,
         full_name=request.full_name,
-        role=normalize_native_role(request.role),
+        role="user",
         auth_provider="local",
         password_hash=hash_password(request.password),
         email_verified_at=None,
@@ -160,7 +105,6 @@ def register_user(request: schemas.RegisterRequest, db: Session = Depends(get_db
 
     db.add(
         AuditLog(
-            tenant_id=tenant.id,
             user_id=user.id,
             action="REGISTER",
             details="Self-service registration completed; email verification required.",
@@ -183,11 +127,11 @@ def register_user(request: schemas.RegisterRequest, db: Session = Depends(get_db
         message="Registration complete. Please verify your email before signing in.",
         email=user.email,
         user_id=user.id,
-        tenant_id=tenant.id,
         requires_email_verification=True,
         expires_in=VERIFICATION_TOKEN_EXPIRES_MINUTES * 60,
         dev_token=dev_token,
     )
+
 
 @router.post("/verify-email", response_model=schemas.AuthActionResponse)
 def verify_email(request: schemas.TokenRequest, db: Session = Depends(get_db)):
@@ -202,14 +146,13 @@ def verify_email(request: schemas.TokenRequest, db: Session = Depends(get_db)):
     user.email_verified_at = datetime.utcnow()
     user.verification_token_hash = None
     user.verification_token_expires_at = None
-    db.add(AuditLog(tenant_id=user.tenant_id, user_id=user.id, action="EMAIL_VERIFIED", details="Email verified", ip_address="127.0.0.1"))
+    db.add(AuditLog(user_id=user.id, action="EMAIL_VERIFIED", details="Email verified", ip_address="127.0.0.1"))
     db.commit()
 
     return schemas.AuthActionResponse(
         message="Email verified successfully.",
         email=user.email,
         user_id=user.id,
-        tenant_id=user.tenant_id,
     )
 
 
@@ -229,7 +172,7 @@ def login_password(request: schemas.LoginRequest, req_meta: Request, db: Session
 
     # Issue refresh token record
     refresh_token, refresh_expires_in = create_refresh_token_record(db, user)
-    db.add(AuditLog(tenant_id=user.tenant_id, user_id=user.id, action="PASSWORD_LOGIN", details="Password login successful", ip_address=req_meta.client.host if req_meta and req_meta.client else "127.0.0.1"))
+    db.add(AuditLog(user_id=user.id, action="PASSWORD_LOGIN", details="Password login successful", ip_address=req_meta.client.host if req_meta and req_meta.client else "127.0.0.1"))
     db.commit()
 
     return schemas.Token(access_token=token_str, token_type="bearer", expires_in=expires_in, refresh_token=refresh_token, refresh_expires_in=refresh_expires_in)
@@ -243,7 +186,7 @@ def read_current_user(current_user: User = Depends(get_current_user)):
 
 @router.get("/session", response_model=schemas.SessionResponse)
 def read_session(current_user: User = Depends(get_current_user)):
-    """Returns the current authenticated session together with role-based route access."""
+    """Returns the current authenticated session together with accessible route groups."""
     return build_session_response(current_user)
 
 
@@ -260,7 +203,6 @@ def logout_current_user(current_user: User = Depends(get_current_user), db: Sess
 
     db.add(
         AuditLog(
-            tenant_id=current_user.tenant_id,
             user_id=current_user.id,
             action="LOGOUT",
             details=f"User logged out; revoked {len(active_tokens)} refresh token(s).",
@@ -294,7 +236,7 @@ def forgot_password(request: schemas.ForgotPasswordRequest, db: Session = Depend
                 # swallow and keep dev_token for debugging
                 pass
 
-        db.add(AuditLog(tenant_id=user.tenant_id, user_id=user.id, action="PASSWORD_RESET_REQUESTED", details="Password reset requested", ip_address="127.0.0.1"))
+        db.add(AuditLog(user_id=user.id, action="PASSWORD_RESET_REQUESTED", details="Password reset requested", ip_address="127.0.0.1"))
         db.commit()
 
     return schemas.AuthActionResponse(
@@ -317,14 +259,13 @@ def reset_password(request: schemas.ResetPasswordRequest, db: Session = Depends(
     user.password_hash = hash_password(request.new_password)
     user.reset_token_hash = None
     user.reset_token_expires_at = None
-    db.add(AuditLog(tenant_id=user.tenant_id, user_id=user.id, action="PASSWORD_RESET", details="Password reset completed", ip_address="127.0.0.1"))
+    db.add(AuditLog(user_id=user.id, action="PASSWORD_RESET", details="Password reset completed", ip_address="127.0.0.1"))
     db.commit()
 
     return schemas.AuthActionResponse(
         message="Password updated successfully.",
         email=user.email,
         user_id=user.id,
-        tenant_id=user.tenant_id,
     )
 
 
@@ -349,7 +290,7 @@ def request_magic_link(request: schemas.ForgotPasswordRequest, db: Session = Dep
             except Exception:
                 pass
 
-        db.add(AuditLog(tenant_id=user.tenant_id, user_id=user.id, action="MAGIC_LINK_REQUESTED", details="Magic link requested", ip_address="127.0.0.1"))
+        db.add(AuditLog(user_id=user.id, action="MAGIC_LINK_REQUESTED", details="Magic link requested", ip_address="127.0.0.1"))
         db.commit()
 
     return schemas.AuthActionResponse(
@@ -379,102 +320,10 @@ def verify_magic_link(request: schemas.TokenRequest, req_meta: Request, db: Sess
     token_str, expires_in = create_access_token(data=token_data, expires_delta=expires_delta)
 
     refresh_token, refresh_expires_in = create_refresh_token_record(db, user)
-    db.add(AuditLog(tenant_id=user.tenant_id, user_id=user.id, action="MAGIC_LINK_LOGIN", details="Magic link login successful", ip_address=req_meta.client.host if req_meta and req_meta.client else "127.0.0.1"))
+    db.add(AuditLog(user_id=user.id, action="MAGIC_LINK_LOGIN", details="Magic link login successful", ip_address=req_meta.client.host if req_meta and req_meta.client else "127.0.0.1"))
     db.commit()
 
     return schemas.Token(access_token=token_str, token_type="bearer", expires_in=expires_in, refresh_token=refresh_token, refresh_expires_in=refresh_expires_in)
-
-
-def get_email_domain(email: str) -> str:
-    """Helper to extract domain from email."""
-    if "@" not in email:
-        raise HTTPException(status_code=400, detail="Invalid email address format")
-    return email.split("@")[1].strip().lower()
-
-@router.post("/sso/check", response_model=schemas.SSOCheckResponse)
-def check_sso_domain(request: schemas.SSOCheckRequest, db: Session = Depends(get_db)):
-    """Verifies if the organization's email domain is configured for corporate SSO (FR-AUTH-01)."""
-    domain = get_email_domain(request.email)
-    tenant = db.query(Tenant).filter(Tenant.sso_domain == domain).first()
-    
-    if tenant:
-        return schemas.SSOCheckResponse(
-            sso_enabled=True,
-            sso_domain=tenant.sso_domain,
-            company_name=tenant.company_name
-        )
-    return schemas.SSOCheckResponse(sso_enabled=False)
-
-@router.post("/sso/login", response_model=schemas.Token)
-def login_sso(
-    request: schemas.SSOLoginRequest,
-    req_meta: Request,
-    db: Session = Depends(get_db)
-):
-    """
-    Performs Just-In-Time (JIT) provisioning SAML 2.0 / OIDC login (FR-AUTH-01, FR-AUTH-03).
-    Automatically maps user to their tenant workspace.
-    """
-    domain = get_email_domain(request.email)
-    tenant = db.query(Tenant).filter(Tenant.sso_domain == domain).first()
-    
-    if not tenant:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This domain is not enrolled in SSO. Please contact your Tenant Administrator."
-        )
-
-    # Simulate SAML assertion validation
-    # If SSO is validated, we fetch or provision the user (Just-in-time provisioning)
-    user = db.query(User).filter(User.email == request.email, User.tenant_id == tenant.id).first()
-    
-    is_new_user = False
-    if not user:
-        # Provision new employee
-        user = User(
-            tenant_id=tenant.id,
-            email=request.email,
-            full_name=request.email.split("@")[0].replace(".", " ").title(),
-            role="learner", # Default JIT provisioning starts as learner
-            auth_provider="sso",
-            email_verified_at=datetime.utcnow(),
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        is_new_user = True
-
-    # Generate JWT token with 12 hour expiry (FR-AUTH-03)
-    token_data = {
-        "user_id": user.id,
-        "tenant_id": user.tenant_id,
-        "email": user.email,
-        "role": user.role
-    }
-    expires_delta = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-    token_str, expires_in = create_access_token(data=token_data, expires_delta=expires_delta)
-
-    # Create refresh token for SSO session
-    refresh_token, refresh_expires_in = create_refresh_token_record(db, user)
-
-    # Log Auth event in Audit trail (FR-AUTH-05)
-    audit = AuditLog(
-        tenant_id=tenant.id,
-        user_id=user.id,
-        action="SSO_LOGIN",
-        details=f"SSO login successful. User JIT provisioned: {is_new_user}",
-        ip_address=req_meta.client.host if req_meta.client else "127.0.0.1"
-    )
-    db.add(audit)
-    db.commit()
-
-    return schemas.Token(
-        access_token=token_str,
-        token_type="bearer",
-        expires_in=expires_in,
-        refresh_token=refresh_token,
-        refresh_expires_in=refresh_expires_in,
-    )
 
 
 @router.post("/token/refresh", response_model=schemas.Token)
@@ -492,7 +341,7 @@ def refresh_access_token(request: schemas.RefreshTokenRequest, req_meta: Request
     refresh.revoked_at = datetime.utcnow()
     new_token, new_expires_in = create_refresh_token_record(db, user)
     refresh.replaced_by_token_hash = hash_secure_token(new_token)
-    db.add(AuditLog(tenant_id=user.tenant_id, user_id=user.id, action="REFRESH_ROTATE", details="Refresh token rotated", ip_address=req_meta.client.host if req_meta and req_meta.client else "127.0.0.1"))
+    db.add(AuditLog(user_id=user.id, action="REFRESH_ROTATE", details="Refresh token rotated", ip_address=req_meta.client.host if req_meta and req_meta.client else "127.0.0.1"))
     db.commit()
 
     token_data = build_user_payload(user)
@@ -500,57 +349,3 @@ def refresh_access_token(request: schemas.RefreshTokenRequest, req_meta: Request
     token_str, expires_in = create_access_token(data=token_data, expires_delta=expires_delta)
 
     return schemas.Token(access_token=token_str, token_type="bearer", expires_in=expires_in, refresh_token=new_token, refresh_expires_in=new_expires_in)
-
-
-# --- Test Utility Helper Endpoint ---
-@router.post("/seed-sandbox", response_model=Dict[str, Any], tags=["Sandbox Development Utilities"])
-def seed_sandbox_data(db: Session = Depends(get_db)):
-    """Seeds Acme Corporation tenant workspace and roles for testing purposes."""
-    # Check if Acme already exists
-    acme_tenant = db.query(Tenant).filter(Tenant.sso_domain == "acme.com").first()
-    if not acme_tenant:
-        acme_tenant = Tenant(
-            company_name="Acme Corporation",
-            sso_domain="acme.com"
-        )
-        db.add(acme_tenant)
-        db.commit()
-        db.refresh(acme_tenant)
-
-    # Add users with different roles for testing RBAC
-    roles_to_seed = [
-        {"email": "admin@acme.com", "name": "Alice Admin", "role": "tenant_admin"},
-        {"email": "trainer@acme.com", "name": "Ted Trainer", "role": "trainer"},
-        {"email": "learner@acme.com", "name": "Leon Learner", "role": "learner"},
-    ]
-    
-    seeded_users = []
-    for u_seed in roles_to_seed:
-        user = db.query(User).filter(User.email == u_seed["email"], User.tenant_id == acme_tenant.id).first()
-        if not user:
-            user = User(
-                tenant_id=acme_tenant.id,
-                email=u_seed["email"],
-                full_name=u_seed["name"],
-                role=u_seed["role"],
-                auth_provider="sso",
-                email_verified_at=datetime.utcnow(),
-            )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-        seeded_users.append({
-            "email": user.email,
-            "role": user.role,
-            "id": user.id
-        })
-        
-    return {
-        "message": "Acme Sandbox environment seeded successfully.",
-        "tenant": {
-            "id": acme_tenant.id,
-            "company_name": acme_tenant.company_name,
-            "sso_domain": acme_tenant.sso_domain
-        },
-        "users": seeded_users
-    }
