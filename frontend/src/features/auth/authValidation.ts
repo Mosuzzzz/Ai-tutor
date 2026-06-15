@@ -13,11 +13,7 @@ import type {
 
 export type { AuthRole, LoginInput, RegisterInput, RegisterValues } from "./types";
 
-const authRoleSchema = z
-  .string()
-  .refine((role): role is AuthRole => role === "student" || role === "teacher", {
-    message: "กรุณาเลือกบทบาทของคุณ"
-  });
+export const DEFAULT_REGISTER_ROLE: AuthRole = "student";
 
 const emailSchema = z
   .string()
@@ -44,8 +40,7 @@ export const registerSchema = z
     confirmPassword: z.string().min(1, "กรุณายืนยันรหัสผ่าน"),
     email: emailSchema,
     fullName: z.string().trim().min(1, "กรุณากรอกชื่อ-นามสกุล"),
-    password: passwordSchema,
-    role: authRoleSchema
+    password: passwordSchema
   })
   .superRefine((values, context) => {
     if (values.confirmPassword && values.confirmPassword !== values.password) {
@@ -97,7 +92,10 @@ export function validateRegister(
 
   return {
     ok: true,
-    values
+    values: {
+      ...values,
+      role: DEFAULT_REGISTER_ROLE
+    }
   };
 }
 

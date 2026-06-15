@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { loginSchema, registerSchema, validateLogin, validateRegister } from "./authValidation";
 
 describe("auth validation", () => {
-  it("exposes Zod schemas for auth form validation", () => {
+  it("exposes Zod schemas for auth form validation without requiring a visible role", () => {
     expect(loginSchema.safeParse({ email: "learner@example.com", password: "learning123" }).success).toBe(
       true
     );
@@ -12,9 +12,8 @@ describe("auth validation", () => {
         acceptedTerms: true,
         confirmPassword: "learning123",
         email: "learner@example.com",
-        fullName: "นักเรียนทดลอง",
-        password: "learning123",
-        role: "student"
+        fullName: "ผู้เรียนทดลอง",
+        password: "learning123"
       }).success
     ).toBe(true);
   });
@@ -39,42 +38,40 @@ describe("auth validation", () => {
     });
   });
 
-  it("rejects register submissions with missing role, weak password, mismatch, and unchecked terms", () => {
+  it("rejects register submissions with weak password, mismatch, and unchecked terms", () => {
     const result = validateRegister({
       acceptedTerms: false,
       confirmPassword: "different-password",
       email: "learner@example.com",
       fullName: "",
-      password: "weak",
-      role: ""
+      password: "weak"
     });
 
     expect(result.ok).toBe(false);
-    expect(result.fieldErrors.role).toBe("กรุณาเลือกบทบาทของคุณ");
+    expect(result.fieldErrors).not.toHaveProperty("role");
     expect(result.fieldErrors.fullName).toBe("กรุณากรอกชื่อ-นามสกุล");
     expect(result.fieldErrors.password).toBe("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
     expect(result.fieldErrors.confirmPassword).toBe("รหัสผ่านยืนยันไม่ตรงกัน");
     expect(result.fieldErrors.acceptedTerms).toBe("กรุณายอมรับเงื่อนไขการใช้งาน");
   });
 
-  it("accepts a valid teacher registration submission", () => {
+  it("accepts a valid single-user registration submission and adds the backend-compatible default role", () => {
     const result = validateRegister({
       acceptedTerms: true,
       confirmPassword: "secure-pass",
-      email: " Teacher@Example.com ",
-      fullName: "อาจารย์สมชาย ใจดี",
-      password: "secure-pass",
-      role: "teacher"
+      email: " Learner@Example.com ",
+      fullName: "ผู้เรียนทดลอง",
+      password: "secure-pass"
     });
 
     expect(result).toEqual({
       ok: true,
       values: {
         acceptedTerms: true,
-        email: "teacher@example.com",
-        fullName: "อาจารย์สมชาย ใจดี",
+        email: "learner@example.com",
+        fullName: "ผู้เรียนทดลอง",
         password: "secure-pass",
-        role: "teacher"
+        role: "student"
       }
     });
   });

@@ -19,11 +19,11 @@ const createSession = (role: AuthSession["user"]["role"]): AuthSession => ({
 });
 
 describe("auth route policy", () => {
-  it("routes learners to the student dashboard, trainers to teacher dashboard, and global admins to analytics", () => {
+  it("routes every authenticated role to the unified personal workspace by default", () => {
     expect(getDefaultRouteForRole("student")).toBe("/");
-    expect(getDefaultRouteForRole("teacher")).toBe("/teacher");
-    expect(getDefaultRouteForRole("tenant_admin")).toBe("/teacher");
-    expect(getDefaultRouteForRole("global_admin")).toBe("/analytics");
+    expect(getDefaultRouteForRole("teacher")).toBe("/");
+    expect(getDefaultRouteForRole("tenant_admin")).toBe("/");
+    expect(getDefaultRouteForRole("global_admin")).toBe("/");
   });
 
   it("requires an authenticated session before rendering protected app routes", () => {
@@ -38,26 +38,24 @@ describe("auth route policy", () => {
       href: "/",
       type: "redirect"
     });
-    expect(resolveProtectedRouteDecision(createSession("teacher"), "/")).toEqual({
-      href: "/teacher",
-      type: "redirect"
-    });
+    expect(resolveProtectedRouteDecision(createSession("teacher"), "/")).toEqual({ type: "render" });
     expect(resolveProtectedRouteDecision(createSession("global_admin"), "/teacher")).toEqual({
-      href: "/analytics",
+      href: "/",
       type: "redirect"
     });
   });
 
-  it("allows role-matched protected routes", () => {
+  it("allows authenticated roles to use the shared core study routes", () => {
     expect(resolveProtectedRouteDecision(createSession("teacher"), "/quiz")).toEqual({ type: "render" });
     expect(resolveProtectedRouteDecision(createSession("student"), "/quiz")).toEqual({ type: "render" });
+    expect(resolveProtectedRouteDecision(createSession("global_admin"), "/quiz")).toEqual({ type: "render" });
     expect(resolveProtectedRouteDecision(createSession("student"), "/documents")).toEqual({ type: "render" });
   });
 
   it("redirects authenticated users away from public auth routes", () => {
     expect(resolvePublicAuthRouteDecision(null)).toEqual({ type: "render" });
     expect(resolvePublicAuthRouteDecision(createSession("teacher"))).toEqual({
-      href: "/teacher",
+      href: "/",
       type: "redirect"
     });
   });
@@ -66,7 +64,7 @@ describe("auth route policy", () => {
     expect(canAccessRoute("teacher", "/quiz/drafts")).toBe(true);
     expect(canAccessRoute("tenant_admin", "/teacher/overview")).toBe(true);
     expect(canAccessRoute("global_admin", "/teacher/overview")).toBe(false);
-    expect(canAccessRoute("global_admin", "/quiz/drafts")).toBe(false);
+    expect(canAccessRoute("global_admin", "/quiz/drafts")).toBe(true);
     expect(canAccessRoute("student", "/quiz/drafts")).toBe(true);
   });
 });

@@ -65,7 +65,7 @@ describe("auth API client", () => {
     expect(localStorageSetItem).not.toHaveBeenCalled();
   });
 
-  it("submits registration to the BFF and keeps backend role mapping out of the page component", async () => {
+  it("submits registration to the BFF with the default frontend role and no browser token storage", async () => {
     const fetcher = vi.fn(async () =>
       jsonResponse(
         {
@@ -80,10 +80,10 @@ describe("auth API client", () => {
     const result = await submitRegister(
       {
         acceptedTerms: true,
-        email: "teacher@example.com",
-        fullName: "Teacher Example",
+        email: "learner@example.com",
+        fullName: "Learner Example",
         password: "secure-pass",
-        role: "teacher"
+        role: "student"
       },
       fetcher
     );
@@ -97,10 +97,10 @@ describe("auth API client", () => {
       expect.objectContaining({
         body: JSON.stringify({
           acceptedTerms: true,
-          email: "teacher@example.com",
-          fullName: "Teacher Example",
+          email: "learner@example.com",
+          fullName: "Learner Example",
           password: "secure-pass",
-          role: "teacher"
+          role: "student"
         }),
         credentials: "same-origin",
         method: "POST"
@@ -112,7 +112,7 @@ describe("auth API client", () => {
     const fetcher = vi.fn(async () =>
       jsonResponse(
         {
-          email: "teacher@example.com",
+          email: "learner@example.com",
           message: "สมัครสมาชิกและยืนยันอีเมลสำหรับ local dev แล้ว กรุณาเข้าสู่ระบบ",
           ok: true,
           requiresEmailVerification: false,
@@ -126,16 +126,16 @@ describe("auth API client", () => {
     const result = await submitRegister(
       {
         acceptedTerms: true,
-        email: "teacher@example.com",
-        fullName: "Teacher Example",
+        email: "learner@example.com",
+        fullName: "Learner Example",
         password: "secure-pass",
-        role: "teacher"
+        role: "student"
       },
       fetcher
     );
 
     expect(result).toMatchObject({
-      email: "teacher@example.com",
+      email: "learner@example.com",
       ok: true,
       requiresEmailVerification: false,
       verifiedInDevelopment: true

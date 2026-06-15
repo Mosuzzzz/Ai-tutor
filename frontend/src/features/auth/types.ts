@@ -12,7 +12,6 @@ export type RegisterInput = {
   email: string;
   fullName: string;
   password: string;
-  role: AuthRole | "";
 };
 
 export type RegisterValues = Omit<RegisterInput, "confirmPassword"> & {

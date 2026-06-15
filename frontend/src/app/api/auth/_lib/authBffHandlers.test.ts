@@ -146,7 +146,7 @@ describe("auth BFF route handlers", () => {
     );
   });
 
-  it("maps register roles from frontend student/teacher values to backend learner/trainer values", async () => {
+  it("defaults browser registrations to the learner backend role without exposing a role choice", async () => {
     const backendRequest = createBackendRequest();
     const handlers = createAuthRouteHandlers({ backendRequest });
 
@@ -154,10 +154,9 @@ describe("auth BFF route handlers", () => {
       createJsonRequest("/api/auth/register", {
         body: {
           acceptedTerms: true,
-          email: "teacher@example.com",
-          fullName: "Teacher Example",
-          password: "secure-pass",
-          role: "teacher"
+          email: "learner@example.com",
+          fullName: "Learner Example",
+          password: "secure-pass"
         }
       })
     );
@@ -173,10 +172,10 @@ describe("auth BFF route handlers", () => {
     expect(backendRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         body: {
-          email: "teacher@example.com",
-          full_name: "Teacher Example",
+          email: "learner@example.com",
+          full_name: "Learner Example",
           password: "secure-pass",
-          role: "trainer"
+          role: "learner"
         },
         method: "POST",
         path: "/api/auth/register"

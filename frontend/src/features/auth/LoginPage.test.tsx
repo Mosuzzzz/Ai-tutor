@@ -118,7 +118,7 @@ describe("LoginPage", () => {
     });
   });
 
-  it("redirects a successful teacher login to the teacher dashboard from the sanitized session role", async () => {
+  it("redirects every successful login to the unified personal workspace", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       jsonResponse({
         message: AUTH_MESSAGES.loginSuccess,
@@ -139,7 +139,7 @@ describe("LoginPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "เข้าสู่ระบบ" }));
 
     await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith("/teacher");
+      expect(replace).toHaveBeenCalledWith("/");
     });
   });
 });
