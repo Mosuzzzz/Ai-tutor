@@ -1,0 +1,506 @@
+# AI Tutor Frontend Roadmap
+
+สถานะเอกสาร: อัปเดตตาม product direction ใหม่วันที่ 2026-06-15
+
+## Product Direction
+
+AI Tutor จะเป็น **Personal AI Study Workspace** สำหรับผู้ใช้คนเดียว ไม่แยกประสบการณ์หลักเป็นครู/นักเรียน
+
+Flow หลัก:
+
+```text
+Register/Login
+  -> Dashboard ส่วนตัว
+  -> Upload Document
+  -> Summary Detail
+  -> Chat with Document
+  -> Generate Personal Quiz
+  -> Take Quiz
+  -> Personal Learning Analytics
+```
+
+หลักการออกแบบ:
+
+- Thai-first: copy หลักเป็นภาษาไทย
+- Personal-first: ทุกหน้าตอบว่า "ฉันจะทบทวนต่อยังไง"
+- No role confusion: UI หลักไม่ถามว่าผู้ใช้เป็นครูหรือนักเรียน
+- API-ready ไม่หลอกผู้ใช้: ถ้า Backend ยังตอบไม่สมบูรณ์ ต้องแสดง state ตามจริง
+- Security-first: ใช้ HttpOnly cookie/session ผ่าน BFF, ไม่เก็บ token ใน `localStorage` หรือ `sessionStorage`
+- Premium learning product: สงบ น่าเชื่อถือ อ่านง่าย ไม่ฉูดฉาด และไม่เหมือน generic AI dashboard
+
+## Verification ทุก Branch
+
+รันจาก `frontend/`
+
+```bash
+npm run test
+npm run lint
+npm run build
+npm audit --audit-level=high
+```
+
+ถ้า branch แตะ UX/UI:
+
+- ตรวจ desktop และ mobile viewport
+- ตรวจ keyboard navigation และ focus visible
+- ตรวจข้อความไทย ชื่อไฟล์ยาว citation และ markdown ไม่ล้น
+- ตรวจ empty/loading/error/success state
+- ตรวจ contrast และ disabled state
+- ใช้ `$impeccable critique` และ `$impeccable audit` ตาม scope ของ branch
+
+## Current Codebase Cleanup Map
+
+จุดที่ยังต้องเปลี่ยนให้ตรงกับ direction ใหม่:
+
+- `frontend/src/features/auth/`: register ยังมี role selector และ copy นักเรียน/ผู้สอน
+- `frontend/src/features/auth/authRoutePolicy.ts`: route policy ยังแยก student/teacher
+- `frontend/src/features/app-shell/`: navigation ยังมีแดชบอร์ดครูและ role-based item
+- `frontend/src/app/page.tsx`: ยังใช้ student dashboard เป็นหน้า `/`
+- `frontend/src/app/teacher/page.tsx`: ยังมี teacher dashboard แยก
+- `frontend/src/features/student-dashboard/` และ `frontend/src/features/teacher-dashboard/`: ต้องรวมเป็น dashboard ส่วนตัวเดียว
+- `frontend/src/features/document-summary/`: copy และ permission บางส่วนยังพูดถึงผู้สอน/แอดมิน/รอครูแชร์
+- `frontend/src/features/ai-chat/`: ต้องทำให้ชัดว่าแชทกับเอกสารของผู้ใช้เอง
+- `frontend/src/features/ai-quiz-generator/`: ยังมี publish/share/teacher mental model และ permission generate quiz ที่ผูกกับ role
+- `frontend/src/features/learning-analytics/`: ต้องเป็นสถิติส่วนตัว ไม่ใช่ภาพรวมห้องเรียน/นักเรียน
+- `PRODUCT.md` และ `frontend/SRS.md`: ควรอัปเดตให้สอดคล้องกับ single-user product
+
+## Branch Rules
+
+- สร้าง branch ใหม่จาก `main` ล่าสุด
+- ทำตามลำดับด้านล่าง เพราะ branch หลังจะพึ่ง mental model จาก branch ก่อน
+- ถ้าเปลี่ยน behavior ให้ปรับ/เพิ่ม test ก่อน
+- ถ้าแตะ UX/UI ให้ใช้ Impeccable command ที่ระบุ
+- ไม่รวมหลาย branch เข้าด้วยกันถ้าทำให้ review ยาก
+- ไม่แก้ auth/session security แบบเดาสุ่มนอก contract ของ Backend
+
+---
+
+# Phase 5.5: Single-User Reset
+
+## 5.5.0 `ProductDirectionSingleUser`
+
+เป้าหมาย:
+
+- ปรับเอกสาร product ให้เป็น personal AI study workspace
+- เลิกใช้คำอธิบาย core flow แบบครูสร้างให้นักเรียน
+- สร้าง vocabulary เดียวสำหรับ branch ต่อไป เช่น "พื้นที่เรียนของฉัน", "เอกสารของฉัน", "ควิซทบทวน", "สถิติของฉัน"
+
+Files:
+
+- `PRODUCT.md`
+- `DESIGN.md`
+- `frontend/SRS.md`
+
+Impeccable:
+
+```text
+$impeccable clarify PRODUCT.md DESIGN.md frontend/SRS.md
+$impeccable distill PRODUCT.md DESIGN.md
+```
+
+Acceptance:
+
+- เอกสารไม่สื่อว่า core flow ต้องมีครูแชร์ให้นักเรียน
+- ทีมอ่านแล้วเข้าใจว่า product หลักเป็น single-user
+- คำศัพท์หลักพร้อมให้ branch อื่นใช้ต่อ
+
+## 5.5.1 `UnifiedAuthAndSession`
+
+เป้าหมาย:
+
+- Register ไม่ถาม role ครู/นักเรียน
+- Login redirect ไป `/` สำหรับ user ปกติ
+- ถ้า Backend ยังต้องการ role ให้ Frontend/BFF ส่ง default role ตาม contract โดยซ่อนจาก UI
+- รักษา HttpOnly cookie/session security ตาม `AGENTS_FRONTEND.md`
+
+Files:
+
+- `frontend/src/features/auth/`
+- `frontend/src/lib/api/authContract.ts`
+- `frontend/src/app/api/auth/_lib/authBffHandlers.ts`
+- auth tests
+
+Impeccable:
+
+```text
+$impeccable clarify frontend/src/features/auth
+$impeccable harden frontend/src/features/auth
+$impeccable critique /login /register
+$impeccable audit frontend/src/features/auth
+```
+
+Acceptance:
+
+- Register ใช้งานได้โดยไม่เลือก role
+- Login success ไป `/`
+- ไม่มี token ใน client storage
+- Test/lint/build/audit ผ่าน
+
+## 5.5.2 `UnifiedAppShellNavigation`
+
+เป้าหมาย:
+
+- Sidebar/topbar เป็น navigation เดียวสำหรับทุก user
+- ไม่มีเมนูแดชบอร์ดครูใน core navigation
+- Primary action พาไปเริ่มที่ `/documents`
+- User badge ไม่แสดง role ครู/นักเรียนใน core UI
+
+Files:
+
+- `frontend/src/features/app-shell/`
+- `frontend/src/features/auth/authRoutePolicy.ts`
+- route/app shell tests
+
+Impeccable:
+
+```text
+$impeccable layout frontend/src/features/app-shell
+$impeccable clarify frontend/src/features/app-shell
+$impeccable adapt frontend/src/features/app-shell
+$impeccable harden frontend/src/features/app-shell
+$impeccable critique /
+$impeccable audit frontend/src/features/app-shell
+```
+
+Acceptance:
+
+- Navigation เดียวกันทุก user
+- `/teacher` ไม่ใช่ route หลักใน product อีกต่อไป
+- Mobile/desktop navigation สอดคล้องกัน
+- Test/lint/build/audit ผ่าน
+
+## 5.5.3 `UnifiedStudyDashboard`
+
+เป้าหมาย:
+
+- รวม student/teacher dashboard เป็น dashboard ส่วนตัวเดียว
+- หน้า `/` แสดง next action ชัด: อัปโหลดเอกสาร, เปิดสรุปล่าสุด, ถาม AI, ทำควิซ, ดูสถิติ
+- Empty state ดูตั้งใจ ไม่เหมือนหน้าว่าง
+
+Files:
+
+- `frontend/src/features/study-dashboard/`
+- `frontend/src/app/page.tsx`
+- legacy dashboard imports/tests ที่เกี่ยวข้อง
+
+Impeccable:
+
+```text
+$impeccable shape frontend/src/features/study-dashboard
+$impeccable layout frontend/src/features/study-dashboard
+$impeccable typeset frontend/src/features/study-dashboard
+$impeccable clarify frontend/src/features/study-dashboard
+$impeccable onboard frontend/src/features/study-dashboard
+$impeccable critique /
+$impeccable audit frontend/src/features/study-dashboard
+```
+
+Acceptance:
+
+- `/` คือ dashboard ส่วนตัวเดียว
+- ไม่มีคำว่าแดชบอร์ดครู/แดชบอร์ดผู้เรียนใน core page
+- ผู้ใช้ใหม่เข้าใจว่าควรเริ่มจากเอกสาร
+- Test/lint/build/audit ผ่าน
+
+## 5.5.4 `PersonalDocumentWorkspace`
+
+เป้าหมาย:
+
+- `/documents` เป็นพื้นที่เอกสารส่วนตัว
+- ทุก user ใน core flow อัปโหลดเอกสารได้ถ้า Backend อนุญาต
+- คลังเอกสารโชว์ล่าสุด 2 รายการ และมีปุ่มเปิด popup ดูทั้งหมด
+- มี delete action ที่ปลอดภัยและชัดเจนตาม endpoint ที่ Backend มี
+- Summary detail ไม่หลอกผู้ใช้ถ้า Backend ยังสรุปไม่ตรงเนื้อหา
+
+Files:
+
+- `frontend/src/features/document-summary/`
+- `frontend/src/app/documents/`
+- document tests
+
+Impeccable:
+
+```text
+$impeccable layout frontend/src/features/document-summary
+$impeccable clarify frontend/src/features/document-summary
+$impeccable adapt frontend/src/features/document-summary
+$impeccable harden frontend/src/features/document-summary
+$impeccable critique /documents
+$impeccable audit frontend/src/features/document-summary
+```
+
+Acceptance:
+
+- ไม่มี copy "ผู้สอนเท่านั้น", "รอครูแชร์"
+- Upload -> processing -> ready -> summary/chat/quiz ต่อกันชัด
+- Popup คลังเอกสารใช้ keyboard ได้และ focus ไม่หลุด
+- Long filename/markdown/citation ไม่ล้น
+- Test/lint/build/audit ผ่าน
+
+Backend ที่ต้องคุย:
+
+- AI title จากเนื้อหาจริง
+- summary markdown จากเนื้อหาจริง
+- OCR/image extraction
+- delete document cascade behavior
+
+## 5.5.5 `PersonalChatWorkspace`
+
+เป้าหมาย:
+
+- `/chat` คือการถาม AI จากเอกสารของผู้ใช้เอง
+- ผู้ใช้เลือกเอกสารที่จะถามได้ชัดเจน
+- ถ้าไม่มีเอกสารพร้อม ต้องพาไปอัปโหลด
+- ถ้า AI ไม่พบข้อมูลในเอกสาร ต้องแสดง no-context state อย่างตรงไปตรงมา
+
+Files:
+
+- `frontend/src/features/ai-chat/`
+- chat tests
+
+Impeccable:
+
+```text
+$impeccable shape frontend/src/features/ai-chat
+$impeccable layout frontend/src/features/ai-chat
+$impeccable clarify frontend/src/features/ai-chat
+$impeccable adapt frontend/src/features/ai-chat
+$impeccable harden frontend/src/features/ai-chat
+$impeccable critique /chat
+$impeccable audit frontend/src/features/ai-chat
+```
+
+Acceptance:
+
+- ผู้ใช้รู้เสมอว่ากำลังถามจากเอกสารไหน
+- UI หลักเป็นภาษาไทย
+- Citation/no-context/empty/error state ชัด
+- Test/lint/build/audit ผ่าน
+
+Backend ที่ต้องคุย:
+
+- Chat response language
+- Citation shape
+- `file_id` filtering
+- RAG answer quality
+
+## 5.5.6 `PersonalQuizReviewFlow`
+
+เป้าหมาย:
+
+- `/quiz` คือควิซทบทวนส่วนตัว
+- ไม่มี publish/share/assign ใน core UI
+- ผู้ใช้สร้างควิซจากเอกสาร -> ทำควิซ -> ส่งคำตอบ -> เห็นคะแนนและ feedback
+- ห้ามโชว์เฉลยก่อนส่งคำตอบ
+
+Files:
+
+- `frontend/src/features/ai-quiz-generator/`
+- quiz tests
+
+Impeccable:
+
+```text
+$impeccable shape frontend/src/features/ai-quiz-generator
+$impeccable layout frontend/src/features/ai-quiz-generator
+$impeccable clarify frontend/src/features/ai-quiz-generator
+$impeccable adapt frontend/src/features/ai-quiz-generator
+$impeccable harden frontend/src/features/ai-quiz-generator
+$impeccable critique /quiz
+$impeccable audit frontend/src/features/ai-quiz-generator
+```
+
+Acceptance:
+
+- Copy เป็น "ควิซทบทวน" หรือ "แบบฝึกทบทวนส่วนตัว"
+- User ปกติสร้างควิซได้ถ้า Backend contract อนุญาต
+- Answer key ไม่แสดงก่อน submit
+- Attempt/score flow ชัด
+- Test/lint/build/audit ผ่าน
+
+Backend ที่ต้องคุย:
+
+- Generate quiz สำหรับ user ปกติ
+- Submit attempt และ score ส่วนตัว
+- Question language
+- Citation quality
+
+## 5.5.7 `PersonalLearningAnalytics`
+
+เป้าหมาย:
+
+- `/analytics` เป็นสถิติการทบทวนส่วนตัว
+- ไม่แสดงห้องเรียน รายชื่อนักเรียน หรือภาพรวม tenant/admin
+- Metrics ผูกกับเอกสาร แชท ควิซ และคะแนนของผู้ใช้เอง
+
+Files:
+
+- `frontend/src/features/learning-analytics/`
+- analytics tests
+
+Impeccable:
+
+```text
+$impeccable layout frontend/src/features/learning-analytics
+$impeccable typeset frontend/src/features/learning-analytics
+$impeccable clarify frontend/src/features/learning-analytics
+$impeccable onboard frontend/src/features/learning-analytics
+$impeccable adapt frontend/src/features/learning-analytics
+$impeccable critique /analytics
+$impeccable audit frontend/src/features/learning-analytics
+```
+
+Acceptance:
+
+- Copy เป็น "สถิติของฉัน" หรือ "ภาพรวมการทบทวน"
+- Empty state พาไปอัปโหลดเอกสารหรือทำควิซ
+- ไม่มีข้อมูลคนอื่นใน core UI
+- Test/lint/build/audit ผ่าน
+
+## 5.5.8 `UnifiedCoursesAndSettingsPlaceholders`
+
+เป้าหมาย:
+
+- `/courses` และ `/settings` ถ้ายังไม่ทำจริง ต้องเป็น placeholder ที่ไม่ขัดกับ single-user product
+- `/courses` สื่อเป็น "ชุดบทเรียนของฉัน" ไม่ใช่ห้องเรียนที่ครูจัด
+- `/settings` เป็น settings ของบัญชีและ workspace ส่วนตัว
+
+Files:
+
+- `frontend/src/features/foundation/`
+- route placeholder tests
+
+Impeccable:
+
+```text
+$impeccable distill frontend/src/features/foundation
+$impeccable clarify frontend/src/features/foundation
+$impeccable onboard frontend/src/features/foundation
+$impeccable layout frontend/src/features/foundation
+$impeccable critique /courses /settings
+$impeccable audit frontend/src/features/foundation
+```
+
+Acceptance:
+
+- Placeholder ไม่พูดถึงครู/นักเรียน
+- มี next action ไป documents/chat/quiz
+- Test/lint/build/audit ผ่าน
+
+## 5.5.9 `SingleUserResponsiveA11yFinal`
+
+เป้าหมาย:
+
+- ตรวจรอบสุดท้ายทั้ง product หลัง unify แล้ว
+- แก้ responsive, overflow, focus, empty states, loading states และ copy หลุด
+
+Files:
+
+- `frontend/src/`
+- routes หลักทั้งหมด
+
+Impeccable:
+
+```text
+$impeccable adapt frontend/src
+$impeccable audit frontend/src
+$impeccable harden frontend/src
+$impeccable polish frontend/src
+```
+
+Acceptance:
+
+- Desktop/mobile ไม่แตก
+- Dialog/popup focus ใช้งานด้วย keyboard ได้
+- ไม่มี copy role-based หลุดใน core UI
+- Test/lint/build/audit ผ่าน
+
+---
+
+# Phase 6: Product Completion หลัง Single-User Reset
+
+ทำหลัง Phase 5.5 เสร็จเท่านั้น
+
+## 6.1 `PersonalStudyCollections`
+
+จัดกลุ่มเอกสารเป็นชุดบทเรียนส่วนตัว
+
+Impeccable:
+
+```text
+$impeccable shape
+$impeccable layout
+$impeccable onboard
+$impeccable clarify
+$impeccable critique
+$impeccable audit
+```
+
+## 6.2 `PersonalExportAndDownload`
+
+Export/download สรุปหรือควิซของตัวเอง
+
+Impeccable:
+
+```text
+$impeccable clarify
+$impeccable layout
+$impeccable harden
+$impeccable audit
+```
+
+## 6.3 `PersonalNotificationsAndReminders`
+
+แจ้งเตือนเอกสารประมวลผลเสร็จ และเตือนทบทวน
+
+Impeccable:
+
+```text
+$impeccable shape
+$impeccable clarify
+$impeccable onboard
+$impeccable harden
+$impeccable audit
+```
+
+## 6.4 `PersonalProfileAndSettings`
+
+ตั้งค่าบัญชี ภาษา และ notification preferences
+
+Impeccable:
+
+```text
+$impeccable layout
+$impeccable clarify
+$impeccable harden
+$impeccable critique
+$impeccable audit
+```
+
+---
+
+# Backend Contract Questions
+
+ถามทีม Backend ก่อนหรือระหว่าง branch ที่เกี่ยวข้อง:
+
+- Auth: register user ปกติต้องส่ง role หรือไม่ และ default role คืออะไร
+- Documents: upload/delete/status/summary/title/OCR รองรับอะไรแล้วบ้าง
+- Chat: ต้องส่ง `file_id` เสมอไหม, citation shape คืออะไร, บังคับตอบไทยได้ไหม
+- Quiz: user ปกติ generate quiz ได้ไหม, submit attempt/score shape คืออะไร, answer key แยกจาก learner view อย่างไร
+- Analytics: personal analytics endpoint ใช้ข้อมูลจาก document/chat/quiz attempt อะไรบ้าง
+
+# Recommended Sequence
+
+1. Commit branch เอกสารนี้
+2. `ProductDirectionSingleUser`
+3. `UnifiedAuthAndSession`
+4. `UnifiedAppShellNavigation`
+5. `UnifiedStudyDashboard`
+6. `PersonalDocumentWorkspace`
+7. `PersonalChatWorkspace`
+8. `PersonalQuizReviewFlow`
+9. `PersonalLearningAnalytics`
+10. `UnifiedCoursesAndSettingsPlaceholders`
+11. `SingleUserResponsiveA11yFinal`
+
+เหตุผลของลำดับนี้: ต้องเปลี่ยน mental model, auth, route และ navigation ก่อน ไม่อย่างนั้น Documents, Chat, Quiz และ Analytics จะยังแบก logic/copy ครู-นักเรียนเดิมติดไปเรื่อย ๆ
