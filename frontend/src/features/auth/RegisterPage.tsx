@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowRight, GraduationCap, Presentation, UserRound } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import type { FormEvent, ReactNode } from "react";
+import type { FormEvent } from "react";
 
 import { Button } from "../../components/ui/Button";
 import { AuthDivider, AuthField, MockSocialButton, MockStatus } from "./AuthFormFields";
@@ -12,12 +12,10 @@ import { submitRegister } from "./authApiClient";
 import {
   AUTH_COPY,
   AUTH_MESSAGES,
-  AUTH_ROLE_DESCRIPTIONS,
-  AUTH_ROLE_LABELS,
   INITIAL_REGISTER_FORM
 } from "./authContent";
 import { validateRegister } from "./authValidation";
-import type { AuthRole, AuthSubmissionStatus, RegisterInput } from "./types";
+import type { AuthSubmissionStatus, RegisterInput } from "./types";
 
 export const RegisterPage = () => {
   const [form, setForm] = useState<RegisterInput>(INITIAL_REGISTER_FORM);
@@ -103,40 +101,15 @@ export const RegisterPage = () => {
           </div>
         )}
 
-        <fieldset>
-          <legend className="mb-3 text-label-md font-bold text-[#132238]">
-            {AUTH_COPY.register.roleLegend}
-          </legend>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <RoleOption
-              checked={form.role === "student"}
-              icon={<GraduationCap aria-hidden="true" className="h-6 w-6" />}
-              label="นักเรียน"
-              onChange={() => updateField("role", "student")}
-              value="student"
-            />
-            <RoleOption
-              checked={form.role === "teacher"}
-              icon={<Presentation aria-hidden="true" className="h-6 w-6" />}
-              label="ผู้สอน"
-              onChange={() => updateField("role", "teacher")}
-              value="teacher"
-            />
-          </div>
-          {fieldErrors.role && <p className="mt-2 text-label-sm text-error">{fieldErrors.role}</p>}
-        </fieldset>
-
         <div className="rounded-lg border border-[#d8deea] bg-[#f8f9ff] p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#10253f] text-[#f4b35b]">
-              <UserRound aria-hidden="true" className="h-5 w-5" />
+              <Sparkles aria-hidden="true" className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-label-md font-bold text-[#10253f]">
-                {form.role ? AUTH_ROLE_LABELS[form.role] : AUTH_COPY.register.roleFallback}
-              </p>
+              <p className="text-label-md font-bold text-[#10253f]">บัญชีเดียวสำหรับพื้นที่เรียนรู้ของคุณ</p>
               <p className="text-label-sm text-[#596273]">
-                {form.role ? AUTH_ROLE_DESCRIPTIONS[form.role] : AUTH_ROLE_DESCRIPTIONS.student}
+                หลังสมัครแล้วคุณจะอัปโหลดเอกสาร สรุป ถาม AI และสร้างควิซทบทวนได้จากพื้นที่เดียวกัน
               </p>
             </div>
           </div>
@@ -219,41 +192,5 @@ export const RegisterPage = () => {
         </Link>
       </p>
     </AuthShell>
-  );
-};
-
-const RoleOption = ({
-  checked,
-  icon,
-  label,
-  onChange,
-  value
-}: {
-  checked: boolean;
-  icon: ReactNode;
-  label: string;
-  onChange: () => void;
-  value: AuthRole;
-}) => {
-  return (
-    <label
-      className={[
-        "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border px-4 py-4 text-center transition-colors",
-        checked
-          ? "border-[#10253f] bg-[#edf3fb] text-[#10253f]"
-          : "border-[#c7cfdd] bg-white text-[#596273] hover:border-[#f4b35b]"
-      ].join(" ")}
-    >
-      <input
-        checked={checked}
-        className="sr-only"
-        name="role"
-        onChange={onChange}
-        type="radio"
-        value={value}
-      />
-      <span className="text-[#a9660a]">{icon}</span>
-      <span className="text-label-md font-bold">{label}</span>
-    </label>
   );
 };

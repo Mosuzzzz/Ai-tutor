@@ -48,7 +48,7 @@ const registerRouteInputSchema = z.object({
   email: z.email(),
   fullName: z.string().trim().min(1),
   password: z.string().min(8),
-  role: frontendRoleSchema
+  role: frontendRoleSchema.default("student")
 });
 
 const DEV_EMAIL_VERIFIED_MESSAGE = "สมัครสมาชิกและยืนยันอีเมลสำหรับ local dev แล้ว กรุณาเข้าสู่ระบบ";

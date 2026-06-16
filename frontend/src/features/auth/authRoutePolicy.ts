@@ -21,30 +21,21 @@ export type AuthRouteDecision =
     };
 
 const ALL_AUTH_ROLES = ["student", "teacher", "tenant_admin", "global_admin"] as const;
-const LEARNER_QUIZ_ROLES = ["student", "teacher", "tenant_admin"] as const;
 const TEACHER_ROLES = ["teacher", "tenant_admin"] as const;
 
 export const protectedRouteRoles = {
-  "/": ["student"],
+  "/": ALL_AUTH_ROLES,
   "/analytics": ALL_AUTH_ROLES,
   "/chat": ALL_AUTH_ROLES,
   "/courses": ALL_AUTH_ROLES,
   "/documents": ALL_AUTH_ROLES,
-  "/quiz": LEARNER_QUIZ_ROLES,
+  "/quiz": ALL_AUTH_ROLES,
   "/settings": ALL_AUTH_ROLES,
   "/teacher": TEACHER_ROLES
 } satisfies Record<ProtectedRouteHref, readonly AuthRouteRole[]>;
 
-export const getDefaultRouteForRole = (role: AuthRouteRole) => {
-  if (role === "student") {
-    return "/";
-  }
-
-  if (role === "global_admin") {
-    return "/analytics";
-  }
-
-  return "/teacher";
+export const getDefaultRouteForRole = (_role: AuthRouteRole) => {
+  return "/";
 };
 
 export const canAccessRoute = (role: AuthRouteRole, href: string) => {

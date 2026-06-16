@@ -78,6 +78,17 @@ Requirements:
 - ถ้า Backend ยังต้องใช้ role ให้ BFF ส่ง default ตาม contract โดยไม่ทำให้ผู้ใช้ต้องเลือก
 - Success state ต้องตรงกับผลลัพธ์จริง ไม่แสดงว่าสำเร็จก่อน Backend ตอบ
 
+Current implementation status after `UnifiedAuthAndSession`:
+
+- Register UI เป็น single-user onboarding แล้ว ไม่มี radio/selector สำหรับบทบาทครูหรือนักเรียน
+- Frontend validation ไม่รับ role จากฟอร์ม แต่เพิ่ม default role ภายในก่อนส่ง BFF เพื่อคง compatibility กับ Backend contract ปัจจุบัน
+- Next.js BFF `/api/auth/register` รองรับ browser payload ที่ไม่มี role และ map default ไปเป็น learner-compatible backend role
+- Login สำเร็จทุก role redirect เข้า workspace เดียวที่ `/`
+- Core protected routes เช่น `/`, `/documents`, `/chat`, `/quiz`, `/analytics`, `/settings` ใช้ร่วมกันได้สำหรับ authenticated session
+- Legacy `/teacher` ยังถูก guard เฉพาะ teacher/tenant_admin เพื่อไม่ทำลาย route เก่าก่อนถูกถอดใน branch ภายหลัง
+- Auth API client และ guard tests ยืนยันว่าไม่มี token ถูกเก็บใน `localStorage` หรือ `sessionStorage`
+- Verification ล่าสุด: `npm run test`, `npm run lint`, `npm run build`, และ `npm audit --audit-level=high` ผ่าน
+
 ### 4.2 App Shell
 
 App Shell ต้องเป็น navigation เดียวสำหรับทุก user

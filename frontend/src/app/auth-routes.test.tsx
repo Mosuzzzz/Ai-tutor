@@ -35,7 +35,9 @@ describe("auth routes", () => {
   it("renders the register route for guests after checking authenticated redirect rules", async () => {
     render(await RegisterRoute());
 
-    expect(screen.getByRole("main")).toHaveTextContent("เริ่มต้นการเรียนรู้ด้วยพลังของ AI");
+    expect(screen.getByRole("main")).toHaveTextContent(
+      "สร้างพื้นที่ของคุณสำหรับอัปโหลดเอกสาร สรุปบทเรียน ถาม AI และทำควิซทบทวน"
+    );
     expect(screen.getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
     expect(redirectAuthenticatedRoute).toHaveBeenCalledTimes(1);
   });

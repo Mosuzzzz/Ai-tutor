@@ -20,6 +20,19 @@ const backendSession = {
   }
 };
 
+const learnerBackendSession = {
+  ...backendSession,
+  accessible_route_groups: ["student"],
+  can_view_admin_analytics: false,
+  protected_routes: ["/"],
+  user: {
+    ...backendSession.user,
+    email: "learner@example.com",
+    full_name: "Learner Example",
+    role: "learner" as const
+  }
+};
+
 const createCookieStore = (token?: string) => ({
   get: (name: string) =>
     name === AUTH_COOKIE_NAMES.accessToken && token
@@ -70,8 +83,8 @@ describe("auth guard server helpers", () => {
       backendRequest: vi.fn() as unknown as AuthBackendRequest,
       cookieStore: createCookieStore()
     });
-    const blockedRole = await resolvePageSession("/", {
-      backendRequest: vi.fn(async () => backendSession) as unknown as AuthBackendRequest,
+    const blockedRole = await resolvePageSession("/teacher", {
+      backendRequest: vi.fn(async () => learnerBackendSession) as unknown as AuthBackendRequest,
       cookieStore: createCookieStore("access-cookie-value")
     });
 
@@ -80,7 +93,7 @@ describe("auth guard server helpers", () => {
       type: "redirect"
     });
     expect(blockedRole).toEqual({
-      href: "/teacher",
+      href: "/",
       type: "redirect"
     });
   });

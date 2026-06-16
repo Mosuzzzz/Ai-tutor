@@ -1,4 +1,4 @@
-import type { AuthRole, LoginInput, RegisterInput } from "./types";
+import type { LoginInput, RegisterInput } from "./types";
 
 export const AUTH_VISUAL_SLIDES = [
   "/auth/login-slide-1.webp",
@@ -16,8 +16,7 @@ export const INITIAL_REGISTER_FORM: RegisterInput = {
   confirmPassword: "",
   email: "",
   fullName: "",
-  password: "",
-  role: "student"
+  password: ""
 };
 
 export const AUTH_MESSAGES = {
@@ -32,7 +31,7 @@ export const AUTH_COPY = {
   login: {
     heading: "AI Tutor",
     intro: "เข้าสู่ระบบเพื่อดำเนินการต่อ",
-    shellHeadline: "Learn with clarity, safely.",
+    shellHeadline: "กลับเข้าสู่พื้นที่เรียนรู้ของคุณ",
     shellDescription: "พื้นที่เข้าสู่ระบบที่เรียบง่าย ปลอดภัย และพร้อมเชื่อม backend เมื่อทีม API เปิดใช้งาน",
     submitLabel: "เข้าสู่ระบบ",
     divider: "หรือเข้าสู่ระบบด้วย",
@@ -41,28 +40,16 @@ export const AUTH_COPY = {
     forgotPassword: "ลืมรหัสผ่าน?"
   },
   register: {
-    eyebrow: "AI Tutor onboarding",
+    eyebrow: "พื้นที่เรียนส่วนตัว",
     heading: "สร้างบัญชีใหม่",
-    intro: "เริ่มต้นการเรียนรู้ด้วยพลังของ AI ไปกับเรา",
-    shellHeadline: "Empower Your Learning",
-    shellDescription: "เลือกเส้นทางของคุณ แล้วเริ่มสร้างพื้นที่เรียนรู้ที่ AI ช่วยจัดระเบียบทุกบทเรียน",
+    intro: "สร้างพื้นที่ของคุณสำหรับอัปโหลดเอกสาร สรุปบทเรียน ถาม AI และทำควิซทบทวน",
+    shellHeadline: "พื้นที่เรียนรู้ AI ส่วนตัวของคุณ",
+    shellDescription: "เริ่มจากบัญชีเดียว ใช้งานเอกสาร แชท และควิซได้ในพื้นที่เรียนรู้ส่วนตัว โดยไม่ต้องเลือกบทบาท",
     submitLabel: "สมัครสมาชิก",
     divider: "หรือสมัครสมาชิกด้วย",
     footerPrompt: "มีบัญชีอยู่แล้ว?",
     footerLink: "เข้าสู่ระบบ",
-    roleLegend: "เลือกบทบาทของคุณ",
-    roleFallback: "เลือกเส้นทางของคุณ",
     termsLabel: "ฉันยอมรับข้อตกลงและเงื่อนไขการใช้งาน"
   },
   socialUnavailableSuffix: "ยังไม่เปิดใช้งาน"
 } as const;
-
-export const AUTH_ROLE_LABELS: Record<AuthRole, string> = {
-  student: "เส้นทางนักเรียน",
-  teacher: "เส้นทางผู้สอน"
-};
-
-export const AUTH_ROLE_DESCRIPTIONS: Record<AuthRole, string> = {
-  student: "เตรียมพื้นที่สำหรับเรียน ทบทวน และถาม AI Tutor",
-  teacher: "เตรียมพื้นที่สำหรับสร้างบทเรียนและดูแลผู้เรียน"
-};

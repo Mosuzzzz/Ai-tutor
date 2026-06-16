@@ -11,13 +11,12 @@ const jsonResponse = (body: unknown, init: ResponseInit = {}) => {
   });
 };
 
-const fillValidTeacherRegistration = () => {
-  fireEvent.click(screen.getByRole("radio", { name: "ผู้สอน" }));
+const fillValidRegistration = () => {
   fireEvent.change(screen.getByLabelText("ชื่อ-นามสกุล"), {
-    target: { value: "อาจารย์สมชาย ใจดี" }
+    target: { value: "ผู้เรียนทดลอง" }
   });
   fireEvent.change(screen.getByLabelText("อีเมล"), {
-    target: { value: "teacher@example.com" }
+    target: { value: "learner@example.com" }
   });
   fireEvent.change(screen.getByLabelText("รหัสผ่าน"), {
     target: { value: "secure-pass" }
@@ -33,12 +32,13 @@ describe("RegisterPage", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders role selection, account fields, terms, and route link", () => {
+  it("renders a single-user account form without exposing role selection", () => {
     render(<RegisterPage />);
 
     expect(screen.getByRole("heading", { name: "สร้างบัญชีใหม่" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "นักเรียน" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "ผู้สอน" })).not.toBeChecked();
+    expect(screen.queryByRole("radio", { name: "นักเรียน" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "ผู้สอน" })).not.toBeInTheDocument();
+    expect(screen.getByText("บัญชีเดียวสำหรับพื้นที่เรียนรู้ของคุณ")).toBeInTheDocument();
     expect(screen.getByLabelText("ชื่อ-นามสกุล")).toBeInTheDocument();
     expect(screen.getByLabelText("อีเมล")).toHaveAttribute("type", "email");
     expect(screen.getByLabelText("รหัสผ่าน")).toHaveAttribute("type", "password");
@@ -51,7 +51,7 @@ describe("RegisterPage", () => {
     render(<RegisterPage />);
 
     fireEvent.change(screen.getByLabelText("ชื่อ-นามสกุล"), {
-      target: { value: "นักเรียนทดลอง" }
+      target: { value: "ผู้เรียนทดลอง" }
     });
     fireEvent.change(screen.getByLabelText("อีเมล"), {
       target: { value: "learner@example.com" }
@@ -68,7 +68,7 @@ describe("RegisterPage", () => {
     expect(screen.getByText("กรุณายอมรับเงื่อนไขการใช้งาน")).toBeInTheDocument();
   });
 
-  it("submits a valid teacher registration through the BFF", async () => {
+  it("submits a valid single-user registration through the BFF with a hidden default role", async () => {
     const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       jsonResponse(
         {
@@ -81,14 +81,15 @@ describe("RegisterPage", () => {
     );
     render(<RegisterPage />);
 
-    fillValidTeacherRegistration();
+    fillValidRegistration();
     fireEvent.click(screen.getByRole("button", { name: "สมัครสมาชิก" }));
 
     expect(await screen.findByText(AUTH_MESSAGES.registerSuccess)).toBeInTheDocument();
-    expect(screen.getByText("เส้นทางผู้สอน")).toBeInTheDocument();
+    expect(screen.queryByText("เส้นทางผู้สอน")).not.toBeInTheDocument();
     expect(fetcher).toHaveBeenCalledWith(
       "/api/auth/register",
       expect.objectContaining({
+        body: expect.stringContaining('"role":"student"'),
         credentials: "same-origin",
         method: "POST"
       })
@@ -99,7 +100,7 @@ describe("RegisterPage", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       jsonResponse(
         {
-          email: "teacher@example.com",
+          email: "learner@example.com",
           message: "สมัครสมาชิกและยืนยันอีเมลสำหรับ local dev แล้ว กรุณาเข้าสู่ระบบ",
           ok: true,
           requiresEmailVerification: false,
@@ -110,7 +111,7 @@ describe("RegisterPage", () => {
     );
     render(<RegisterPage />);
 
-    fillValidTeacherRegistration();
+    fillValidRegistration();
     fireEvent.click(screen.getByRole("button", { name: "สมัครสมาชิก" }));
 
     expect(
@@ -129,7 +130,7 @@ describe("RegisterPage", () => {
     );
     render(<RegisterPage />);
 
-    fillValidTeacherRegistration();
+    fillValidRegistration();
     fireEvent.click(screen.getByRole("button", { name: "สมัครสมาชิก" }));
 
     const pendingStatus = await screen.findByRole("status");
