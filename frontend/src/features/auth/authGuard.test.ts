@@ -4,32 +4,26 @@ import { AUTH_COOKIE_NAMES } from "../../lib/api/authCookies";
 import { getServerAuthSession, resolvePageSession, type AuthBackendRequest } from "./authGuard";
 
 const backendSession = {
-  accessible_route_groups: ["teacher"],
+  accessible_route_groups: ["dashboard", "documents", "chat", "quiz", "analytics"],
   authenticated: true as const,
-  can_manage_users: false,
-  can_view_admin_analytics: true,
-  protected_routes: ["/teacher", "/quiz"],
+  is_admin: false,
   user: {
     created_at: "2026-06-04T00:00:00Z",
     email: "teacher@example.com",
     full_name: "Teacher Example",
     id: "user-1",
     last_active_at: "2026-06-04T00:00:00Z",
-    role: "trainer" as const,
-    tenant_id: "tenant-1"
+    role: "user" as const
   }
 };
 
 const learnerBackendSession = {
   ...backendSession,
-  accessible_route_groups: ["student"],
-  can_view_admin_analytics: false,
-  protected_routes: ["/"],
   user: {
     ...backendSession.user,
     email: "learner@example.com",
     full_name: "Learner Example",
-    role: "learner" as const
+    role: "user" as const
   }
 };
 
@@ -67,7 +61,7 @@ describe("auth guard server helpers", () => {
     expect(session).toMatchObject({
       user: {
         email: "teacher@example.com",
-        role: "teacher"
+        role: "user"
       }
     });
     expect(backendRequest).toHaveBeenCalledWith(
@@ -78,12 +72,12 @@ describe("auth guard server helpers", () => {
     );
   });
 
-  it("returns a redirect decision when a session is missing or the role cannot access a route", async () => {
+  it("redirects missing sessions and lets learner-compatible sessions enter shared core routes", async () => {
     const missingSession = await resolvePageSession("/documents", {
       backendRequest: vi.fn() as unknown as AuthBackendRequest,
       cookieStore: createCookieStore()
     });
-    const blockedRole = await resolvePageSession("/teacher", {
+    const sharedRoute = await resolvePageSession("/quiz", {
       backendRequest: vi.fn(async () => learnerBackendSession) as unknown as AuthBackendRequest,
       cookieStore: createCookieStore("access-cookie-value")
     });
@@ -92,14 +86,19 @@ describe("auth guard server helpers", () => {
       href: "/login",
       type: "redirect"
     });
-    expect(blockedRole).toEqual({
-      href: "/",
-      type: "redirect"
+    expect(sharedRoute).toMatchObject({
+      session: {
+        user: {
+          email: "learner@example.com",
+          role: "user"
+        }
+      },
+      type: "render"
     });
   });
 
   it("returns a sanitized frontend session when the role is allowed", async () => {
-    const result = await resolvePageSession("/teacher", {
+    const result = await resolvePageSession("/quiz", {
       backendRequest: vi.fn(async () => backendSession) as unknown as AuthBackendRequest,
       cookieStore: createCookieStore("access-cookie-value")
     });
@@ -111,7 +110,7 @@ describe("auth guard server helpers", () => {
         user: {
           displayName: "Teacher Example",
           email: "teacher@example.com",
-          role: "teacher"
+          role: "user"
         }
       },
       type: "render"

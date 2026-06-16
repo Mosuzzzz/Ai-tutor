@@ -27,7 +27,7 @@ describe("auth API client", () => {
           storesTokenInClient: false,
           user: {
             email: "learner@example.com",
-            role: "student"
+            role: "user"
           }
         }
       })
@@ -65,7 +65,7 @@ describe("auth API client", () => {
     expect(localStorageSetItem).not.toHaveBeenCalled();
   });
 
-  it("submits registration to the BFF with the default frontend role and no browser token storage", async () => {
+  it("submits registration to the BFF without forwarding the unified frontend role", async () => {
     const fetcher = vi.fn(async () =>
       jsonResponse(
         {
@@ -83,7 +83,7 @@ describe("auth API client", () => {
         email: "learner@example.com",
         fullName: "Learner Example",
         password: "secure-pass",
-        role: "student"
+        role: "user"
       },
       fetcher
     );
@@ -99,8 +99,7 @@ describe("auth API client", () => {
           acceptedTerms: true,
           email: "learner@example.com",
           fullName: "Learner Example",
-          password: "secure-pass",
-          role: "student"
+          password: "secure-pass"
         }),
         credentials: "same-origin",
         method: "POST"
@@ -129,7 +128,7 @@ describe("auth API client", () => {
         email: "learner@example.com",
         fullName: "Learner Example",
         password: "secure-pass",
-        role: "student"
+        role: "user"
       },
       fetcher
     );

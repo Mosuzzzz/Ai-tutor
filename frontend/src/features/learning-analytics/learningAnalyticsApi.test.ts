@@ -9,9 +9,7 @@ import {
   backendTrainerAnalyticsResponse,
   backendTrainerStudentsResponse,
   globalAdminAnalyticsSession,
-  learnerAnalyticsSession,
-  tenantAdminAnalyticsSession,
-  trainerAnalyticsSession
+  learnerAnalyticsSession
 } from "./learningAnalyticsTestData";
 import {
   loadLearningAnalyticsForSession,
@@ -75,53 +73,7 @@ describe("loadLearningAnalyticsForSession", () => {
     expect(JSON.stringify(result)).not.toContain("server-cookie-token");
   });
 
-  it("loads trainer analytics and students without requesting admin audit logs for teacher role", async () => {
-    const backendRequest = createAnalyticsBackendRequest();
-
-    const result = await loadLearningAnalyticsForSession({
-      backendRequest,
-      cookieStore: createCookieStore("server-cookie-token"),
-      session: trainerAnalyticsSession
-    });
-
-    expect(result.status).toBe("ready");
-    expect(backendRequest).toHaveBeenCalledTimes(2);
-    expect(backendRequest).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: "/api/analytics/trainer"
-      })
-    );
-    expect(backendRequest).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: "/api/analytics/trainer/students"
-      })
-    );
-    expect(backendRequest).not.toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: "/api/analytics/audit-logs"
-      })
-    );
-  });
-
-  it("loads tenant admin trainer analytics plus audit logs", async () => {
-    const backendRequest = createAnalyticsBackendRequest();
-
-    const result = await loadLearningAnalyticsForSession({
-      backendRequest,
-      cookieStore: createCookieStore("server-cookie-token"),
-      session: tenantAdminAnalyticsSession
-    });
-
-    expect(result.status).toBe("ready");
-    expect(backendRequest).toHaveBeenCalledTimes(3);
-    expect(backendRequest).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: "/api/analytics/audit-logs"
-      })
-    );
-  });
-
-  it("loads global admin usage and audit logs without calling trainer-only endpoints", async () => {
+  it("loads admin usage and audit logs without calling trainer-only endpoints", async () => {
     const backendRequest = createAnalyticsBackendRequest();
 
     const result = await loadLearningAnalyticsForSession({

@@ -12,7 +12,7 @@ const studentSession: AuthSession = {
   user: {
     displayName: "Student Example",
     email: "student@example.com",
-    role: "student"
+    role: "user"
   }
 };
 

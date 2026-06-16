@@ -6,7 +6,7 @@ export const learnerAnalyticsSession: AuthSession = {
   user: {
     displayName: "Learner One",
     email: "learner@example.com",
-    role: "student"
+    role: "user"
   }
 };
 
@@ -16,7 +16,7 @@ export const trainerAnalyticsSession: AuthSession = {
   user: {
     displayName: "Trainer One",
     email: "trainer@example.com",
-    role: "teacher"
+    role: "user"
   }
 };
 
@@ -26,7 +26,7 @@ export const tenantAdminAnalyticsSession: AuthSession = {
   user: {
     displayName: "Tenant Admin",
     email: "tenant-admin@example.com",
-    role: "tenant_admin"
+    role: "admin"
   }
 };
 
@@ -36,7 +36,7 @@ export const globalAdminAnalyticsSession: AuthSession = {
   user: {
     displayName: "Global Admin",
     email: "global-admin@example.com",
-    role: "global_admin"
+    role: "admin"
   }
 };
 

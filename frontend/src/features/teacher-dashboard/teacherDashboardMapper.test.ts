@@ -16,7 +16,7 @@ const teacherSession: AuthSession = {
   user: {
     displayName: "Teacher Example",
     email: "teacher@example.com",
-    role: "teacher"
+    role: "user"
   }
 };
 

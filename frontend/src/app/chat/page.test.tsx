@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthSession } from "@/features/auth/types";
 import ChatPage from "./page";
 
-const studentSession: AuthSession = {
+const userSession: AuthSession = {
   mode: "http-only-cookie",
   storesTokenInClient: false,
   user: {
-    displayName: "Student One",
-    email: "student@example.com",
-    role: "student"
+    displayName: "Study User",
+    email: "user@example.com",
+    role: "user"
   }
 };
 
@@ -45,7 +45,7 @@ vi.mock("@/features/ai-chat/aiChatApi", () => ({
 describe("chat route", () => {
   beforeEach(() => {
     requirePageSession.mockReset();
-    requirePageSession.mockResolvedValue(studentSession);
+    requirePageSession.mockResolvedValue(userSession);
     loadAiChatSummaryForSession.mockReset();
     loadAiChatSummaryForSession.mockResolvedValue({
       chat: chatSummary,
@@ -58,7 +58,7 @@ describe("chat route", () => {
 
     expect(requirePageSession).toHaveBeenCalledWith("/chat");
     expect(loadAiChatSummaryForSession).toHaveBeenCalledWith({
-      session: studentSession
+      session: userSession
     });
     expect(screen.getByRole("banner")).toHaveTextContent("AI Tutor");
     expect(screen.getByTestId("ai-chat-summary")).toBeInTheDocument();
@@ -76,7 +76,7 @@ describe("chat route", () => {
 
     expect(loadAiChatSummaryForSession).toHaveBeenCalledWith({
       selectedDocumentId: "file-ready",
-      session: studentSession
+      session: userSession
     });
   });
 });

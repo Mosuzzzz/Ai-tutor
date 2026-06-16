@@ -11,14 +11,10 @@ import type { AuthSession } from "../auth/types";
 import {
   ADMIN_AUDIT_LOGS_API_PATH,
   LEARNER_ANALYTICS_API_PATH,
-  TRAINER_ANALYTICS_API_PATH,
-  TRAINER_STUDENTS_API_PATH,
   adminAuditLogsResponseSchema,
   adminUsageApiPath,
   adminUsageResponseSchema,
-  learnerAnalyticsResponseSchema,
-  trainerAnalyticsResponseSchema,
-  trainerStudentsResponseSchema
+  learnerAnalyticsResponseSchema
 } from "./learningAnalyticsContract";
 import {
   isLearningAnalyticsResponseEmpty,
@@ -75,7 +71,7 @@ export const loadLearningAnalyticsForSession = async ({
   }
 
   try {
-    if (session.user.role === "global_admin") {
+    if (session.user.role === "admin") {
       const usage = await backendRequest({
         accessToken,
         path: adminUsageApiPath(usageDays),
@@ -96,39 +92,6 @@ export const loadLearningAnalyticsForSession = async ({
       return {
         analytics,
         status: isLearningAnalyticsResponseEmpty({ auditLogs, usage }) ? "empty" : "ready"
-      };
-    }
-
-    if (session.user.role === "teacher" || session.user.role === "tenant_admin") {
-      const trainer = await backendRequest({
-        accessToken,
-        path: TRAINER_ANALYTICS_API_PATH,
-        schema: trainerAnalyticsResponseSchema
-      });
-      const students = await backendRequest({
-        accessToken,
-        path: TRAINER_STUDENTS_API_PATH,
-        schema: trainerStudentsResponseSchema
-      });
-      const auditLogs =
-        session.user.role === "tenant_admin"
-          ? await backendRequest({
-              accessToken,
-              path: ADMIN_AUDIT_LOGS_API_PATH,
-              schema: adminAuditLogsResponseSchema
-            })
-          : undefined;
-      const analytics = toLearningAnalyticsViewModel({
-        auditLogs,
-        session,
-        students,
-        timestamp,
-        trainer
-      });
-
-      return {
-        analytics,
-        status: isLearningAnalyticsResponseEmpty({ auditLogs, students, trainer }) ? "empty" : "ready"
       };
     }
 

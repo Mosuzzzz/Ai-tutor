@@ -5,13 +5,13 @@ import type { AuthSession } from "@/features/auth/types";
 import { aiQuizGeneratorMock } from "@/features/ai-quiz-generator/quizGeneratorData";
 import QuizPage from "./page";
 
-const teacherSession: AuthSession = {
+const userSession: AuthSession = {
   mode: "http-only-cookie",
   storesTokenInClient: false,
   user: {
-    displayName: "Teacher One",
-    email: "teacher@example.com",
-    role: "teacher"
+    displayName: "Study User",
+    email: "user@example.com",
+    role: "user"
   }
 };
 
@@ -29,7 +29,7 @@ vi.mock("@/features/ai-quiz-generator/quizGeneratorApi", () => ({
 describe("quiz route", () => {
   beforeEach(() => {
     requirePageSession.mockReset();
-    requirePageSession.mockResolvedValue(teacherSession);
+    requirePageSession.mockResolvedValue(userSession);
     loadQuizGeneratorForSession.mockReset();
     loadQuizGeneratorForSession.mockResolvedValue({
       quiz: aiQuizGeneratorMock,
@@ -42,7 +42,7 @@ describe("quiz route", () => {
 
     expect(requirePageSession).toHaveBeenCalledWith("/quiz");
     expect(loadQuizGeneratorForSession).toHaveBeenCalledWith({
-      session: teacherSession
+      session: userSession
     });
     expect(screen.getByRole("banner")).toHaveTextContent("AI Tutor");
     expect(screen.getByRole("main")).toContainElement(screen.getByTestId("ai-quiz-generator"));
@@ -60,7 +60,7 @@ describe("quiz route", () => {
 
     expect(loadQuizGeneratorForSession).toHaveBeenCalledWith({
       selectedDocumentId: "file-ready",
-      session: teacherSession
+      session: userSession
     });
   });
 
@@ -75,7 +75,7 @@ describe("quiz route", () => {
 
     expect(loadQuizGeneratorForSession).toHaveBeenCalledWith({
       selectedExamId: "exam-learner",
-      session: teacherSession
+      session: userSession
     });
   });
 });

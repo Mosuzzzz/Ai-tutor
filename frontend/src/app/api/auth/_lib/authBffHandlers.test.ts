@@ -14,19 +14,16 @@ const tokenResponse = {
 };
 
 const sessionResponse = {
-  accessible_route_groups: ["student"],
+  accessible_route_groups: ["dashboard", "documents", "chat", "quiz", "analytics"],
   authenticated: true as const,
-  can_manage_users: false,
-  can_view_admin_analytics: false,
-  protected_routes: ["/"],
+  is_admin: false,
   user: {
     created_at: "2026-06-03T00:00:00Z",
     email: "learner@example.com",
     full_name: "Learner Example",
     id: "user-1",
     last_active_at: "2026-06-03T00:00:00Z",
-    role: "learner" as const,
-    tenant_id: "tenant-1"
+    role: "user" as const
   }
 };
 
@@ -115,7 +112,7 @@ describe("auth BFF route handlers", () => {
         storesTokenInClient: false,
         user: {
           email: "learner@example.com",
-          role: "student"
+          role: "user"
         }
       }
     });
@@ -146,7 +143,7 @@ describe("auth BFF route handlers", () => {
     );
   });
 
-  it("defaults browser registrations to the learner backend role without exposing a role choice", async () => {
+  it("registers a unified personal account without forwarding a browser-selected role", async () => {
     const backendRequest = createBackendRequest();
     const handlers = createAuthRouteHandlers({ backendRequest });
 
@@ -174,8 +171,7 @@ describe("auth BFF route handlers", () => {
         body: {
           email: "learner@example.com",
           full_name: "Learner Example",
-          password: "secure-pass",
-          role: "learner"
+          password: "secure-pass"
         },
         method: "POST",
         path: "/api/auth/register"
@@ -213,8 +209,7 @@ describe("auth BFF route handlers", () => {
           acceptedTerms: true,
           email: "teacher@example.com",
           fullName: "Teacher Example",
-          password: "secure-pass",
-          role: "teacher"
+          password: "secure-pass"
         }
       })
     );
@@ -263,8 +258,7 @@ describe("auth BFF route handlers", () => {
           acceptedTerms: true,
           email: "teacher@example.com",
           fullName: "Teacher Example",
-          password: "secure-pass",
-          role: "teacher"
+          password: "secure-pass"
         }
       })
     );

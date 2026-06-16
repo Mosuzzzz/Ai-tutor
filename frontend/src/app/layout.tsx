@@ -12,7 +12,7 @@ const notoThai = Noto_Sans_Thai({
 
 export const metadata: Metadata = {
   title: "AI Tutor Platform",
-  description: "AI-powered learning platform for students and teachers"
+  description: "Personal AI study workspace for document summary, chat, quizzes, and review analytics"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

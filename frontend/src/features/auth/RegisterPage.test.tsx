@@ -68,7 +68,7 @@ describe("RegisterPage", () => {
     expect(screen.getByText("กรุณายอมรับเงื่อนไขการใช้งาน")).toBeInTheDocument();
   });
 
-  it("submits a valid single-user registration through the BFF with a hidden default role", async () => {
+  it("submits a valid single-user registration through the BFF without a role choice", async () => {
     const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       jsonResponse(
         {
@@ -89,7 +89,7 @@ describe("RegisterPage", () => {
     expect(fetcher).toHaveBeenCalledWith(
       "/api/auth/register",
       expect.objectContaining({
-        body: expect.stringContaining('"role":"student"'),
+        body: expect.not.stringContaining('"role"'),
         credentials: "same-origin",
         method: "POST"
       })

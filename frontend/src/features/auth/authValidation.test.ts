@@ -71,7 +71,7 @@ describe("auth validation", () => {
         email: "learner@example.com",
         fullName: "ผู้เรียนทดลอง",
         password: "secure-pass",
-        role: "student"
+        role: "user"
       }
     });
   });

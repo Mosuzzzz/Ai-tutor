@@ -1,12 +1,7 @@
 import { cn } from "../../lib/cn";
-import type { AuthRouteRole, AuthSession } from "../auth/types";
+import type { AuthSession } from "../auth/types";
 
-const roleLabelByRole: Record<AuthRouteRole, string> = {
-  global_admin: "ผู้ดูแลระบบ",
-  student: "ผู้เรียน",
-  teacher: "ครูผู้สอน",
-  tenant_admin: "ผู้ดูแลพื้นที่"
-};
+const accountContextLabel = "พื้นที่เรียนของฉัน";
 
 type AppShellUserSummaryProps = {
   ariaLabelPrefix?: string;
@@ -27,7 +22,6 @@ export const AppShellUserSummary = ({
 }: AppShellUserSummaryProps) => {
   const displayName = session.user.displayName?.trim() || session.user.email;
   const initial = displayName.charAt(0).toLocaleUpperCase("th-TH");
-  const roleLabel = roleLabelByRole[session.user.role];
 
   return (
     <div
@@ -37,7 +31,7 @@ export const AppShellUserSummary = ({
       {!compact && (
         <div className={cn("min-w-0 text-right", detailsClassName)}>
           <p className="truncate text-label-md font-bold text-on-surface">{displayName}</p>
-          <p className="truncate text-label-sm text-on-surface-variant">{roleLabel}</p>
+          <p className="truncate text-label-sm text-on-surface-variant">{accountContextLabel}</p>
         </div>
       )}
       <div

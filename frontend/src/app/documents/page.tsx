@@ -5,7 +5,7 @@ import { DocumentSummaryPage } from "../../features/document-summary/DocumentSum
 
 export const dynamic = "force-dynamic";
 
-const DOCUMENT_UPLOAD_ROLES = new Set(["teacher", "tenant_admin", "global_admin"]);
+const DOCUMENT_UPLOAD_ROLES = new Set(["user", "admin"]);
 
 const DocumentsPage = async () => {
   const session = await requirePageSession("/documents");

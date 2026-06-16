@@ -308,11 +308,11 @@ const buildWorkspaceName = (session: AuthSession) => {
 };
 
 const canGenerateQuiz = (session: AuthSession) => {
-  return session.user.role === "teacher" || session.user.role === "tenant_admin";
+  return session.user.role === "user" || session.user.role === "admin";
 };
 
 const canSubmitQuizAttempt = (session: AuthSession) => {
-  return session.user.role === "student" || session.user.role === "teacher" || session.user.role === "tenant_admin";
+  return session.user.role === "user" || session.user.role === "admin";
 };
 
 const formatDateLabel = (dateValue: string) => {

@@ -22,23 +22,23 @@ const jsonResponse = (body: unknown, init: ResponseInit = {}) => {
   });
 };
 
-const studentSession: AuthSession = {
+const learnerSession: AuthSession = {
   mode: "http-only-cookie",
   storesTokenInClient: false,
   user: {
-    displayName: "Student One",
-    email: "student@example.com",
-    role: "student"
+    displayName: "Siwakorn bundi",
+    email: "siwakorn@example.com",
+    role: "user"
   }
 };
 
-const teacherSession: AuthSession = {
+const teacherCompatibleSession: AuthSession = {
   mode: "http-only-cookie",
   storesTokenInClient: false,
   user: {
     displayName: "Teacher One",
     email: "teacher@example.com",
-    role: "teacher"
+    role: "user"
   }
 };
 
@@ -49,25 +49,20 @@ describe("AppShell navigation", () => {
     routerReplace.mockReset();
   });
 
-  it("marks the current route as active from the pathname", () => {
+  it("marks the current document route as active from the pathname", () => {
     render(
-      <AppShell session={studentSession}>
+      <AppShell session={learnerSession}>
         <p>Route content</p>
       </AppShell>
     );
 
-    expect(screen.getByRole("link", { name: /สรุปเอกสาร/ })).toHaveAttribute(
-      "aria-current",
-      "page"
-    );
-    expect(screen.getByRole("link", { name: /^แดชบอร์ด$/ })).not.toHaveAttribute(
-      "aria-current"
-    );
+    expect(screen.getByRole("link", { name: /เอกสารของฉัน/ })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: /^แดชบอร์ด$/ })).not.toHaveAttribute("aria-current");
   });
 
-  it("renders premium shell landmarks with a skip link and labeled search", () => {
+  it("renders premium shell landmarks with a skip link and document-first search", () => {
     render(
-      <AppShell session={studentSession}>
+      <AppShell session={learnerSession}>
         <p>Route content</p>
       </AppShell>
     );
@@ -82,66 +77,64 @@ describe("AppShell navigation", () => {
       "id",
       "main-content"
     );
-    expect(screen.getByRole("searchbox", { name: "ค้นหาคอร์สและบทเรียน" })).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "ค้นหาเอกสาร ควิซ หรือสรุป" })).toBeInTheDocument();
   });
 
-  it("shows account details in the top bar without duplicating them in the sidebar footer", () => {
+  it("shows a neutral account summary in the top bar without role labels or sidebar duplication", () => {
     render(
-      <AppShell session={studentSession}>
+      <AppShell session={learnerSession}>
         <p>Route content</p>
       </AppShell>
     );
 
     const topBar = screen.getByRole("banner", { name: "แถบบนของแอป" });
-    const accountSummary = within(topBar).getByLabelText("บัญชีผู้ใช้ Student One");
+    const sidebar = screen.getByRole("complementary", { name: "แถบนำทางหลัก" });
+    const accountSummary = within(topBar).getByLabelText("บัญชีผู้ใช้ Siwakorn bundi");
 
-    expect(accountSummary).toHaveTextContent("Student One");
-    expect(accountSummary).toHaveTextContent("ผู้เรียน");
-    expect(screen.queryByLabelText("ข้อมูลผู้ใช้ Student One")).not.toBeInTheDocument();
+    expect(accountSummary).toHaveTextContent("Siwakorn bundi");
+    expect(accountSummary).toHaveTextContent("พื้นที่เรียนของฉัน");
+    expect(accountSummary).not.toHaveTextContent("ผู้เรียน");
+    expect(accountSummary).not.toHaveTextContent("ครูผู้สอน");
+    expect(within(sidebar).queryByText("Siwakorn bundi")).not.toBeInTheDocument();
   });
 
-  it("keeps account identity out of the sidebar and mobile drawer", () => {
+  it("uses the same core navigation for backend-compatible teacher sessions", () => {
     render(
-      <AppShell session={studentSession}>
+      <AppShell session={teacherCompatibleSession}>
         <p>Route content</p>
       </AppShell>
     );
 
-    const topBar = screen.getByRole("banner");
-    const sidebar = screen.getByRole("complementary");
-
-    expect(within(topBar).getByText("Student One")).toBeInTheDocument();
-    expect(within(sidebar).queryByText("Student One")).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { expanded: false }));
-
-    expect(within(screen.getByRole("dialog")).queryByText("Student One")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^แดชบอร์ด$/ })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /ควิซทบทวน/ })).toHaveAttribute("href", "/quiz");
+    expect(screen.queryByRole("link", { name: "แดชบอร์ดครู" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "คอร์สเรียน" })).not.toBeInTheDocument();
   });
 
   it("keeps desktop navigation targets comfortable for pointer and touch users", () => {
     render(
-      <AppShell session={studentSession}>
+      <AppShell session={learnerSession}>
         <p>Route content</p>
       </AppShell>
     );
 
-    expect(screen.getByRole("link", { name: /สรุปเอกสาร/ })).toHaveClass("min-h-11");
+    expect(screen.getByRole("link", { name: /เอกสารของฉัน/ })).toHaveClass("min-h-11");
     expect(screen.getByRole("button", { name: "การแจ้งเตือน" })).toHaveClass("min-h-11");
   });
 
-  it("routes the primary learning action instead of rendering a dead button", () => {
+  it("routes the primary learning action to document upload instead of a placeholder course page", () => {
     render(
-      <AppShell session={studentSession}>
+      <AppShell session={learnerSession}>
         <p>Route content</p>
       </AppShell>
     );
 
-    expect(screen.getByRole("link", { name: "เริ่มเรียนเลย" })).toHaveAttribute("href", "/courses");
+    expect(screen.getByRole("link", { name: "เริ่มจากเอกสาร" })).toHaveAttribute("href", "/documents");
   });
 
   it("opens mobile navigation from the top bar menu button", () => {
     render(
-      <AppShell session={studentSession}>
+      <AppShell session={learnerSession}>
         <p>Route content</p>
       </AppShell>
     );
@@ -149,12 +142,12 @@ describe("AppShell navigation", () => {
     fireEvent.click(screen.getByRole("button", { name: "เปิดเมนู" }));
 
     expect(screen.getByRole("dialog", { name: "เมนูหลัก" })).toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: /แชท AI/ }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: /แชทกับเอกสาร/ }).length).toBeGreaterThan(0);
   });
 
   it("closes mobile navigation with Escape and returns focus to the menu button", async () => {
     render(
-      <AppShell session={studentSession}>
+      <AppShell session={learnerSession}>
         <p>Route content</p>
       </AppShell>
     );
@@ -175,7 +168,7 @@ describe("AppShell navigation", () => {
 
   it("traps keyboard focus inside mobile navigation", () => {
     render(
-      <AppShell session={studentSession}>
+      <AppShell session={learnerSession}>
         <p>Route content</p>
       </AppShell>
     );
@@ -195,31 +188,6 @@ describe("AppShell navigation", () => {
     expect(closeButton).toHaveFocus();
   });
 
-  it("hides teacher-only navigation for learners", () => {
-    render(
-      <AppShell session={studentSession}>
-        <p>Route content</p>
-      </AppShell>
-    );
-
-    expect(screen.queryByRole("link", { name: "แดชบอร์ดครู" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "สร้างควิซ" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /^แดชบอร์ด$/ })).toHaveAttribute("href", "/");
-  });
-
-  it("shows teacher navigation and profile details for teacher sessions", () => {
-    render(
-      <AppShell session={teacherSession}>
-        <p>Route content</p>
-      </AppShell>
-    );
-
-    expect(screen.getByRole("link", { name: "แดชบอร์ดครู" })).toHaveAttribute("href", "/teacher");
-    expect(screen.getByRole("link", { name: "สร้างควิซ" })).toHaveAttribute("href", "/quiz");
-    expect(screen.queryByRole("link", { name: /^แดชบอร์ด$/ })).not.toBeInTheDocument();
-    expect(screen.getByLabelText("บัญชีผู้ใช้ Teacher One")).toHaveTextContent("T");
-  });
-
   it("logs out through the same-origin BFF and redirects to login", async () => {
     const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       jsonResponse({
@@ -228,7 +196,7 @@ describe("AppShell navigation", () => {
       })
     );
     render(
-      <AppShell session={studentSession}>
+      <AppShell session={learnerSession}>
         <p>Route content</p>
       </AppShell>
     );

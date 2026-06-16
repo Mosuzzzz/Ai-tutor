@@ -81,11 +81,12 @@ Requirements:
 Current implementation status after `UnifiedAuthAndSession`:
 
 - Register UI เป็น single-user onboarding แล้ว ไม่มี radio/selector สำหรับบทบาทครูหรือนักเรียน
-- Frontend validation ไม่รับ role จากฟอร์ม แต่เพิ่ม default role ภายในก่อนส่ง BFF เพื่อคง compatibility กับ Backend contract ปัจจุบัน
-- Next.js BFF `/api/auth/register` รองรับ browser payload ที่ไม่มี role และ map default ไปเป็น learner-compatible backend role
+- Frontend validation ไม่รับ role จากฟอร์ม และ browser register payload ไม่ส่ง role ไปที่ BFF
+- Next.js BFF `/api/auth/register` ส่งเฉพาะ `email`, `full_name`, และ `password` ให้ Backend ตาม single-user contract ล่าสุด
+- Session contract รองรับ Backend role `user/admin`, `is_admin`, และ `accessible_route_groups` โดยไม่พึ่ง `tenant_id` หรือ legacy learner/trainer fields
 - Login สำเร็จทุก role redirect เข้า workspace เดียวที่ `/`
 - Core protected routes เช่น `/`, `/documents`, `/chat`, `/quiz`, `/analytics`, `/settings` ใช้ร่วมกันได้สำหรับ authenticated session
-- Legacy `/teacher` ยังถูก guard เฉพาะ teacher/tenant_admin เพื่อไม่ทำลาย route เก่าก่อนถูกถอดใน branch ภายหลัง
+- Legacy `/teacher` ถูกถอดจาก core route policy แล้วเพื่อให้ product เป็น personal workspace เดียว
 - Auth API client และ guard tests ยืนยันว่าไม่มี token ถูกเก็บใน `localStorage` หรือ `sessionStorage`
 - Verification ล่าสุด: `npm run test`, `npm run lint`, `npm run build`, และ `npm audit --audit-level=high` ผ่าน
 
@@ -109,6 +110,15 @@ Requirements:
 - User badge แสดงชื่อผู้ใช้ ไม่เน้น role
 - Sidebar/topbar ต้อง keyboard-friendly และ responsive
 - ไม่มี navigation หลักไปแดชบอร์ดครู
+
+Current implementation status after `UnifiedAppShellNavigation`:
+
+- Core navigation เป็นชุดเดียวสำหรับทุก authenticated session: แดชบอร์ด, เอกสารของฉัน, แชทกับเอกสาร, ควิซทบทวน, และสถิติการทบทวน
+- Primary action เปลี่ยนเป็น `เริ่มจากเอกสาร` และพาไป `/documents`
+- `/teacher` ถูกถอดออกจาก protected route policy และ app route หลักแล้ว
+- User badge ใน topbar แสดงชื่อผู้ใช้กับข้อความกลาง `พื้นที่เรียนของฉัน` โดยไม่แสดง role ครู/นักเรียนใน core shell
+- Search copy ใน topbar เปลี่ยนเป็น document-first: ค้นหาเอกสาร ควิซ หรือสรุป
+- Desktop sidebar และ mobile navigation ใช้รายการเดียวกัน พร้อม focus trap/escape restore ตาม accessibility requirement
 
 ### 4.3 My Study Dashboard
 
