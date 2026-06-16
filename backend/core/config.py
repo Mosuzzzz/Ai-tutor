@@ -20,6 +20,16 @@ class Config:
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", "30"))
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    # Google OAuth (consumer social login). Empty by default -> endpoint reports "not configured".
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
+    GOOGLE_TOKEN_URL: str = os.getenv("GOOGLE_TOKEN_URL", "https://oauth2.googleapis.com/token")
+    GOOGLE_USERINFO_URL: str = os.getenv("GOOGLE_USERINFO_URL", "https://openidconnect.googleapis.com/v1/userinfo")
+    GOOGLE_AUTHORIZE_URL: str = os.getenv("GOOGLE_AUTHORIZE_URL", "https://accounts.google.com/o/oauth2/v2/auth")
+    # Public callback URL registered in Google console. Empty -> derived from the request base URL.
+    GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "").strip()
+    # Where the browser lands after a successful/failed Google sign-in.
+    OAUTH_SUCCESS_REDIRECT: str = os.getenv("OAUTH_SUCCESS_REDIRECT", FRONTEND_URL.split(",")[0].strip() or "http://localhost:3000")
     UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", os.path.join(backend_root, "uploads"))
     SMTP_HOST: str = os.getenv("SMTP_HOST", "").strip()
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))

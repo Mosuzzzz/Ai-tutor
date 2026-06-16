@@ -6,7 +6,9 @@ Only two roles exist: ``user`` (everyone in the core study flow) and ``admin``
 """
 from datetime import datetime, timedelta
 from typing import Dict, Any
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from auth import (
     create_access_token,
@@ -349,3 +351,191 @@ def refresh_access_token(request: schemas.RefreshTokenRequest, req_meta: Request
     token_str, expires_in = create_access_token(data=token_data, expires_delta=expires_delta)
 
     return schemas.Token(access_token=token_str, token_type="bearer", expires_in=expires_in, refresh_token=new_token, refresh_expires_in=new_expires_in)
+
+
+# --- Google OAuth (consumer social login) ---
+#
+# The whole redirect dance lives in the backend so no frontend code is required:
+#   GET  /api/auth/google/start    -> redirect the browser to Google
+#   GET  /api/auth/google/callback -> exchange code, set HttpOnly cookies, redirect home
+# A programmatic POST /api/auth/google is also exposed for callers that already
+# hold an authorization code (e.g. a future BFF).
+#
+# Deployment note: the session cookies are host-only (``__Host-`` prefix), so the
+# backend and the user-facing app must share an origin (same domain / reverse
+# proxy) for the cookie to be visible to the app. Tokens never appear in URLs.
+
+OAUTH_ACCESS_COOKIE = "__Host-ai_tutor_access_token"
+OAUTH_REFRESH_COOKIE = "__Host-ai_tutor_refresh_token"
+OAUTH_STATE_COOKIE = "__Host-ai_tutor_oauth_state"
+OAUTH_STATE_MAX_AGE_SECONDS = 600
+
+
+def _require_google_configured() -> None:
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Google login is not configured")
+
+
+def _google_redirect_uri(request: Request) -> str:
+    """Resolve the callback URL; must match what is registered in Google console."""
+    if settings.GOOGLE_REDIRECT_URI:
+        return settings.GOOGLE_REDIRECT_URI
+    return str(request.base_url).rstrip("/") + "/api/auth/google/callback"
+
+
+def fetch_google_profile(code: str, redirect_uri: str) -> Dict[str, Any]:
+    """Exchange an authorization code for the Google account profile.
+
+    Isolated so it can be stubbed in tests. Raises HTTPException on any failure.
+    """
+    try:
+        with httpx.Client(timeout=10.0) as client:
+            token_resp = client.post(
+                settings.GOOGLE_TOKEN_URL,
+                data={
+                    "code": code,
+                    "client_id": settings.GOOGLE_CLIENT_ID,
+                    "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                    "redirect_uri": redirect_uri,
+                    "grant_type": "authorization_code",
+                },
+            )
+            token_resp.raise_for_status()
+            access_token = token_resp.json().get("access_token")
+            if not access_token:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google did not return an access token")
+
+            userinfo_resp = client.get(
+                settings.GOOGLE_USERINFO_URL,
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            userinfo_resp.raise_for_status()
+            return userinfo_resp.json()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Google sign-in failed: {exc}") from exc
+
+
+def provision_google_user(db: Session, profile: Dict[str, Any], req_meta: Request | None) -> schemas.Token:
+    """Find-or-create a user from a verified Google profile and mint session tokens."""
+    email = (profile.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google account has no email")
+    if profile.get("email_verified") is False:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google email is not verified")
+
+    user = db.query(User).filter(User.email == email).first()
+    is_new_user = user is None
+    if is_new_user:
+        user = User(
+            email=email,
+            full_name=profile.get("name") or email.split("@")[0],
+            role="user",
+            auth_provider="google",
+            email_verified_at=datetime.utcnow(),
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif not user.email_verified_at:
+        # A Google-verified email is trustworthy; mark a pre-existing local account verified.
+        user.email_verified_at = datetime.utcnow()
+
+    token_data = build_user_payload(user)
+    expires_delta = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+    token_str, expires_in = create_access_token(data=token_data, expires_delta=expires_delta)
+    refresh_token, refresh_expires_in = create_refresh_token_record(db, user)
+
+    db.add(AuditLog(
+        user_id=user.id,
+        action="GOOGLE_LOGIN",
+        details=f"Google sign-in successful (new_user={is_new_user})",
+        ip_address=req_meta.client.host if req_meta and req_meta.client else "127.0.0.1",
+    ))
+    db.commit()
+
+    return schemas.Token(
+        access_token=token_str,
+        token_type="bearer",
+        expires_in=expires_in,
+        refresh_token=refresh_token,
+        refresh_expires_in=refresh_expires_in,
+    )
+
+
+@router.get("/google/start")
+def google_start(request: Request):
+    """Begin Google sign-in: set a CSRF state cookie and redirect to Google."""
+    _require_google_configured()
+
+    state = generate_secure_token()
+    redirect_uri = _google_redirect_uri(request)
+    params = {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": state,
+        "access_type": "offline",
+        "prompt": "select_account",
+    }
+    authorize_url = httpx.URL(settings.GOOGLE_AUTHORIZE_URL, params=params)
+
+    response = RedirectResponse(url=str(authorize_url), status_code=status.HTTP_302_FOUND)
+    # sameSite "lax" so the cookie returns on Google's top-level redirect back.
+    response.set_cookie(
+        OAUTH_STATE_COOKIE,
+        state,
+        max_age=OAUTH_STATE_MAX_AGE_SECONDS,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        path="/",
+    )
+    return response
+
+
+@router.get("/google/callback")
+def google_callback(request: Request, db: Session = Depends(get_db)):
+    """Complete Google sign-in: verify state, exchange the code, set session cookies."""
+    _require_google_configured()
+
+    success_base = settings.OAUTH_SUCCESS_REDIRECT.rstrip("/")
+
+    if request.query_params.get("error"):
+        return RedirectResponse(url=f"{success_base}/login?error=google_denied", status_code=status.HTTP_302_FOUND)
+
+    code = request.query_params.get("code")
+    state = request.query_params.get("state")
+    stored_state = request.cookies.get(OAUTH_STATE_COOKIE)
+    if not code or not state or not stored_state or state != stored_state:
+        return RedirectResponse(url=f"{success_base}/login?error=google_state", status_code=status.HTTP_302_FOUND)
+
+    try:
+        profile = fetch_google_profile(code, _google_redirect_uri(request))
+        token = provision_google_user(db, profile, request)
+    except HTTPException:
+        return RedirectResponse(url=f"{success_base}/login?error=google_failed", status_code=status.HTTP_302_FOUND)
+
+    response = RedirectResponse(url=f"{success_base}/", status_code=status.HTTP_302_FOUND)
+    response.set_cookie(
+        OAUTH_ACCESS_COOKIE, token.access_token, max_age=token.expires_in,
+        httponly=True, secure=True, samesite="lax", path="/",
+    )
+    if token.refresh_token and token.refresh_expires_in:
+        response.set_cookie(
+            OAUTH_REFRESH_COOKIE, token.refresh_token, max_age=token.refresh_expires_in,
+            httponly=True, secure=True, samesite="lax", path="/",
+        )
+    # Consume the one-time state cookie.
+    response.delete_cookie(OAUTH_STATE_COOKIE, path="/")
+    return response
+
+
+@router.post("/google", response_model=schemas.Token)
+def login_with_google(request: schemas.GoogleAuthRequest, req_meta: Request, db: Session = Depends(get_db)):
+    """Programmatic exchange: take an authorization ``code`` and return session tokens."""
+    _require_google_configured()
+    profile = fetch_google_profile(request.code, request.redirect_uri)
+    return provision_google_user(db, profile, req_meta)
