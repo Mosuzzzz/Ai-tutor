@@ -8,8 +8,7 @@ export type ProtectedRouteHref =
   | "/courses"
   | "/documents"
   | "/quiz"
-  | "/settings"
-  | "/teacher";
+  | "/settings";
 
 export type AuthRouteDecision =
   | {
@@ -20,8 +19,7 @@ export type AuthRouteDecision =
       type: "redirect";
     };
 
-const ALL_AUTH_ROLES = ["student", "teacher", "tenant_admin", "global_admin"] as const;
-const TEACHER_ROLES = ["teacher", "tenant_admin"] as const;
+const ALL_AUTH_ROLES = ["user", "admin"] as const;
 
 export const protectedRouteRoles = {
   "/": ALL_AUTH_ROLES,
@@ -30,8 +28,7 @@ export const protectedRouteRoles = {
   "/courses": ALL_AUTH_ROLES,
   "/documents": ALL_AUTH_ROLES,
   "/quiz": ALL_AUTH_ROLES,
-  "/settings": ALL_AUTH_ROLES,
-  "/teacher": TEACHER_ROLES
+  "/settings": ALL_AUTH_ROLES
 } satisfies Record<ProtectedRouteHref, readonly AuthRouteRole[]>;
 
 export const getDefaultRouteForRole = (_role: AuthRouteRole) => {

@@ -5,7 +5,7 @@ import type { AuthSubmissionResult, LoginInput, RegisterValues } from "./types";
 
 type AuthFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
-const authRouteRoleSchema = z.enum(["student", "teacher", "tenant_admin", "global_admin"]);
+const authRouteRoleSchema = z.enum(["user", "admin"]);
 
 const authSessionSchema = z.object({
   mode: z.literal("http-only-cookie"),
@@ -44,7 +44,9 @@ export const submitRegister = async (
   input: RegisterValues,
   fetcher: AuthFetch = globalThis.fetch
 ): Promise<AuthSubmissionResult> => {
-  return authJsonRequest("/api/auth/register", "POST", input, fetcher);
+  const { role: _role, ...registerBody } = input;
+
+  return authJsonRequest("/api/auth/register", "POST", registerBody, fetcher);
 };
 
 export const getAuthSession = async (fetcher: AuthFetch = globalThis.fetch): Promise<AuthSubmissionResult> => {

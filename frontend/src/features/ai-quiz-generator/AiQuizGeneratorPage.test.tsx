@@ -42,7 +42,7 @@ const studentSession: AuthSession = {
   user: {
     displayName: "Student One",
     email: "student@example.com",
-    role: "student"
+    role: "user"
   }
 };
 
@@ -214,7 +214,7 @@ describe("AiQuizGeneratorPage", () => {
     const attemptRegion = screen.getByRole("region", { name: "ทำควิซ" });
     const submitButton = screen.getByRole("button", { name: "ส่งคำตอบ" });
 
-    expect(screen.queryByRole("button", { name: "สร้างควิซ" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "สร้างควิซ" })).toBeEnabled();
     expect(submitButton).toBeDisabled();
     fireEvent.click(within(attemptRegion).getByRole("radio", { name: "ทบทวนรายการตรวจสอบ" }));
     expect(submitButton).toBeEnabled();

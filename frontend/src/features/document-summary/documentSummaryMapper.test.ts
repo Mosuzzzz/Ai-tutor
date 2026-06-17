@@ -10,7 +10,7 @@ const session: AuthSession = {
   user: {
     displayName: "Learner One",
     email: "learner@example.com",
-    role: "student"
+    role: "user"
   }
 };
 

@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthSession } from "@/features/auth/types";
 import DocumentsPage from "./page";
 
-const studentSession: AuthSession = {
+const userSession: AuthSession = {
   mode: "http-only-cookie",
   storesTokenInClient: false,
   user: {
-    displayName: "Student One",
-    email: "student@example.com",
-    role: "student"
+    displayName: "Study User",
+    email: "user@example.com",
+    role: "user"
   }
 };
 
@@ -48,7 +48,7 @@ vi.mock("@/features/document-summary/documentSummaryApi", () => ({
 describe("documents route", () => {
   beforeEach(() => {
     requirePageSession.mockReset();
-    requirePageSession.mockResolvedValue(studentSession);
+    requirePageSession.mockResolvedValue(userSession);
     loadDocumentSummaryForSession.mockReset();
     loadDocumentSummaryForSession.mockResolvedValue({
       dashboard: documentDashboard,
@@ -61,7 +61,7 @@ describe("documents route", () => {
 
     expect(requirePageSession).toHaveBeenCalledWith("/documents");
     expect(loadDocumentSummaryForSession).toHaveBeenCalledWith({
-      session: studentSession
+      session: userSession
     });
     expect(screen.getByRole("banner")).toHaveTextContent("AI Tutor");
     expect(screen.getByTestId("document-summary")).toBeInTheDocument();

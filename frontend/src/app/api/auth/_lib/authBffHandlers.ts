@@ -5,7 +5,6 @@ import { AUTH_MESSAGES } from "../../../../features/auth/authContent";
 import { toAuthSession } from "../../../../features/auth/sessionMapping";
 import {
   authActionResponseSchema,
-  mapFrontendRoleToBackendRole,
   sessionResponseSchema,
   tokenResponseSchema,
   type SessionResponse,
@@ -36,8 +35,6 @@ type AuthRouteDependencies = {
   enableDevEmailVerification?: boolean;
 };
 
-const frontendRoleSchema = z.enum(["student", "teacher"]);
-
 const loginRouteInputSchema = z.object({
   email: z.email(),
   password: z.string().min(1)
@@ -47,8 +44,7 @@ const registerRouteInputSchema = z.object({
   acceptedTerms: z.literal(true),
   email: z.email(),
   fullName: z.string().trim().min(1),
-  password: z.string().min(8),
-  role: frontendRoleSchema.default("student")
+  password: z.string().min(8)
 });
 
 const DEV_EMAIL_VERIFIED_MESSAGE = "สมัครสมาชิกและยืนยันอีเมลสำหรับ local dev แล้ว กรุณาเข้าสู่ระบบ";
@@ -166,8 +162,7 @@ export const createAuthRouteHandlers = ({
           body: {
             email: input.email,
             full_name: input.fullName,
-            password: input.password,
-            role: mapFrontendRoleToBackendRole(input.role)
+            password: input.password
           },
           method: "POST",
           path: "/api/auth/register",
@@ -257,9 +252,7 @@ const createSessionResponse = (message: string, session: SessionResponse) => {
     {
       access: {
         accessibleRouteGroups: session.accessible_route_groups,
-        canManageUsers: session.can_manage_users,
-        canViewAdminAnalytics: session.can_view_admin_analytics,
-        protectedRoutes: session.protected_routes
+        isAdmin: session.is_admin
       },
       message,
       ok: true,

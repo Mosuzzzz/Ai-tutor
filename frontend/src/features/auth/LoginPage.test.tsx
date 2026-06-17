@@ -56,7 +56,7 @@ describe("LoginPage", () => {
           storesTokenInClient: false,
           user: {
             email: "student@example.com",
-            role: "student"
+            role: "user"
           }
         }
       })
@@ -107,7 +107,7 @@ describe("LoginPage", () => {
           storesTokenInClient: false,
           user: {
             email: "student@example.com",
-            role: "student"
+            role: "user"
           }
         }
       })
@@ -128,7 +128,7 @@ describe("LoginPage", () => {
           storesTokenInClient: false,
           user: {
             email: "teacher@example.com",
-            role: "teacher"
+            role: "user"
           }
         }
       })

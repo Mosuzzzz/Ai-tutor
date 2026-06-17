@@ -1,9 +1,7 @@
 import {
   BarChart3,
-  BookOpen,
   Bot,
   FileText,
-  GraduationCap,
   LayoutDashboard,
   MessageSquareText,
   Settings,
@@ -14,17 +12,13 @@ import { filterNavigationItemsForRole } from "../auth/authRoutePolicy";
 import type { AuthRouteRole } from "../auth/types";
 import type { NavigationItem, ShellAction } from "./types";
 
-const ALL_AUTH_ROLES = ["student", "teacher", "tenant_admin", "global_admin"] as const;
-const TEACHER_ROLES = ["teacher", "tenant_admin"] as const;
-
+const ALL_AUTH_ROLES = ["user", "admin"] as const;
 export const primaryNavigation = [
-  { allowedRoles: ["student"], href: "/", icon: LayoutDashboard, label: "แดชบอร์ด" },
-  { allowedRoles: TEACHER_ROLES, href: "/teacher", icon: GraduationCap, label: "แดชบอร์ดครู" },
-  { allowedRoles: ALL_AUTH_ROLES, href: "/courses", icon: BookOpen, label: "คอร์สเรียน" },
-  { allowedRoles: ALL_AUTH_ROLES, href: "/documents", icon: FileText, label: "สรุปเอกสาร" },
-  { allowedRoles: ALL_AUTH_ROLES, href: "/chat", icon: MessageSquareText, label: "แชท AI" },
-  { allowedRoles: TEACHER_ROLES, href: "/quiz", icon: Bot, label: "สร้างควิซ" },
-  { allowedRoles: ALL_AUTH_ROLES, href: "/analytics", icon: BarChart3, label: "สถิติการเรียน" }
+  { allowedRoles: ALL_AUTH_ROLES, href: "/", icon: LayoutDashboard, label: "แดชบอร์ด" },
+  { allowedRoles: ALL_AUTH_ROLES, href: "/documents", icon: FileText, label: "เอกสารของฉัน" },
+  { allowedRoles: ALL_AUTH_ROLES, href: "/chat", icon: MessageSquareText, label: "แชทกับเอกสาร" },
+  { allowedRoles: ALL_AUTH_ROLES, href: "/quiz", icon: Bot, label: "ควิซทบทวน" },
+  { allowedRoles: ALL_AUTH_ROLES, href: "/analytics", icon: BarChart3, label: "สถิติการทบทวน" }
 ] satisfies NavigationItem[];
 
 export const secondaryNavigation = [
@@ -32,9 +26,9 @@ export const secondaryNavigation = [
 ] satisfies NavigationItem[];
 
 export const aiAction = {
-  href: "/courses",
+  href: "/documents",
   icon: Sparkles,
-  label: "เริ่มเรียนเลย"
+  label: "เริ่มจากเอกสาร"
 } satisfies ShellAction;
 
 export const getPrimaryNavigationForRole = (role: AuthRouteRole) => {

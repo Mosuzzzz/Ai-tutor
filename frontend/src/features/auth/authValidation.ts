@@ -13,7 +13,7 @@ import type {
 
 export type { AuthRole, LoginInput, RegisterInput, RegisterValues } from "./types";
 
-export const DEFAULT_REGISTER_ROLE: AuthRole = "student";
+export const DEFAULT_REGISTER_ROLE: AuthRole = "user";
 
 const emailSchema = z
   .string()

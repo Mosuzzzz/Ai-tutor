@@ -9,23 +9,12 @@ const studentSession: AuthSession = {
   user: {
     displayName: "Student One",
     email: "student@example.com",
-    role: "student"
-  }
-};
-
-const teacherSession: AuthSession = {
-  mode: "http-only-cookie",
-  storesTokenInClient: false,
-  user: {
-    displayName: "Teacher One",
-    email: "teacher@example.com",
-    role: "teacher"
+    role: "user"
   }
 };
 
 const requirePageSession = vi.hoisted(() => vi.fn());
 const loadStudentDashboardForSession = vi.hoisted(() => vi.fn());
-const loadTeacherDashboardForSession = vi.hoisted(() => vi.fn());
 const loadDocumentSummaryForSession = vi.hoisted(() => vi.fn());
 const loadAiChatSummaryForSession = vi.hoisted(() => vi.fn());
 const loadQuizGeneratorForSession = vi.hoisted(() => vi.fn());
@@ -37,10 +26,6 @@ vi.mock("@/features/auth/authGuard", () => ({
 
 vi.mock("@/features/student-dashboard/studentDashboardApi", () => ({
   loadStudentDashboardForSession
-}));
-
-vi.mock("@/features/teacher-dashboard/teacherDashboardApi", () => ({
-  loadTeacherDashboardForSession
 }));
 
 vi.mock("@/features/document-summary/documentSummaryApi", () => ({
@@ -80,23 +65,6 @@ describe("protected app routes", () => {
         learnerName: "Student One",
         nextMilestone: "เริ่มเรียนจากเอกสารแรกของคุณ",
         roleLabel: "ผู้เรียน"
-      },
-      status: "ready"
-    });
-    loadTeacherDashboardForSession.mockReset();
-    loadTeacherDashboardForSession.mockResolvedValue({
-      dashboard: {
-        apiResponse: {
-          activities: [],
-          classes: [],
-          completion_rate: 0.82,
-          generated_quizzes: 18,
-          quizzes: [],
-          reviewed_documents: 7,
-          total_students: 42
-        },
-        generatedAtLabel: "5 มิ.ย. 2569 17:00",
-        teacherName: "Teacher One"
       },
       status: "ready"
     });
@@ -205,17 +173,12 @@ describe("protected app routes", () => {
     expect(screen.getByRole("main")).toHaveTextContent("แดชบอร์ดผู้เรียน");
   });
 
-  it("guards teacher-only routes with a teacher session", async () => {
-    requirePageSession.mockResolvedValue(teacherSession);
-    const { default: TeacherPage } = await import("./teacher/page");
+  it("guards the shared quiz route for a normal authenticated session", async () => {
     const { default: QuizPage } = await import("./quiz/page");
 
-    render(await TeacherPage());
     render(await QuizPage());
 
-    expect(requirePageSession).toHaveBeenCalledWith("/teacher");
     expect(requirePageSession).toHaveBeenCalledWith("/quiz");
-    expect(screen.getByTestId("teacher-dashboard")).toBeInTheDocument();
     expect(screen.getByTestId("ai-quiz-generator")).toBeInTheDocument();
   });
 

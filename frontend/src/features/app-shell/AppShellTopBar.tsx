@@ -38,7 +38,7 @@ export const AppShellTopBar = ({
 
       <form aria-label="ค้นหาในแอป" className="relative ml-auto hidden w-full max-w-md md:block" role="search">
         <label className="sr-only" htmlFor="app-shell-search">
-          ค้นหาคอร์สและบทเรียน
+          ค้นหาเอกสาร ควิซ หรือสรุป
         </label>
         <Search
           aria-hidden="true"
@@ -47,7 +47,7 @@ export const AppShellTopBar = ({
         <input
           className="h-11 w-full rounded border border-outline-variant/60 bg-surface-container-low py-2 pl-10 pr-4 text-body-md text-on-surface shadow-control placeholder:text-on-surface-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim"
           id="app-shell-search"
-          placeholder="ค้นหาคอร์ส, บทเรียน..."
+          placeholder="ค้นหาเอกสาร ควิซ หรือสรุป..."
           type="search"
         />
       </form>

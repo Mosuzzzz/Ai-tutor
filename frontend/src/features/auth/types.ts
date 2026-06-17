@@ -1,5 +1,5 @@
-export type AuthRole = "student" | "teacher";
-export type AuthRouteRole = AuthRole | "global_admin" | "tenant_admin";
+export type AuthRole = "user";
+export type AuthRouteRole = AuthRole | "admin";
 
 export type LoginInput = {
   email: string;

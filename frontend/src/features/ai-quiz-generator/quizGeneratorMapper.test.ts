@@ -15,23 +15,23 @@ import {
   backendQuizDocumentsResponse
 } from "./quizGeneratorTestData";
 
-const teacherSession: AuthSession = {
+const userSession: AuthSession = {
   mode: "http-only-cookie",
   storesTokenInClient: false,
   user: {
-    displayName: "Teacher One",
-    email: "teacher@example.com",
-    role: "teacher"
+    displayName: "User One",
+    email: "user@example.com",
+    role: "user"
   }
 };
 
-const studentSession: AuthSession = {
+const adminSession: AuthSession = {
   mode: "http-only-cookie",
   storesTokenInClient: false,
   user: {
-    displayName: "Student One",
-    email: "student@example.com",
-    role: "student"
+    displayName: "Admin One",
+    email: "admin@example.com",
+    role: "admin"
   }
 };
 
@@ -39,15 +39,15 @@ describe("quizGeneratorMapper", () => {
   it("maps document dashboard data into quiz-ready sources and current-session labels", () => {
     const viewModel = toQuizGeneratorViewModel({
       documentsResponse: backendQuizDocumentsResponse,
-      session: teacherSession
+      session: userSession
     });
 
-    expect(viewModel.workspaceName).toBe("พื้นที่สร้างควิซของ Teacher One");
+    expect(viewModel.workspaceName).toBe("พื้นที่สร้างควิซของ User One");
     expect(viewModel.capabilities).toEqual({
       canGenerateQuiz: true,
       canSubmitAttempt: true
     });
-    expect(viewModel.workspaceName).not.toContain("teacher@example.com");
+    expect(viewModel.workspaceName).not.toContain("user@example.com");
     expect(viewModel.sources).toHaveLength(2);
     expect(viewModel.sources[0]).toMatchObject({
       id: "file-ready",
@@ -76,7 +76,7 @@ describe("quizGeneratorMapper", () => {
     const viewModel = toQuizGeneratorViewModel({
       documentsResponse: backendQuizDocumentsResponse,
       examResponse: trainerExamResponseSchema.parse(backendGeneratedExamResponse),
-      session: teacherSession
+      session: userSession
     });
 
     expect(viewModel.draft.id).toBe("exam-1");
@@ -114,7 +114,7 @@ describe("quizGeneratorMapper", () => {
           }
         ]
       }),
-      session: teacherSession
+      session: userSession
     });
     const question = viewModel.draft.questions?.[0];
 
@@ -129,11 +129,11 @@ describe("quizGeneratorMapper", () => {
     const viewModel = toQuizGeneratorViewModel({
       documentsResponse: backendQuizDocumentsResponse,
       examResponse: backendLearnerExamResponse,
-      session: studentSession
+      session: userSession
     });
 
     expect(viewModel.capabilities).toEqual({
-      canGenerateQuiz: false,
+      canGenerateQuiz: true,
       canSubmitAttempt: true
     });
     const result = toQuizAttemptResult({
@@ -160,7 +160,7 @@ describe("quizGeneratorMapper", () => {
     const viewModel = toQuizGeneratorViewModel({
       documentsResponse: backendQuizDocumentsResponse,
       examResponse: backendLearnerExamResponse,
-      session: studentSession
+      session: userSession
     });
 
     const result = toQuizAttemptResult({

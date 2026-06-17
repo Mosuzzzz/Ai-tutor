@@ -10,7 +10,7 @@ import {
 
 const profileSchema = z.object({
   email: z.email(),
-  role: z.enum(["learner", "trainer", "tenant_admin", "global_admin"])
+  role: z.enum(["user", "admin"])
 });
 
 const jsonResponse = (body: unknown, init: ResponseInit = {}) => {
@@ -24,24 +24,24 @@ const jsonResponse = (body: unknown, init: ResponseInit = {}) => {
 describe("backendJsonRequest", () => {
   it("sends server-side bearer auth and validates a successful JSON response", async () => {
     const fetcher = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
-      jsonResponse({ email: "learner@example.com", role: "learner" })
+      jsonResponse({ email: "user@example.com", role: "user" })
     );
 
     const result = await backendJsonRequest({
       accessToken: "access-token-from-http-only-cookie",
       baseUrl: "https://backend.example.com",
-      body: { email: "learner@example.com" },
+      body: { email: "user@example.com" },
       fetcher,
       method: "POST",
       path: "/api/auth/session",
       schema: profileSchema
     });
 
-    expect(result).toEqual({ email: "learner@example.com", role: "learner" });
+    expect(result).toEqual({ email: "user@example.com", role: "user" });
     expect(fetcher).toHaveBeenCalledWith(
       new URL("https://backend.example.com/api/auth/session"),
       expect.objectContaining({
-        body: JSON.stringify({ email: "learner@example.com" }),
+        body: JSON.stringify({ email: "user@example.com" }),
         headers: expect.objectContaining({
           Accept: "application/json",
           Authorization: "Bearer access-token-from-http-only-cookie",
@@ -86,7 +86,7 @@ describe("backendJsonRequest", () => {
   });
 
   it("throws invalid_response when the backend payload does not match the Zod contract", async () => {
-    const fetcher = vi.fn(async () => jsonResponse({ email: "not-an-email", role: "learner" }));
+    const fetcher = vi.fn(async () => jsonResponse({ email: "not-an-email", role: "user" }));
 
     await expect(
       backendJsonRequest({
@@ -132,7 +132,7 @@ describe("backendFormDataRequest", () => {
   it("sends multipart data without forcing a JSON content type", async () => {
     const formData = new FormData();
     formData.set("file", new File(["training manual"], "training-manual.pdf", { type: "application/pdf" }));
-    const fetcher = vi.fn(async () => jsonResponse({ email: "trainer@example.com", role: "trainer" }));
+    const fetcher = vi.fn(async () => jsonResponse({ email: "admin@example.com", role: "admin" }));
 
     const result = await backendFormDataRequest({
       accessToken: "access-token-from-http-only-cookie",
@@ -143,7 +143,7 @@ describe("backendFormDataRequest", () => {
       schema: profileSchema
     });
 
-    expect(result).toEqual({ email: "trainer@example.com", role: "trainer" });
+    expect(result).toEqual({ email: "admin@example.com", role: "admin" });
     expect(fetcher).toHaveBeenCalledWith(
       new URL("https://backend.example.com/api/files/upload"),
       expect.objectContaining({

@@ -6,49 +6,41 @@ import {
   primaryNavigation,
   secondaryNavigation
 } from "./navigationData";
+import type { AuthRouteRole } from "../auth/types";
+
+const allRoles: AuthRouteRole[] = ["user", "admin"];
+const expectedCoreHrefs = ["/", "/documents", "/chat", "/quiz", "/analytics"];
 
 describe("app shell navigation data", () => {
-  it("keeps primary navigation hrefs stable for the app shell", () => {
-    expect(primaryNavigation.map((item) => item.href)).toEqual([
-      "/",
-      "/teacher",
-      "/courses",
-      "/documents",
-      "/chat",
-      "/quiz",
-      "/analytics"
+  it("uses one core navigation model for every authenticated user", () => {
+    expect(primaryNavigation.map((item) => item.href)).toEqual(expectedCoreHrefs);
+    expect(primaryNavigation.map((item) => item.label)).toEqual([
+      "แดชบอร์ด",
+      "เอกสารของฉัน",
+      "แชทกับเอกสาร",
+      "ควิซทบทวน",
+      "สถิติการทบทวน"
     ]);
   });
 
-  it("filters primary navigation for learner and teacher sessions", () => {
-    expect(getPrimaryNavigationForRole("student").map((item) => item.href)).toEqual([
-      "/",
-      "/courses",
-      "/documents",
-      "/chat",
-      "/analytics"
-    ]);
-    expect(getPrimaryNavigationForRole("teacher").map((item) => item.href)).toEqual([
-      "/teacher",
-      "/courses",
-      "/documents",
-      "/chat",
-      "/quiz",
-      "/analytics"
-    ]);
+  it("does not expose teacher-only routes or role labels in core navigation", () => {
+    const labels = primaryNavigation.map((item) => item.label);
+    const hrefs = primaryNavigation.map((item) => item.href);
+
+    expect(hrefs).not.toContain("/teacher");
+    expect(labels).not.toContain("แดชบอร์ดครู");
+    expect(labels).not.toContain("แดชบอร์ดนักเรียน");
   });
 
-  it("hides trainer-only navigation from global admin sessions", () => {
-    expect(getPrimaryNavigationForRole("global_admin").map((item) => item.href)).toEqual([
-      "/courses",
-      "/documents",
-      "/chat",
-      "/analytics"
-    ]);
+  it.each(allRoles)("keeps %s on the same personal study routes", (role) => {
+    expect(getPrimaryNavigationForRole(role).map((item) => item.href)).toEqual(expectedCoreHrefs);
   });
 
-  it("keeps secondary navigation and AI action ready for role-aware expansion", () => {
+  it("keeps secondary navigation and the primary action aligned with the document-first flow", () => {
     expect(secondaryNavigation.map((item) => item.href)).toEqual(["/settings"]);
-    expect(aiAction.label).toBe("เริ่มเรียนเลย");
+    expect(aiAction).toMatchObject({
+      href: "/documents",
+      label: "เริ่มจากเอกสาร"
+    });
   });
 });
