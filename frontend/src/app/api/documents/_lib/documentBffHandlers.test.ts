@@ -1,3 +1,6 @@
+// @vitest-environment node
+// ponytail: jsdom's Request.formData() can't parse a multipart body; this file's
+// upload tests need the real Node/undici Request. node env if jsdom ever supports it.
 import { describe, expect, it, vi } from "vitest";
 
 import { AUTH_COOKIE_NAMES } from "../../../../lib/api/authCookies";
