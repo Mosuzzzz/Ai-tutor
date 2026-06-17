@@ -18,9 +18,9 @@ const cardPaddingClassNames: Record<CardPadding, string> = {
 };
 
 const cardVariantClassNames: Record<CardVariant, string> = {
-  default: "border border-outline-variant/70 bg-surface-container-lowest",
-  elevated: "bg-surface-container-lowest shadow-elevated",
-  muted: "border border-outline-variant/70 bg-surface-container-low"
+  default: "border border-outline-variant bg-surface-container-lowest",
+  elevated: "border border-outline-variant bg-surface-container-lowest shadow-elevated",
+  muted: "border border-outline-variant bg-surface-container-low"
 };
 
 export const Card = ({
@@ -33,7 +33,7 @@ export const Card = ({
   return (
     <div
       className={cn(
-        "rounded",
+        "rounded-lg",
         cardPaddingClassNames[padding],
         cardVariantClassNames[variant],
         className

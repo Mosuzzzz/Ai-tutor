@@ -17,7 +17,7 @@ export const AppShell = ({ children, session }: AppShellProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-on-background lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
+    <div className="min-h-screen bg-background text-on-background lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
       <a
         className="sr-only z-50 rounded bg-primary px-4 py-3 text-label-md font-bold text-on-primary focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
         href="#main-content"

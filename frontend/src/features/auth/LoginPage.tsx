@@ -63,13 +63,13 @@ export const LoginPage = () => {
   return (
     <AuthShell mode="login">
       <div className="mb-10 text-center">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-[#10253f] text-[#f4b35b] shadow-[0_18px_44px_rgba(16,37,63,0.18)]">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-[#15181d] text-[#5a4fe0] shadow-[0_18px_44px_rgba(16,37,63,0.18)]">
           <GraduationCap aria-hidden="true" className="h-8 w-8" />
         </div>
-        <h1 className="auth-display text-[44px] font-bold leading-tight text-[#10253f]">
+        <h1 className="auth-display text-[44px] font-bold leading-tight text-[#15181d]">
           {AUTH_COPY.login.heading}
         </h1>
-        <p className="mt-3 text-body-lg text-[#596273]">{AUTH_COPY.login.intro}</p>
+        <p className="mt-3 text-body-lg text-[#5c636e]">{AUTH_COPY.login.intro}</p>
       </div>
 
       <form className="space-y-5" noValidate onSubmit={handleSubmit}>
@@ -94,7 +94,7 @@ export const LoginPage = () => {
         />
         <AuthField
           action={
-            <button className="text-label-sm font-bold text-[#a9660a]" type="button">
+            <button className="text-label-sm font-bold text-[#5c636e]" type="button">
               {AUTH_COPY.login.forgotPassword}
             </button>
           }
@@ -108,7 +108,7 @@ export const LoginPage = () => {
           value={form.password}
         />
 
-        <Button className="w-full bg-[#10253f] text-white hover:bg-[#18395e]" disabled={isSubmitting} type="submit">
+        <Button className="w-full bg-[#15181d] text-white hover:bg-[#2b3038]" disabled={isSubmitting} type="submit">
           {AUTH_COPY.login.submitLabel}
           <ArrowRight aria-hidden="true" className="h-5 w-5" />
         </Button>
@@ -121,9 +121,9 @@ export const LoginPage = () => {
         <MockSocialButton provider="Facebook" />
       </div>
 
-      <p className="mt-8 text-center text-body-md text-[#596273]">
+      <p className="mt-8 text-center text-body-md text-[#5c636e]">
         {AUTH_COPY.login.footerPrompt}{" "}
-        <Link className="font-bold text-[#a9660a] hover:text-[#704512]" href="/register">
+        <Link className="font-bold text-[#5c636e] hover:text-[#5c636e]" href="/register">
           {AUTH_COPY.login.footerLink}
         </Link>
       </p>

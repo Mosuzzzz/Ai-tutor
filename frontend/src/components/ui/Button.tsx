@@ -12,12 +12,11 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const buttonVariantClassNames: Record<ButtonVariant, string> = {
-  primary: "bg-primary text-on-primary shadow-control hover:bg-primary-hover",
+  primary: "bg-primary text-on-primary hover:bg-primary-hover",
   secondary:
-    "border border-outline-variant/70 bg-surface-container-lowest text-primary shadow-control hover:bg-surface-container-low",
-  ghost: "text-on-surface-variant hover:bg-surface-container-low hover:text-primary",
-  danger:
-    "border border-error-container bg-error-container text-on-error-container hover:border-error hover:bg-error hover:text-on-error"
+    "border border-outline-variant bg-surface-container-lowest text-on-surface hover:bg-surface-container-low",
+  ghost: "text-on-surface-variant hover:bg-surface-container hover:text-on-surface",
+  danger: "bg-error text-on-error hover:bg-on-error-container"
 };
 
 export const Button = ({
@@ -37,7 +36,7 @@ export const Button = ({
       {...props}
       aria-busy={isLoading ? "true" : undefined}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded px-4 py-2 text-label-md font-bold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3.5 py-2 text-label-md font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60",
         isLoading && "cursor-wait",
         buttonVariantClassNames[variant],
         className

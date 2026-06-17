@@ -5,7 +5,7 @@ import {
   ArrowRight,
   Bot,
   FileText,
-  MessageSquareText,
+  Quote,
   Send,
   ShieldCheck,
   Sparkles,
@@ -44,19 +44,19 @@ type AiChatSummaryPageProps = {
 };
 
 const statusToneClassNames: Record<ChatDocumentStatus, string> = {
-  error: "bg-[#ffe9df] text-[#9a3b18]",
-  pending: "bg-[#eaf3ff] text-[#24527a]",
-  processing: "bg-[#fff3d8] text-[#8a5a00]",
-  ready: "bg-[#e6f6ee] text-[#216148]"
+  error: "bg-[#f6f7f9] text-[#5c636e]",
+  pending: "bg-[#f6f7f9] text-[#1e3a8a]",
+  processing: "bg-[#f6f7f9] text-[#5c636e]",
+  ready: "bg-[#e5f6ef] text-[#0a5c42]"
 };
 
 const messageToneClassNames: Record<ReturnType<typeof getMessageTone>, string> = {
-  assistant: "border-[#d8e5f5] bg-[#fbfdff] text-on-surface",
-  learner: "border-[#2d5f72] bg-[#2d5f72] text-white"
+  assistant: "border-[#e4e7eb] bg-[#ffffff] text-on-surface",
+  learner: "border-[#2b3038] bg-[#2b3038] text-white"
 };
 
 const linkClassName =
-  "inline-flex min-h-12 max-w-full items-center justify-center gap-2 rounded border border-[#2d5f72]/15 bg-white px-4 py-2 text-left text-label-md font-bold text-[#2d5f72] transition-colors hover:bg-[#edf6f8] focus:outline-none focus:ring-2 focus:ring-[#5ba8b5] focus:ring-offset-2";
+  "inline-flex min-h-12 max-w-full items-center justify-center gap-2 rounded border border-[#2b3038]/15 bg-white px-4 py-2 text-left text-label-md font-bold text-[#2b3038] transition-colors hover:bg-[#e5f6ef] focus:outline-none focus:ring-2 focus:ring-[#c7c3f5] focus:ring-offset-2";
 
 const DocumentSelector = ({
   documents,
@@ -67,7 +67,7 @@ const DocumentSelector = ({
 }) => {
   return (
     <Card className="min-w-0 overflow-hidden p-5" data-testid="ai-chat-document-selector">
-      <div className="flex items-center gap-2 text-label-sm font-semibold text-[#2d5f72]">
+      <div className="flex items-center gap-2 text-label-sm font-semibold text-[#2b3038]">
         <FileText aria-hidden="true" className="h-4 w-4" />
         เอกสารสำหรับสนทนา
       </div>
@@ -81,7 +81,7 @@ const DocumentSelector = ({
               className={cn(
                 "min-w-0 overflow-hidden rounded border p-4 transition-colors",
                 isSelected
-                  ? "border-[#2d5f72] bg-[#edf6f8]"
+                  ? "border-[#2b3038] bg-[#e5f6ef]"
                   : "border-outline-variant/40 bg-surface-container-lowest"
               )}
               key={document.id}
@@ -101,7 +101,7 @@ const DocumentSelector = ({
               </p>
               <div className="mt-4">
                 <Link
-                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded border border-[#2d5f72]/15 bg-white px-3 py-2 text-label-sm font-bold text-[#2d5f72] transition-colors hover:bg-[#edf6f8] focus:outline-none focus:ring-2 focus:ring-[#5ba8b5] focus:ring-offset-2"
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded border border-[#2b3038]/15 bg-white px-3 py-2 text-label-sm font-bold text-[#2b3038] transition-colors hover:bg-[#e5f6ef] focus:outline-none focus:ring-2 focus:ring-[#c7c3f5] focus:ring-offset-2"
                   href={`/chat?documentId=${encodeURIComponent(document.id)}`}
                 >
                   {isSelected ? "กำลังใช้เอกสารนี้" : "เลือกเอกสารนี้"}
@@ -121,10 +121,10 @@ const ChatThread = ({ messages }: { messages: ChatMessage[] }) => {
     <Card className="min-w-0 overflow-hidden p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-label-sm font-semibold text-[#2d5f72]">แชทจากเอกสารเดียวกัน</p>
+          <p className="text-label-sm font-semibold text-[#2b3038]">แชทจากเอกสารเดียวกัน</p>
           <h3 className="mt-1 break-words text-headline-md text-on-surface">บทสนทนาอ้างอิงเอกสาร</h3>
         </div>
-        <span className="rounded bg-[#e6f6ee] px-3 py-1 text-label-sm font-bold text-[#216148]">
+        <span className="rounded bg-[#e5f6ef] px-3 py-1 text-label-sm font-bold text-[#0a5c42]">
           {countGroundedAssistantMessages(messages)} คำตอบมีอ้างอิง
         </span>
       </div>
@@ -152,11 +152,14 @@ const ChatThread = ({ messages }: { messages: ChatMessage[] }) => {
                 <div className="mt-4 grid gap-2">
                   {message.citations.map((citation) => (
                     <div
-                      className="min-w-0 overflow-hidden rounded border border-[#d8e5f5] bg-white p-3 text-label-sm text-on-surface-variant"
+                      className="min-w-0 overflow-hidden rounded-md border border-outline-variant border-l-2 border-l-accent-warm bg-accent-warm-container/25 p-3 text-label-sm text-on-surface-variant"
                       key={`${message.id}-${citation.file_id}-${citation.chunk_index}`}
                     >
-                      <p className="break-words font-bold text-[#2d5f72]">{buildCitationLabel(citation)}</p>
-                      <p className="mt-1 break-words">{citation.matched_text}</p>
+                      <p className="flex items-center gap-1.5 break-words font-mono font-medium text-on-accent-warm-container">
+                        <Quote aria-hidden="true" className="h-3 w-3 shrink-0 text-accent-warm" />
+                        <span className="source-mark">{buildCitationLabel(citation)}</span>
+                      </p>
+                      <p className="mt-1.5 break-words">{citation.matched_text}</p>
                     </div>
                   ))}
                 </div>
@@ -175,7 +178,7 @@ const SummaryPanel = ({ chat, selectedDocument }: { chat: AiChatSummaryViewModel
   return (
     <aside className="grid min-w-0 gap-4 overflow-hidden" data-testid="ai-chat-summary-panel">
       <Card>
-        <div className="flex items-center gap-2 text-label-sm font-semibold text-[#2d5f72]">
+        <div className="flex items-center gap-2 text-label-sm font-semibold text-[#2b3038]">
           <ShieldCheck aria-hidden="true" className="h-4 w-4" />
           เอกสารที่เลือก
         </div>
@@ -198,7 +201,7 @@ const SummaryPanel = ({ chat, selectedDocument }: { chat: AiChatSummaryViewModel
         <p className="mt-3 break-words text-body-md text-on-surface-variant">{chat.summaryPanel.summary}</p>
         <div className="mt-4 grid gap-3">
           {chat.summaryPanel.takeaways.map((takeaway) => (
-            <div className="rounded border border-outline-variant/40 bg-[#fbfcff] p-3 text-body-md text-on-surface" key={takeaway}>
+            <div className="rounded border border-outline-variant/40 bg-[#ffffff] p-3 text-body-md text-on-surface" key={takeaway}>
               {takeaway}
             </div>
           ))}
@@ -271,7 +274,7 @@ const ChatComposer = ({
       </div>
       {status === "success" ? (
         <div
-          className="mt-4 rounded border border-[#b8dfc8] bg-[#effaf3] p-3 text-body-md font-semibold text-[#216148]"
+          className="mt-4 rounded border border-[#cdeadd] bg-[#e5f6ef] p-3 text-body-md font-semibold text-[#0a5c42]"
           role="status"
         >
           ส่งคำถามถึง AI สำเร็จ
@@ -279,7 +282,7 @@ const ChatComposer = ({
       ) : null}
       {status === "error" && errorMessage ? (
         <div
-          className="mt-4 rounded border border-[#f2b8b5] bg-[#fff8f7] p-3 text-body-md font-semibold text-[#8c1d18]"
+          className="mt-4 rounded border border-[#f5c6c6] bg-[#fce9e9] p-3 text-body-md font-semibold text-[#a11d21]"
           role="alert"
         >
           {errorMessage}
@@ -311,7 +314,7 @@ export const AiChatSummaryPage = ({
   if (status === "error") {
     return (
       <div
-        className="rounded border border-[#f2b8b5] bg-[#fff8f7] p-6 text-body-md font-semibold text-[#8c1d18] shadow-ambient"
+        className="rounded border border-[#f5c6c6] bg-[#fce9e9] p-6 text-body-md font-semibold text-[#a11d21] shadow-ambient"
         role="alert"
       >
         {errorMessage}
@@ -385,9 +388,9 @@ export const AiChatSummaryPage = ({
 
   return (
     <div className="space-y-6" data-source={dataSource} data-testid="ai-chat-summary">
-      <section className="overflow-hidden rounded border border-[#2d5f72]/15 bg-[#183642] text-white shadow-ambient">
+      <section className="overflow-hidden rounded border border-[#2b3038]/15 bg-[#15181d] text-white shadow-ambient">
         <div className="p-5 md:p-7">
-          <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#ffd37a]">
+          <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#c7c3f5]">
             <Sparkles aria-hidden="true" className="h-4 w-4" />
             {chat.workspaceName}
           </div>

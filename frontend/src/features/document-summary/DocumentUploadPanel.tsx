@@ -31,10 +31,10 @@ const uploadStatusLabels: Record<DocumentProcessingStatus, string> = {
 };
 
 const statusToneClassNames: Record<DocumentProcessingStatus, string> = {
-  error: "border-[#f2b8b5] bg-[#fff8f7] text-[#8c1d18]",
-  pending: "border-[#c7d7ed] bg-[#f4f8ff] text-[#24527a]",
-  processing: "border-[#f2d58a] bg-[#fff8ea] text-[#8a5a00]",
-  ready: "border-[#bfe4cf] bg-[#f1fbf6] text-[#216148]"
+  error: "border-[#f5c6c6] bg-[#fce9e9] text-[#a11d21]",
+  pending: "border-[#e4e7eb] bg-[#f6f7f9] text-[#1e3a8a]",
+  processing: "border-[#e4e7eb] bg-[#f6f7f9] text-[#5c636e]",
+  ready: "border-[#cdeadd] bg-[#e5f6ef] text-[#0a5c42]"
 };
 
 const shouldPollStatus = (status: DocumentProcessingStatus) => status === "pending" || status === "processing";
@@ -136,7 +136,7 @@ export const DocumentUploadPanel = ({
     <Card>
       <form className="grid gap-4" onSubmit={handleSubmit}>
         <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-[#f4f8ff] text-[#24527a]">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-[#f6f7f9] text-[#1e3a8a]">
             <FileUp aria-hidden="true" className="h-5 w-5" />
           </div>
           <div className="min-w-0">
@@ -167,7 +167,7 @@ export const DocumentUploadPanel = ({
         </div>
 
         {errorMessage && (
-          <div className="rounded border border-[#f2b8b5] bg-[#fff8f7] p-3 text-body-md font-semibold text-[#8c1d18]" role="alert">
+          <div className="rounded border border-[#f5c6c6] bg-[#fce9e9] p-3 text-body-md font-semibold text-[#a11d21]" role="alert">
             {errorMessage}
           </div>
         )}

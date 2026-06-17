@@ -31,12 +31,12 @@ export const AppShellLogoutButton = () => {
     <div>
       <button
         aria-busy={isSubmitting}
-        className="flex min-h-11 w-full items-center gap-3 rounded px-3 py-2.5 text-left text-body-md text-on-surface-variant transition-colors duration-200 hover:bg-surface-container-low hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-label-md font-medium text-on-surface-variant transition-colors duration-150 hover:bg-surface-container hover:text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         disabled={isSubmitting}
         onClick={handleLogout}
         type="button"
       >
-        <LogOut aria-hidden="true" className="h-5 w-5" />
+        <LogOut aria-hidden="true" className="h-[18px] w-[18px]" />
         {isSubmitting ? "กำลังออกจากระบบ" : "ออกจากระบบ"}
       </button>
       {errorMessage && (

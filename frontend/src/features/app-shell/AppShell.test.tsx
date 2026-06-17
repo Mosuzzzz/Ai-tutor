@@ -118,8 +118,8 @@ describe("AppShell navigation", () => {
       </AppShell>
     );
 
-    expect(screen.getByRole("link", { name: /เอกสารของฉัน/ })).toHaveClass("min-h-11");
-    expect(screen.getByRole("button", { name: "การแจ้งเตือน" })).toHaveClass("min-h-11");
+    expect(screen.getByRole("link", { name: /เอกสารของฉัน/ })).toHaveClass("min-h-9");
+    expect(screen.getByRole("button", { name: "การแจ้งเตือน" })).toHaveClass("h-9");
   });
 
   it("routes the primary learning action to document upload instead of a placeholder course page", () => {

@@ -69,13 +69,13 @@ export const RegisterPage = () => {
   return (
     <AuthShell mode="register">
       <div className="mb-8">
-        <p className="text-label-md font-bold uppercase tracking-[0.12em] text-[#a9660a]">
+        <p className="text-label-md font-bold uppercase tracking-[0.12em] text-[#5c636e]">
           {AUTH_COPY.register.eyebrow}
         </p>
-        <h1 className="auth-display mt-2 text-[42px] font-bold leading-tight text-[#10253f]">
+        <h1 className="auth-display mt-2 text-[42px] font-bold leading-tight text-[#15181d]">
           {AUTH_COPY.register.heading}
         </h1>
-        <p className="mt-3 text-body-lg text-[#596273]">{AUTH_COPY.register.intro}</p>
+        <p className="mt-3 text-body-lg text-[#5c636e]">{AUTH_COPY.register.intro}</p>
       </div>
 
       <form className="space-y-5" noValidate onSubmit={handleSubmit}>
@@ -90,10 +90,10 @@ export const RegisterPage = () => {
         )}
 
         {hasDevVerifiedRegistration && (
-          <div className="rounded-lg border border-[#c7cfdd] bg-[#f8f9ff] p-4 text-body-md text-[#3e4a5c]">
+          <div className="rounded-lg border border-[#e4e7eb] bg-[#f6f7f9] p-4 text-body-md text-[#2b3038]">
             <p>อีเมลถูกยืนยันสำหรับ local dev แล้ว คุณสามารถเข้าสู่ระบบด้วยบัญชีนี้ได้ทันที</p>
             <Link
-              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#10253f] px-4 text-label-md font-bold text-white transition-colors hover:bg-[#18395e]"
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#15181d] px-4 text-label-md font-bold text-white transition-colors hover:bg-[#2b3038]"
               href="/login"
             >
               ไปหน้าเข้าสู่ระบบ
@@ -101,14 +101,14 @@ export const RegisterPage = () => {
           </div>
         )}
 
-        <div className="rounded-lg border border-[#d8deea] bg-[#f8f9ff] p-4">
+        <div className="rounded-lg border border-[#e4e7eb] bg-[#f6f7f9] p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#10253f] text-[#f4b35b]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#15181d] text-[#5a4fe0]">
               <Sparkles aria-hidden="true" className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-label-md font-bold text-[#10253f]">บัญชีเดียวสำหรับพื้นที่เรียนรู้ของคุณ</p>
-              <p className="text-label-sm text-[#596273]">
+              <p className="text-label-md font-bold text-[#15181d]">บัญชีเดียวสำหรับพื้นที่เรียนรู้ของคุณ</p>
+              <p className="text-label-sm text-[#5c636e]">
                 หลังสมัครแล้วคุณจะอัปโหลดเอกสาร สรุป ถาม AI และสร้างควิซทบทวนได้จากพื้นที่เดียวกัน
               </p>
             </div>
@@ -157,10 +157,10 @@ export const RegisterPage = () => {
         />
 
         <div>
-          <label className="flex items-start gap-3 text-body-md text-[#3e4a5c]" htmlFor="register-terms">
+          <label className="flex items-start gap-3 text-body-md text-[#2b3038]" htmlFor="register-terms">
             <input
               checked={form.acceptedTerms}
-              className="mt-1 h-5 w-5 rounded border-[#bcc5d6] text-[#10253f] focus:ring-[#f4b35b]"
+              className="mt-1 h-5 w-5 rounded border-[#e4e7eb] text-[#15181d] focus:ring-[#5a4fe0]"
               id="register-terms"
               onChange={(event) => updateField("acceptedTerms", event.target.checked)}
               type="checkbox"
@@ -172,7 +172,7 @@ export const RegisterPage = () => {
           )}
         </div>
 
-        <Button className="w-full bg-[#10253f] text-white hover:bg-[#18395e]" disabled={isSubmitting} type="submit">
+        <Button className="w-full bg-[#15181d] text-white hover:bg-[#2b3038]" disabled={isSubmitting} type="submit">
           {AUTH_COPY.register.submitLabel}
           <ArrowRight aria-hidden="true" className="h-5 w-5" />
         </Button>
@@ -185,9 +185,9 @@ export const RegisterPage = () => {
         <MockSocialButton provider="Facebook" />
       </div>
 
-      <p className="mt-8 text-center text-body-md text-[#596273]">
+      <p className="mt-8 text-center text-body-md text-[#5c636e]">
         {AUTH_COPY.register.footerPrompt}{" "}
-        <Link className="font-bold text-[#a9660a] hover:text-[#704512]" href="/login">
+        <Link className="font-bold text-[#5c636e] hover:text-[#5c636e]" href="/login">
           {AUTH_COPY.register.footerLink}
         </Link>
       </p>

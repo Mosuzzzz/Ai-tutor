@@ -44,10 +44,10 @@ type LearningAnalyticsPageProps = {
 };
 
 const metricToneClassNames: Record<LearningAnalyticsMetric["tone"], string> = {
-  amber: "bg-[#fff3d8] text-[#8a5a00]",
-  blue: "bg-[#eaf3ff] text-[#24527a]",
-  green: "bg-[#e6f6ee] text-[#216148]",
-  rose: "bg-[#ffe9df] text-[#9a3b18]"
+  amber: "bg-[#f6f7f9] text-[#5c636e]",
+  blue: "bg-[#f6f7f9] text-[#1e3a8a]",
+  green: "bg-[#e5f6ef] text-[#0a5c42]",
+  rose: "bg-[#f6f7f9] text-[#5c636e]"
 };
 
 const activityIconMap: Record<LearningActivityType, LucideIcon> = {
@@ -57,10 +57,10 @@ const activityIconMap: Record<LearningActivityType, LucideIcon> = {
 };
 
 const actionLinkClassName =
-  "inline-flex min-h-12 max-w-full items-center justify-center gap-2 rounded border border-[#234c5c]/15 bg-white px-4 py-2 text-left text-label-md font-bold text-[#234c5c] transition-colors hover:bg-[#eaf7f8] focus:outline-none focus:ring-2 focus:ring-[#72b7bf] focus:ring-offset-2";
+  "inline-flex min-h-12 max-w-full items-center justify-center gap-2 rounded border border-[#2b3038]/15 bg-white px-4 py-2 text-left text-label-md font-bold text-[#2b3038] transition-colors hover:bg-[#e5f6ef] focus:outline-none focus:ring-2 focus:ring-[#c7c3f5] focus:ring-offset-2";
 
 const emptyPanelClassName =
-  "mt-4 rounded border border-outline-variant/40 bg-[#fbfcff] p-4 text-body-md text-on-surface-variant";
+  "mt-4 rounded border border-outline-variant/40 bg-[#ffffff] p-4 text-body-md text-on-surface-variant";
 
 const formatTrendDateLabel = (date: string) => {
   return new Intl.DateTimeFormat("th-TH", {
@@ -92,7 +92,7 @@ const ScoreTrendChart = ({ trend }: { trend: LearningTrendPoint[] }) => {
   if (trend.length === 0) {
     return (
       <Card className="min-w-0 overflow-hidden p-5">
-        <p className="text-label-sm font-semibold text-[#234c5c]">แนวโน้มคะแนน</p>
+        <p className="text-label-sm font-semibold text-[#2b3038]">แนวโน้มคะแนน</p>
         <h3 className="mt-1 break-words text-headline-md text-on-surface">แนวโน้มคะแนนเฉลี่ย</h3>
         <div className={emptyPanelClassName} data-testid="learning-score-trend-empty" role="status">
           ยังไม่มีข้อมูลแนวโน้มคะแนนจาก API
@@ -105,16 +105,16 @@ const ScoreTrendChart = ({ trend }: { trend: LearningTrendPoint[] }) => {
     <Card className="min-w-0 overflow-hidden p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-label-sm font-semibold text-[#234c5c]">แนวโน้มคะแนน</p>
+          <p className="text-label-sm font-semibold text-[#2b3038]">แนวโน้มคะแนน</p>
           <h3 className="mt-1 break-words text-headline-md text-on-surface">แนวโน้มคะแนนเฉลี่ย</h3>
         </div>
-        <span className="rounded bg-[#e6f6ee] px-3 py-1 text-label-sm font-bold text-[#216148]">
+        <span className="rounded bg-[#e5f6ef] px-3 py-1 text-label-sm font-bold text-[#0a5c42]">
           {trend.length} จุดข้อมูล
         </span>
       </div>
       <div
         aria-label="แนวโน้มคะแนนเฉลี่ย 7 วันล่าสุด"
-        className="mt-5 flex h-56 min-w-0 items-end gap-3 overflow-hidden rounded border border-outline-variant/40 bg-[#fbfcff] px-4 py-5"
+        className="mt-5 flex h-56 min-w-0 items-end gap-3 overflow-hidden rounded border border-outline-variant/40 bg-[#ffffff] px-4 py-5"
         role="img"
       >
         {trend.map((point) => {
@@ -125,7 +125,7 @@ const ScoreTrendChart = ({ trend }: { trend: LearningTrendPoint[] }) => {
               <div className="flex h-36 w-full items-end rounded bg-surface-container-low">
                 <div
                   aria-hidden="true"
-                  className="w-full rounded bg-[#2f7b84]"
+                  className="w-full rounded bg-[#2b3038]"
                   style={{ height: `${percent}%` }}
                 />
               </div>
@@ -147,14 +147,14 @@ const SkillGapCard = ({ gap }: { gap: LearningSkillGap }) => {
   return (
     <article
       aria-label={`ทักษะ ${gap.topic}`}
-      className="min-w-0 overflow-hidden rounded border border-outline-variant/40 bg-[#fbfcff] p-4"
+      className="min-w-0 overflow-hidden rounded border border-outline-variant/40 bg-[#ffffff] p-4"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h4 className="break-words text-body-lg font-bold text-on-surface">{gap.topic}</h4>
           <p className="mt-1 break-words text-body-md text-on-surface-variant">{gap.description}</p>
         </div>
-        <span className="rounded bg-[#ffe9df] px-3 py-1 text-label-sm font-bold text-[#9a3b18]">
+        <span className="rounded bg-[#f6f7f9] px-3 py-1 text-label-sm font-bold text-[#5c636e]">
           {formatRiskLevel(gap.error_rate)}
         </span>
       </div>
@@ -173,7 +173,7 @@ const SkillGapCard = ({ gap }: { gap: LearningSkillGap }) => {
         >
           <div
             aria-hidden="true"
-            className="h-full rounded-full bg-[#b65f3b]"
+            className="h-full rounded-full bg-[#5c636e]"
             style={{ width: `${riskPercent}%` }}
           />
         </div>
@@ -194,7 +194,7 @@ const SkillRadarPanel = ({ skillGaps }: { skillGaps: LearningSkillGap[] }) => {
       className="min-w-0 overflow-hidden p-5"
       role="region"
     >
-      <div className="flex items-center gap-2 text-label-sm font-semibold text-[#234c5c]">
+      <div className="flex items-center gap-2 text-label-sm font-semibold text-[#2b3038]">
         <Target aria-hidden="true" className="h-4 w-4" />
         วิเคราะห์จุดอ่อน
       </div>
@@ -224,7 +224,7 @@ const DepartmentStatsPanel = ({ analytics }: { analytics: LearningAnalyticsViewM
         <div className="mt-4 grid gap-3">
           {sortedStats.map((stat) => (
             <div
-              className="flex min-w-0 items-center justify-between gap-3 rounded border border-outline-variant/40 bg-[#fbfcff] p-3"
+              className="flex min-w-0 items-center justify-between gap-3 rounded border border-outline-variant/40 bg-[#ffffff] p-3"
               key={stat.label}
             >
               <span className="break-words text-body-md font-semibold text-on-surface-variant">
@@ -254,7 +254,7 @@ const RecentScoresPanel = ({ recentScores }: { recentScores: LearningRecentScore
         <div className="mt-4 grid gap-3">
           {recentScores.map((score) => (
             <article
-              className="min-w-0 overflow-hidden rounded border border-outline-variant/40 bg-[#fbfcff] p-4"
+              className="min-w-0 overflow-hidden rounded border border-outline-variant/40 bg-[#ffffff] p-4"
               key={score.id}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -264,7 +264,7 @@ const RecentScoresPanel = ({ recentScores }: { recentScores: LearningRecentScore
                     {score.submittedAtLabel}
                   </p>
                 </div>
-                <span className="rounded bg-[#e6f6ee] px-3 py-1 text-label-sm font-bold text-[#216148]">
+                <span className="rounded bg-[#e5f6ef] px-3 py-1 text-label-sm font-bold text-[#0a5c42]">
                   {formatAnalyticsPercent(score.scorePercent)}
                 </span>
               </div>
@@ -314,10 +314,10 @@ const LearningActivityTable = ({ activities }: { activities: LearningActivity[] 
               const Icon = activityIconMap[activity.type];
 
               return (
-                <tr className="rounded bg-[#fbfcff] text-body-md text-on-surface" key={activity.id}>
+                <tr className="rounded bg-[#ffffff] text-body-md text-on-surface" key={activity.id}>
                   <td className="min-w-64 rounded-l border-y border-l border-outline-variant/40 px-3 py-3">
                     <div className="flex min-w-0 gap-3">
-                      <Icon aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-[#2f7b84]" />
+                      <Icon aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-[#2b3038]" />
                       <div className="min-w-0">
                         <p className="break-words font-bold">{activity.title}</p>
                         <p className="mt-1 break-words text-label-sm text-on-surface-variant">
@@ -362,7 +362,7 @@ export const LearningAnalyticsPage = ({
   if (status === "error") {
     return (
       <div
-        className="rounded border border-[#f2b8b5] bg-[#fff8f7] p-6 text-body-md font-semibold text-[#8c1d18] shadow-ambient"
+        className="rounded border border-[#f5c6c6] bg-[#fce9e9] p-6 text-body-md font-semibold text-[#a11d21] shadow-ambient"
         role="alert"
       >
         {errorMessage}
@@ -393,7 +393,7 @@ export const LearningAnalyticsPage = ({
           </p>
           <div className="mx-auto mt-6 grid max-w-3xl gap-3 sm:grid-cols-2">
             <Link
-              className="inline-flex min-h-12 items-center justify-between gap-2 rounded bg-[#f5b94f] px-4 py-2 text-label-md font-bold text-[#16233a] transition-colors hover:bg-[#ffd37a] focus:outline-none focus:ring-2 focus:ring-[#ffd37a] focus:ring-offset-2"
+              className="inline-flex min-h-12 items-center justify-between gap-2 rounded bg-[#5a4fe0] px-4 py-2 text-label-md font-bold text-[#15181d] transition-colors hover:bg-[#c7c3f5] focus:outline-none focus:ring-2 focus:ring-[#c7c3f5] focus:ring-offset-2"
               href="/quiz"
             >
               สร้างควิซแรกเพื่อเก็บคะแนน
@@ -419,12 +419,12 @@ export const LearningAnalyticsPage = ({
   return (
     <div className="space-y-6" data-source={dataSource} data-testid="learning-analytics">
       <section
-        className="overflow-hidden rounded border border-[#234c5c]/15 bg-[#153642] text-white shadow-ambient"
+        className="overflow-hidden rounded border border-[#2b3038]/15 bg-[#15181d] text-white shadow-ambient"
         data-dashboard-surface="analytics"
         data-testid="dashboard-hero"
       >
         <div className="p-5 md:p-7">
-          <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#ffd37a]">
+          <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#c7c3f5]">
             <Sparkles aria-hidden="true" className="h-4 w-4" />
             พื้นที่วิเคราะห์การเรียน
           </div>
@@ -459,14 +459,14 @@ export const LearningAnalyticsPage = ({
           <Card className="min-w-0 overflow-hidden p-5">
             <h3 className="text-headline-md text-on-surface">คำแนะนำถัดไป</h3>
             <div className="mt-4 grid gap-3">
-              <div className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4">
-                <p className="text-label-sm font-bold text-[#216148]">แข็งแรงที่สุด</p>
+              <div className="rounded border border-outline-variant/40 bg-[#ffffff] p-4">
+                <p className="text-label-sm font-bold text-[#0a5c42]">แข็งแรงที่สุด</p>
                 <p className="mt-2 break-words text-body-lg font-bold text-on-surface">
                   {strongestSkill?.topic ?? "ยังไม่มีข้อมูล"}
                 </p>
               </div>
-              <div className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4">
-                <p className="text-label-sm font-bold text-[#9a3b18]">ควรทบทวนก่อน</p>
+              <div className="rounded border border-outline-variant/40 bg-[#ffffff] p-4">
+                <p className="text-label-sm font-bold text-[#5c636e]">ควรทบทวนก่อน</p>
                 <p className="mt-2 break-words text-body-lg font-bold text-on-surface">
                   {lowestScoringSkill?.topic ?? "ยังไม่มีข้อมูล"}
                 </p>

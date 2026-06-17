@@ -57,7 +57,7 @@ export const DocumentSummaryDetailPage = ({
   if (status === "error") {
     return (
       <div
-        className="rounded border border-[#f2b8b5] bg-[#fff8f7] p-6 text-body-md font-semibold text-[#8c1d18] shadow-ambient"
+        className="rounded border border-[#f5c6c6] bg-[#fce9e9] p-6 text-body-md font-semibold text-[#a11d21] shadow-ambient"
         role="alert"
       >
         {errorMessage}
@@ -106,10 +106,10 @@ export const DocumentSummaryDetailPage = ({
         กลับไปคลังเอกสาร
       </Link>
 
-      <section className="overflow-hidden rounded border border-[#0e2d4f]/10 bg-[#24344d] text-white shadow-ambient">
+      <section className="overflow-hidden rounded border border-[#15181d]/10 bg-[#15181d] text-white shadow-ambient">
         <div className="grid gap-6 p-5 md:p-7 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#ffd37a]">
+            <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#c7c3f5]">
               <Sparkles aria-hidden="true" className="h-4 w-4" />
               รายละเอียดสรุปเอกสาร
             </div>
@@ -121,14 +121,14 @@ export const DocumentSummaryDetailPage = ({
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-[#f5b94f] px-4 py-2 text-label-md font-bold text-[#16233a] transition-colors hover:bg-[#ffd37a] focus:outline-none focus:ring-2 focus:ring-[#ffd37a] focus:ring-offset-2 focus:ring-offset-[#24344d]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-[#5a4fe0] px-4 py-2 text-label-md font-bold text-[#15181d] transition-colors hover:bg-[#c7c3f5] focus:outline-none focus:ring-2 focus:ring-[#c7c3f5] focus:ring-offset-2 focus:ring-offset-[#15181d]"
                 href={`/quiz?documentId=${encodedDocumentId}`}
               >
                 สร้างควิซจากเอกสารนี้
                 <Bot aria-hidden="true" className="h-5 w-5" />
               </Link>
               <Link
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-white/25 bg-white/10 px-4 py-2 text-label-md font-bold text-white transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#24344d]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-white/25 bg-white/10 px-4 py-2 text-label-md font-bold text-white transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#15181d]"
                 href={`/chat?documentId=${encodedDocumentId}`}
               >
                 ถาม AI จากเอกสารนี้
@@ -138,7 +138,7 @@ export const DocumentSummaryDetailPage = ({
           </div>
 
           <Card className="bg-white/95">
-            <div className="flex items-center gap-2 text-label-sm font-semibold text-[#24527a]">
+            <div className="flex items-center gap-2 text-label-sm font-semibold text-[#1e3a8a]">
               <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
               สถานะเอกสาร
             </div>
@@ -166,14 +166,14 @@ export const DocumentSummaryDetailPage = ({
           aria-label={`สรุปเอกสาร ${selectedDetail.filename}`}
           className="rounded border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-ambient md:p-6"
         >
-          <div className="flex items-center gap-2 text-label-sm font-semibold text-[#24527a]">
+          <div className="flex items-center gap-2 text-label-sm font-semibold text-[#1e3a8a]">
             <FileText aria-hidden="true" className="h-4 w-4" />
             สรุปจาก AI
           </div>
           <h2 className="mt-2 text-headline-md text-on-surface">สรุปเอกสาร</h2>
           <div className="mt-5 grid gap-4">
             {parsedSections.map((section) => (
-              <article className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4" key={section.id}>
+              <article className="rounded border border-outline-variant/40 bg-[#ffffff] p-4" key={section.id}>
                 <h3 className="break-words text-body-lg font-bold text-on-surface">{section.title}</h3>
                 <p className="mt-2 whitespace-pre-line break-words text-body-md text-on-surface-variant">{section.body}</p>
               </article>
@@ -201,7 +201,7 @@ export const DocumentSummaryDetailPage = ({
                   >
                     <div
                       aria-hidden="true"
-                      className="h-full rounded-full bg-[#24527a]"
+                      className="h-full rounded-full bg-[#1e3a8a]"
                       style={{ width: `${topic.confidencePercent}%` }}
                     />
                   </div>
@@ -225,7 +225,7 @@ export const DocumentSummaryDetailPage = ({
               {selectedDetail.relatedDocuments.length > 0 ? (
                 selectedDetail.relatedDocuments.map((document) => (
                   <Link
-                    className="group rounded border border-outline-variant/40 bg-[#fbfcff] p-4 transition-colors hover:border-primary-fixed-dim hover:bg-surface-container-lowest"
+                    className="group rounded border border-outline-variant/40 bg-[#ffffff] p-4 transition-colors hover:border-primary-fixed-dim hover:bg-surface-container-lowest"
                     href={document.href}
                     key={document.id}
                   >

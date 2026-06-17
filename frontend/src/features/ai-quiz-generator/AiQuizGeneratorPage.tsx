@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   FileText,
   ListChecks,
+  Quote,
   Settings2,
   Sparkles,
   TriangleAlert
@@ -55,9 +56,9 @@ type AiQuizGeneratorPageProps = {
 type AsyncActionStatus = "idle" | "submitting" | "success" | "error";
 
 const sourceStatusToneClassNames: Record<QuizSourceStatus, string> = {
-  error: "bg-[#ffe9df] text-[#9a3b18]",
-  processing: "bg-[#fff3d8] text-[#8a5a00]",
-  ready: "bg-[#e6f6ee] text-[#216148]"
+  error: "bg-[#f6f7f9] text-[#5c636e]",
+  processing: "bg-[#f6f7f9] text-[#5c636e]",
+  ready: "bg-[#e5f6ef] text-[#0a5c42]"
 };
 
 const sourceModeItems = [
@@ -79,7 +80,7 @@ const sourceModeItems = [
 ] as const;
 
 const actionLinkClassName =
-  "inline-flex min-h-12 max-w-full items-center justify-center gap-2 rounded border border-[#3f5d2f]/15 bg-white px-4 py-2 text-left text-label-md font-bold text-[#355526] transition-colors hover:bg-[#f0f7e8] focus:outline-none focus:ring-2 focus:ring-[#8ab86f] focus:ring-offset-2";
+  "inline-flex min-h-12 max-w-full items-center justify-center gap-2 rounded border border-[#2b3038]/15 bg-white px-4 py-2 text-left text-label-md font-bold text-[#15181d] transition-colors hover:bg-[#e5f6ef] focus:outline-none focus:ring-2 focus:ring-[#c7c3f5] focus:ring-offset-2";
 
 const SourcePanel = ({
   selectedSource,
@@ -90,7 +91,7 @@ const SourcePanel = ({
 }) => {
   return (
     <Card className="min-w-0 overflow-hidden p-5" data-testid="ai-quiz-source-panel">
-      <div className="flex items-center gap-2 text-label-sm font-semibold text-[#355526]">
+      <div className="flex items-center gap-2 text-label-sm font-semibold text-[#15181d]">
         <FileText aria-hidden="true" className="h-4 w-4" />
         แหล่งข้อมูล
       </div>
@@ -104,7 +105,7 @@ const SourcePanel = ({
               className={cn(
                 "min-w-0 overflow-hidden rounded border p-4 transition-colors",
                 isSelected
-                  ? "border-[#4f7d3a] bg-[#f0f7e8]"
+                  ? "border-[#2b3038] bg-[#e5f6ef]"
                   : "border-outline-variant/40 bg-surface-container-lowest"
               )}
               key={source.id}
@@ -124,7 +125,7 @@ const SourcePanel = ({
               </p>
               <div className="mt-4">
                 <Link
-                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded border border-[#3f5d2f]/15 bg-white px-3 py-2 text-label-sm font-bold text-[#355526] transition-colors hover:bg-[#f0f7e8] focus:outline-none focus:ring-2 focus:ring-[#8ab86f] focus:ring-offset-2"
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded border border-[#2b3038]/15 bg-white px-3 py-2 text-label-sm font-bold text-[#15181d] transition-colors hover:bg-[#e5f6ef] focus:outline-none focus:ring-2 focus:ring-[#c7c3f5] focus:ring-offset-2"
                   href={`/quiz?documentId=${encodeURIComponent(source.id)}`}
                 >
                   {isSelected ? "กำลังใช้แหล่งนี้" : "เลือกแหล่งนี้"}
@@ -156,14 +157,14 @@ const SettingsPanel = ({
 
   return (
     <Card className="min-w-0 overflow-hidden p-5">
-      <div className="flex items-center gap-2 text-label-sm font-semibold text-[#355526]">
+      <div className="flex items-center gap-2 text-label-sm font-semibold text-[#15181d]">
         <Settings2 aria-hidden="true" className="h-4 w-4" />
         <h3 className="text-headline-md text-on-surface">ตั้งค่าควิซ</h3>
       </div>
       <div className="mt-4 grid gap-3">
         <div className="grid gap-3 sm:grid-cols-3">
           {sourceModeItems.map((mode) => (
-            <div className="rounded border border-outline-variant/40 bg-[#fbfcff] p-3" key={mode.id}>
+            <div className="rounded border border-outline-variant/40 bg-[#ffffff] p-3" key={mode.id}>
               <p className="text-label-sm font-bold text-on-surface">{mode.label}</p>
               <p className="mt-1 break-words text-label-sm text-on-surface-variant">{mode.helper}</p>
             </div>
@@ -185,12 +186,12 @@ const SettingsPanel = ({
             </p>
           </div>
         </div>
-        <div className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4">
+        <div className="rounded border border-outline-variant/40 bg-[#ffffff] p-4">
           <p className="text-label-sm font-bold text-on-surface-variant">คำสั่งสำหรับ AI</p>
           <ul className="mt-3 grid gap-2">
             {quiz.instructions.map((instruction) => (
               <li className="flex min-w-0 gap-2 text-body-md text-on-surface-variant" key={instruction}>
-                <CheckCircle2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-[#4f7d3a]" />
+                <CheckCircle2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-[#2b3038]" />
                 <span className="break-words">{instruction}</span>
               </li>
             ))}
@@ -207,7 +208,7 @@ const SettingsPanel = ({
         </div>
         {generationStatus === "success" ? (
           <div
-            className="rounded border border-[#b8dfc8] bg-[#effaf3] p-3 text-body-md font-semibold text-[#216148]"
+            className="rounded border border-[#cdeadd] bg-[#e5f6ef] p-3 text-body-md font-semibold text-[#0a5c42]"
             role="status"
           >
             สร้างแบบร่างควิซสำเร็จ
@@ -215,7 +216,7 @@ const SettingsPanel = ({
         ) : null}
         {generationStatus === "error" && generationError ? (
           <div
-            className="rounded border border-[#f2b8b5] bg-[#fff8f7] p-3 text-body-md font-semibold text-[#8c1d18]"
+            className="rounded border border-[#f5c6c6] bg-[#fce9e9] p-3 text-body-md font-semibold text-[#a11d21]"
             role="alert"
           >
             {generationError}
@@ -228,24 +229,30 @@ const SettingsPanel = ({
 
 const QuestionPreviewCard = ({ index, question }: { index: number; question: QuizQuestionPreview }) => {
   return (
-    <article className="min-w-0 overflow-hidden rounded border border-outline-variant/40 bg-[#fbfcff] p-4">
+    <article className="min-w-0 overflow-hidden rounded border border-outline-variant/40 bg-[#ffffff] p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-label-sm font-bold text-[#355526]">ข้อที่ {index + 1}</p>
+          <p className="text-label-sm font-bold text-[#15181d]">ข้อที่ {index + 1}</p>
           <h4 className="mt-2 break-words text-body-lg font-bold text-on-surface">{question.question_text}</h4>
         </div>
-        <span className="rounded bg-[#e6f6ee] px-3 py-1 text-label-sm font-bold text-[#216148]">อ้างอิงเอกสาร</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-warm-container bg-accent-warm-container/40 px-2.5 py-0.5 text-label-sm font-medium text-on-accent-warm-container">
+          <Quote aria-hidden="true" className="h-3 w-3 text-accent-warm" />
+          อ้างอิงเอกสาร
+        </span>
       </div>
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         {question.options.map((option) => (
-          <div className="min-w-0 rounded border border-[#d8e5f5] bg-white p-3 text-body-md text-on-surface-variant" key={option.id}>
+          <div className="min-w-0 rounded-md border border-outline-variant bg-surface-container-lowest p-3 text-body-md text-on-surface-variant" key={option.id}>
             <span className="break-words">{option.label}</span>
           </div>
         ))}
       </div>
-      <div className="mt-4 rounded border border-[#d8e5f5] bg-white p-3 text-label-sm text-on-surface-variant">
-        <p className="break-words font-bold text-[#355526]">{buildQuizCitationLabel(question.citation)}</p>
-        <p className="mt-1 break-words">{question.citation.matched_text}</p>
+      <div className="mt-4 rounded-md border border-outline-variant border-l-2 border-l-accent-warm bg-accent-warm-container/25 p-3 text-label-sm text-on-surface-variant">
+        <p className="flex items-center gap-1.5 break-words font-mono font-medium text-on-accent-warm-container">
+          <Quote aria-hidden="true" className="h-3 w-3 shrink-0 text-accent-warm" />
+          <span className="source-mark">{buildQuizCitationLabel(question.citation)}</span>
+        </p>
+        <p className="mt-1.5 break-words">{question.citation.matched_text}</p>
       </div>
     </article>
   );
@@ -276,14 +283,14 @@ const AttemptPanel = ({
       <Card className="min-w-0 overflow-hidden p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-label-sm font-semibold text-[#355526]">ทำควิซ</p>
+            <p className="text-label-sm font-semibold text-[#15181d]">ทำควิซ</p>
             <h3 className="mt-1 break-words text-headline-md text-on-surface">ทำควิซและบันทึกคะแนน</h3>
             <p className="mt-2 break-words text-body-md text-on-surface-variant">
               เลือกคำตอบให้ครบทุกข้อ แล้วระบบจะบันทึกคะแนนกลับไปยังสถิติการเรียน
             </p>
           </div>
           {attemptResult ? (
-            <span className="rounded bg-[#e6f6ee] px-3 py-1 text-label-sm font-bold text-[#216148]">
+            <span className="rounded bg-[#e5f6ef] px-3 py-1 text-label-sm font-bold text-[#0a5c42]">
               {attemptResult.passedLabel}
             </span>
           ) : null}
@@ -292,7 +299,7 @@ const AttemptPanel = ({
         <div className="mt-5 grid gap-4">
           {questions.map((question, questionIndex) => (
             <fieldset
-              className="min-w-0 rounded border border-outline-variant/40 bg-[#fbfcff] p-4"
+              className="min-w-0 rounded border border-outline-variant/40 bg-[#ffffff] p-4"
               key={question.id}
             >
               <legend className="break-words text-body-lg font-bold text-on-surface">
@@ -301,7 +308,7 @@ const AttemptPanel = ({
               <div className="mt-4 grid gap-2">
                 {question.options.map((option, optionIndex) => (
                   <label
-                    className="flex min-w-0 cursor-pointer items-start gap-3 rounded border border-[#d8e5f5] bg-white p-3 text-body-md text-on-surface-variant transition-colors hover:bg-[#f6f9ff]"
+                    className="flex min-w-0 cursor-pointer items-start gap-3 rounded border border-[#e4e7eb] bg-white p-3 text-body-md text-on-surface-variant transition-colors hover:bg-[#f6f7f9]"
                     key={option.id}
                   >
                     <input
@@ -331,7 +338,7 @@ const AttemptPanel = ({
 
         {attemptError ? (
           <div
-            className="mt-4 rounded border border-[#f2b8b5] bg-[#fff8f7] p-3 text-body-md font-semibold text-[#8c1d18]"
+            className="mt-4 rounded border border-[#f5c6c6] bg-[#fce9e9] p-3 text-body-md font-semibold text-[#a11d21]"
             role="alert"
           >
             {attemptError}
@@ -339,13 +346,13 @@ const AttemptPanel = ({
         ) : null}
 
         {attemptResult ? (
-          <div className="mt-5 rounded border border-[#b8dfc8] bg-[#effaf3] p-4" role="status">
+          <div className="mt-5 rounded border border-[#cdeadd] bg-[#e5f6ef] p-4" role="status">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-headline-md font-bold text-[#216148]">คะแนน {attemptResult.scoreLabel}</p>
-              <p className="text-body-md font-semibold text-[#216148]">ถูก {attemptResult.correctAnswersLabel}</p>
+              <p className="text-headline-md font-bold text-[#0a5c42]">คะแนน {attemptResult.scoreLabel}</p>
+              <p className="text-body-md font-semibold text-[#0a5c42]">ถูก {attemptResult.correctAnswersLabel}</p>
             </div>
             <Link
-              className="mt-4 inline-flex min-h-12 max-w-full items-center justify-center gap-2 rounded border border-[#216148]/20 bg-white px-4 py-2 text-label-md font-bold text-[#216148] transition-colors hover:bg-[#effaf3] focus:outline-none focus:ring-2 focus:ring-[#216148]/30 focus:ring-offset-2"
+              className="mt-4 inline-flex min-h-12 max-w-full items-center justify-center gap-2 rounded border border-[#0a5c42]/20 bg-white px-4 py-2 text-label-md font-bold text-[#0a5c42] transition-colors hover:bg-[#e5f6ef] focus:outline-none focus:ring-2 focus:ring-[#0a5c42]/30 focus:ring-offset-2"
               href="/analytics"
             >
               ดูสถิติการเรียน
@@ -353,7 +360,7 @@ const AttemptPanel = ({
             </Link>
             <div className="mt-4 grid gap-3">
               {attemptResult.items.map((item) => (
-                <article className="rounded border border-[#b8dfc8] bg-white p-3" key={item.questionId}>
+                <article className="rounded border border-[#cdeadd] bg-white p-3" key={item.questionId}>
                   <p className="break-words text-body-md font-bold text-on-surface">{item.questionText}</p>
                   <p className="mt-2 break-words text-body-md text-on-surface-variant">
                     คำตอบของคุณ: {item.chosenOptionLabel}
@@ -365,7 +372,10 @@ const AttemptPanel = ({
                     <p className="mt-2 break-words text-body-md text-on-surface-variant">{item.explanation}</p>
                   ) : null}
                   {item.citation ? (
-                    <p className="mt-2 break-words text-label-sm font-semibold text-[#355526]">{item.citation}</p>
+                    <p className="mt-2 inline-flex max-w-full items-center gap-1.5 break-words rounded border border-accent-warm-container bg-accent-warm-container/40 px-2 py-0.5 text-label-sm font-medium text-on-accent-warm-container">
+                      <Quote aria-hidden="true" className="h-3 w-3 shrink-0 text-accent-warm" />
+                      <span className="source-mark">{item.citation}</span>
+                    </p>
                   ) : null}
                 </article>
               ))}
@@ -389,10 +399,10 @@ const PreviewPanel = ({ quiz }: { quiz: QuizGeneratorViewModel }) => {
       <Card className="min-w-0 overflow-hidden p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-label-sm font-semibold text-[#355526]">{quiz.draft.generatedAtLabel}</p>
+            <p className="text-label-sm font-semibold text-[#15181d]">{quiz.draft.generatedAtLabel}</p>
             <h3 className="mt-1 break-words text-headline-md text-on-surface">แบบร่างคำถาม</h3>
           </div>
-          <span className="rounded bg-[#fff3d8] px-3 py-1 text-label-sm font-bold text-[#8a5a00]">
+          <span className="rounded bg-[#f6f7f9] px-3 py-1 text-label-sm font-bold text-[#5c636e]">
             {formatQuizDraftStatus(quiz.draft.status)}
           </span>
         </div>
@@ -404,7 +414,7 @@ const PreviewPanel = ({ quiz }: { quiz: QuizGeneratorViewModel }) => {
           </div>
         ) : (
           <div
-            className="mt-5 rounded border border-outline-variant/40 bg-[#fbfcff] p-5 text-body-md text-on-surface-variant"
+            className="mt-5 rounded border border-outline-variant/40 bg-[#ffffff] p-5 text-body-md text-on-surface-variant"
             data-testid="ai-quiz-empty-draft"
             role="status"
           >
@@ -436,7 +446,7 @@ const PublishPanel = ({
     <Card className="min-w-0 overflow-hidden p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-label-sm font-semibold text-[#355526]">ขั้นตอนถัดไป</p>
+          <p className="text-label-sm font-semibold text-[#15181d]">ขั้นตอนถัดไป</p>
           <h3 className="mt-1 break-words text-headline-md text-on-surface">
             {isPublished ? "ควิซพร้อมให้ทำแล้ว" : "ตรวจแบบร่างก่อนเผยแพร่"}
           </h3>
@@ -449,7 +459,7 @@ const PublishPanel = ({
         <span
           className={cn(
             "rounded px-3 py-1 text-label-sm font-bold",
-            isPublished ? "bg-[#e6f6ee] text-[#216148]" : "bg-[#fff3d8] text-[#8a5a00]"
+            isPublished ? "bg-[#e5f6ef] text-[#0a5c42]" : "bg-[#f6f7f9] text-[#5c636e]"
           )}
         >
           {formatQuizDraftStatus(quiz.draft.status)}
@@ -468,13 +478,13 @@ const PublishPanel = ({
       </div>
 
       {!hasDraftReady ? (
-        <div className="mt-4 rounded border border-outline-variant/40 bg-[#fbfcff] p-3 text-body-md text-on-surface-variant" role="status">
+        <div className="mt-4 rounded border border-outline-variant/40 bg-[#ffffff] p-3 text-body-md text-on-surface-variant" role="status">
           สร้างแบบร่างควิซจากเอกสารก่อน จึงจะเผยแพร่ให้ผู้เรียนทำได้
         </div>
       ) : null}
       {publishStatus === "success" ? (
         <div
-          className="mt-4 rounded border border-[#b8dfc8] bg-[#effaf3] p-3 text-body-md font-semibold text-[#216148]"
+          className="mt-4 rounded border border-[#cdeadd] bg-[#e5f6ef] p-3 text-body-md font-semibold text-[#0a5c42]"
           role="status"
         >
           เผยแพร่ควิซสำเร็จ ตอนนี้สามารถลองทำควิซและบันทึกคะแนนได้แล้ว
@@ -482,7 +492,7 @@ const PublishPanel = ({
       ) : null}
       {publishStatus === "error" && publishError ? (
         <div
-          className="mt-4 rounded border border-[#f2b8b5] bg-[#fff8f7] p-3 text-body-md font-semibold text-[#8c1d18]"
+          className="mt-4 rounded border border-[#f5c6c6] bg-[#fce9e9] p-3 text-body-md font-semibold text-[#a11d21]"
           role="alert"
         >
           {publishError}
@@ -520,7 +530,7 @@ export const AiQuizGeneratorPage = ({
   if (status === "error") {
     return (
       <div
-        className="rounded border border-[#f2b8b5] bg-[#fff8f7] p-6 text-body-md font-semibold text-[#8c1d18] shadow-ambient"
+        className="rounded border border-[#f5c6c6] bg-[#fce9e9] p-6 text-body-md font-semibold text-[#a11d21] shadow-ambient"
         role="alert"
       >
         {errorMessage}
@@ -664,9 +674,9 @@ export const AiQuizGeneratorPage = ({
 
   return (
     <div className="space-y-6" data-source={dataSource} data-testid="ai-quiz-generator">
-      <section className="overflow-hidden rounded border border-[#4f7d3a]/15 bg-[#213719] text-white shadow-ambient">
+      <section className="overflow-hidden rounded border border-[#2b3038]/15 bg-[#15181d] text-white shadow-ambient">
         <div className="p-5 md:p-7">
-          <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#f6cf67]">
+          <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#c7c3f5]">
             <Sparkles aria-hidden="true" className="h-4 w-4" />
             {quiz.workspaceName}
           </div>
@@ -694,7 +704,7 @@ export const AiQuizGeneratorPage = ({
         <div className="grid min-w-0 gap-4 overflow-hidden">
           <SourcePanel selectedSource={selectedSource} sources={sortedSources} />
           <Card className="min-w-0 overflow-hidden p-5">
-            <div className="flex items-center gap-2 text-label-sm font-semibold text-[#355526]">
+            <div className="flex items-center gap-2 text-label-sm font-semibold text-[#15181d]">
               <ListChecks aria-hidden="true" className="h-4 w-4" />
               แหล่งข้อมูลพร้อมใช้
             </div>

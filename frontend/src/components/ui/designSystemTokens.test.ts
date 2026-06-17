@@ -14,18 +14,18 @@ const themeExtend = tailwindConfig.theme?.extend as TailwindThemeExtend;
 describe("impeccable design system tokens", () => {
   it("exposes restrained product state colors for shared surfaces", () => {
     expect(themeExtend.colors).toMatchObject({
-      "accent-warm": "#b87516",
-      info: "#22577a",
-      success: "#146c43",
-      warning: "#9a6400"
+      "accent-warm": "#C97A0E",
+      info: "#2563EB",
+      success: "#0E9F6E",
+      warning: "#C97A0E"
     });
   });
 
   it("uses named product shadows instead of one ambient shadow for every surface", () => {
     expect(themeExtend.boxShadow).toMatchObject({
-      card: "0 1px 2px rgba(11, 28, 48, 0.06)",
-      control: "0 1px 2px rgba(11, 28, 48, 0.08)",
-      elevated: "0 10px 24px rgba(11, 28, 48, 0.1)"
+      card: "0 1px 1px rgba(20, 24, 29, 0.03)",
+      control: "0 1px 1px rgba(20, 24, 29, 0.04)",
+      elevated: "0 12px 32px -8px rgba(20, 24, 29, 0.16), 0 1px 2px rgba(20, 24, 29, 0.08)"
     });
   });
 

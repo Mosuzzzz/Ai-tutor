@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 :root {
-  color: #0b1c30;
-  background: #f7f8fb;
-  --focus-ring: #8d86ff;
-  --font-auth-display: "Fraunces", "Noto Sans Thai", "Noto Sans", Georgia, serif;
-  --font-auth-body: "DM Sans", var(--font-noto-thai), "Noto Sans Thai", "Noto Sans", system-ui, sans-serif;
+  color: #15181d;
+  background: #fbfcfd;
+  --focus-ring: #5a4fe0;
+  --font-auth-display: var(--font-noto-thai), "Noto Sans Thai", "Noto Sans", system-ui, sans-serif;
+  --font-auth-body: var(--font-noto-thai), "Noto Sans Thai", "Noto Sans", system-ui, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -27,8 +27,21 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background: #f7f8fb;
+  background: #fbfcfd;
   font-family: var(--font-noto-thai), "Noto Sans Thai", "Noto Sans", system-ui, sans-serif;
+}
+
+/* Mono utility — numbers, scores, file metadata, citation labels (the "data" texture) */
+.font-mono,
+[data-mono] {
+  font-family: var(--font-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+}
+
+/* Signature: highlighter mark on source citations */
+.source-mark {
+  background-image: linear-gradient(transparent 62%, rgba(201, 122, 14, 0.22) 0);
+  text-decoration: none;
 }
 
 button,
@@ -44,7 +57,7 @@ a {
 }
 
 :focus-visible {
-  outline: 3px solid var(--focus-ring);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 

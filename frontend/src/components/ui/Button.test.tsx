@@ -12,11 +12,10 @@ describe("Button", () => {
     expect(button).toHaveAttribute("type", "button");
     expect(button).toHaveClass(
       "inline-flex",
-      "min-h-11",
-      "rounded",
+      "min-h-10",
+      "rounded-md",
       "bg-primary",
-      "text-on-primary",
-      "shadow-control"
+      "text-on-primary"
     );
   });
 
@@ -30,7 +29,7 @@ describe("Button", () => {
     const button = screen.getByRole("button", { name: "Save" });
 
     expect(button).toHaveAttribute("type", "submit");
-    expect(button).toHaveClass("border", "bg-surface-container-lowest", "text-primary", "w-full");
+    expect(button).toHaveClass("border", "bg-surface-container-lowest", "text-on-surface", "w-full");
   });
 
   it("forwards native button attributes", () => {
@@ -65,6 +64,6 @@ describe("Button", () => {
 
     const button = screen.getByRole("button", { name: "Delete document" });
 
-    expect(button).toHaveClass("bg-error-container", "text-on-error-container");
+    expect(button).toHaveClass("bg-error", "text-on-error");
   });
 });

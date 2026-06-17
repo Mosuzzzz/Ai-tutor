@@ -54,10 +54,10 @@ const metricIconMap: Record<TeacherMetric["tone"], LucideIcon> = {
 };
 
 const metricToneClassName: Record<TeacherMetric["tone"], string> = {
-  blue: "bg-[#eaf3ff] text-[#24527a]",
-  gold: "bg-[#fff3d8] text-[#8a5a00]",
-  green: "bg-[#e6f6ee] text-[#216148]",
-  rose: "bg-[#ffe9df] text-[#9a3b18]"
+  blue: "bg-[#f6f7f9] text-[#1e3a8a]",
+  gold: "bg-[#f6f7f9] text-[#5c636e]",
+  green: "bg-[#e5f6ef] text-[#0a5c42]",
+  rose: "bg-[#f6f7f9] text-[#5c636e]"
 };
 
 const activityIconMap: Record<TeacherActivityType, LucideIcon> = {
@@ -132,7 +132,7 @@ export const TeacherDashboardPage = ({
           </div>
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <Link
-              className="inline-flex min-h-12 items-center justify-between gap-2 rounded bg-[#f5b94f] px-4 py-2 text-label-md font-bold text-[#16233a] transition-colors hover:bg-[#ffd37a] focus:outline-none focus:ring-2 focus:ring-[#ffd37a] focus:ring-offset-2"
+              className="inline-flex min-h-12 items-center justify-between gap-2 rounded bg-[#5a4fe0] px-4 py-2 text-label-md font-bold text-[#15181d] transition-colors hover:bg-[#c7c3f5] focus:outline-none focus:ring-2 focus:ring-[#c7c3f5] focus:ring-offset-2"
               href="/courses"
             >
               เปิดคอร์สเรียน
@@ -203,12 +203,12 @@ export const TeacherDashboardPage = ({
     <div data-source={dataSource} data-testid="teacher-dashboard" className="space-y-6">
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <div
-          className="overflow-hidden rounded border border-[#0e2d4f]/10 bg-[#173829] text-white shadow-ambient"
+          className="overflow-hidden rounded border border-[#15181d]/10 bg-[#15181d] text-white shadow-ambient"
           data-dashboard-surface="teacher"
           data-testid="dashboard-hero"
         >
           <div className="p-5 md:p-7">
-            <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#ffd37a]">
+            <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#c7c3f5]">
               <ShieldCheck aria-hidden="true" className="h-4 w-4" />
               พื้นที่จัดการชั้นเรียน
             </div>
@@ -224,12 +224,12 @@ export const TeacherDashboardPage = ({
 
                 return (
                   <Link
-                    className="group rounded border border-white/15 bg-white/10 p-4 transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-[#ffd37a] focus:ring-offset-2 focus:ring-offset-[#173829]"
+                    className="group rounded border border-white/15 bg-white/10 p-4 transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-[#c7c3f5] focus:ring-offset-2 focus:ring-offset-[#15181d]"
                     href={action.href}
                     key={action.id}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <Icon aria-hidden="true" className="h-5 w-5 text-[#ffd37a]" />
+                      <Icon aria-hidden="true" className="h-5 w-5 text-[#c7c3f5]" />
                       <ArrowRight
                         aria-hidden="true"
                         className="h-4 w-4 text-white/70 transition-transform group-hover:translate-x-1"
@@ -245,7 +245,7 @@ export const TeacherDashboardPage = ({
         </div>
 
         <div className="rounded border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-ambient md:p-6">
-          <div className="flex items-center gap-2 text-label-sm font-semibold text-[#216148]">
+          <div className="flex items-center gap-2 text-label-sm font-semibold text-[#0a5c42]">
             <Sparkles aria-hidden="true" className="h-4 w-4" />
             ภาพรวมล่าสุด
           </div>
@@ -302,7 +302,7 @@ export const TeacherDashboardPage = ({
               const completionPercent = getCompletionPercentValue(classroom.completionRate);
 
               return (
-                <article className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4" key={classroom.id}>
+                <article className="rounded border border-outline-variant/40 bg-[#ffffff] p-4" key={classroom.id}>
                   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="min-w-0">
                       <h4 className="truncate text-body-lg font-bold text-on-surface">{classroom.title}</h4>
@@ -323,7 +323,7 @@ export const TeacherDashboardPage = ({
                         className="mt-2 h-2 overflow-hidden rounded-full bg-surface-container"
                         role="progressbar"
                       >
-                        <div className="h-full rounded-full bg-[#2f7c57]" style={{ width: `${completionPercent}%` }} />
+                        <div className="h-full rounded-full bg-[#0a5c42]" style={{ width: `${completionPercent}%` }} />
                       </div>
                     </div>
                   </div>
@@ -344,13 +344,13 @@ export const TeacherDashboardPage = ({
 
           <div className="mt-5 grid gap-3">
             {dashboard.apiResponse.quizzes.map((quiz) => (
-              <article className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4" key={quiz.id}>
+              <article className="rounded border border-outline-variant/40 bg-[#ffffff] p-4" key={quiz.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h4 className="truncate text-body-md font-bold text-on-surface">{quiz.title}</h4>
                     <p className="mt-1 truncate text-label-sm text-on-surface-variant">{quiz.source}</p>
                   </div>
-                  <span className="rounded bg-[#fff3d8] px-3 py-1 text-label-sm font-bold text-[#8a5a00]">
+                  <span className="rounded bg-[#f6f7f9] px-3 py-1 text-label-sm font-bold text-[#5c636e]">
                     {getQuizStatusLabel(quiz.status)}
                   </span>
                 </div>
@@ -379,7 +379,7 @@ export const TeacherDashboardPage = ({
             <h3 className="text-headline-md text-on-surface">กิจกรรมล่าสุด</h3>
             <p className="mt-1 text-body-md text-on-surface-variant">รายการที่ช่วยให้ครูรู้ว่าควรจัดการอะไรก่อน</p>
           </div>
-          <MessageSquareText aria-hidden="true" className="h-6 w-6 text-[#216148]" />
+          <MessageSquareText aria-hidden="true" className="h-6 w-6 text-[#0a5c42]" />
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-3">
@@ -387,8 +387,8 @@ export const TeacherDashboardPage = ({
             const Icon = activityIconMap[activity.type];
 
             return (
-              <article className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4" key={activity.id}>
-                <div className="flex items-center gap-2 text-label-sm font-semibold text-[#216148]">
+              <article className="rounded border border-outline-variant/40 bg-[#ffffff] p-4" key={activity.id}>
+                <div className="flex items-center gap-2 text-label-sm font-semibold text-[#0a5c42]">
                   <Icon aria-hidden="true" className="h-4 w-4" />
                   {getActivityLabel(activity.type)}
                 </div>

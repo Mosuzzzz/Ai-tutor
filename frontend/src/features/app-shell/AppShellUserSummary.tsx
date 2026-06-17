@@ -30,13 +30,13 @@ export const AppShellUserSummary = ({
     >
       {!compact && (
         <div className={cn("min-w-0 text-right", detailsClassName)}>
-          <p className="truncate text-label-md font-bold text-on-surface">{displayName}</p>
+          <p className="truncate text-label-md font-semibold text-on-surface">{displayName}</p>
           <p className="truncate text-label-sm text-on-surface-variant">{accountContextLabel}</p>
         </div>
       )}
       <div
         className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-label-md font-bold text-on-primary",
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-label-md font-semibold text-on-primary",
           avatarClassName
         )}
       >

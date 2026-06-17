@@ -60,10 +60,10 @@ type SummaryMetric = {
 };
 
 const statusToneClassNames: Record<DocumentProcessingStatus, string> = {
-  ready: "bg-[#e6f6ee] text-[#216148]",
-  processing: "bg-[#fff3d8] text-[#8a5a00]",
-  pending: "bg-[#eaf3ff] text-[#24527a]",
-  error: "bg-[#ffe9df] text-[#9a3b18]"
+  ready: "bg-[#e5f6ef] text-[#0a5c42]",
+  processing: "bg-[#f6f7f9] text-[#5c636e]",
+  pending: "bg-[#f6f7f9] text-[#1e3a8a]",
+  error: "bg-[#f6f7f9] text-[#5c636e]"
 };
 
 const getDetailByDocumentId = (
@@ -123,7 +123,7 @@ export const DocumentSummaryPage = ({
   if (status === "error") {
     return (
       <div
-        className="rounded border border-[#f2b8b5] bg-[#fff8f7] p-6 text-body-md font-semibold text-[#8c1d18] shadow-ambient"
+        className="rounded border border-[#f5c6c6] bg-[#fce9e9] p-6 text-body-md font-semibold text-[#a11d21] shadow-ambient"
         role="alert"
       >
         {errorMessage}
@@ -220,7 +220,7 @@ export const DocumentSummaryPage = ({
       icon: FileText,
       id: "total-documents",
       label: "เอกสารทั้งหมด",
-      tone: "bg-[#eaf3ff] text-[#24527a]",
+      tone: "bg-[#f6f7f9] text-[#1e3a8a]",
       value: String(sortedDocuments.length)
     },
     {
@@ -228,7 +228,7 @@ export const DocumentSummaryPage = ({
       icon: CheckCircle2,
       id: "ready-summaries",
       label: "พร้อมสรุป",
-      tone: "bg-[#e6f6ee] text-[#216148]",
+      tone: "bg-[#e5f6ef] text-[#0a5c42]",
       value: String(countAvailableSummaries(sortedDocuments))
     },
     {
@@ -236,7 +236,7 @@ export const DocumentSummaryPage = ({
       icon: Clock3,
       id: "processing-documents",
       label: "กำลังประมวลผล",
-      tone: "bg-[#fff3d8] text-[#8a5a00]",
+      tone: "bg-[#f6f7f9] text-[#5c636e]",
       value: String(visibleStatusCounts.processing)
     },
     {
@@ -244,7 +244,7 @@ export const DocumentSummaryPage = ({
       icon: TriangleAlert,
       id: "error-documents",
       label: "มีปัญหา",
-      tone: "bg-[#ffe9df] text-[#9a3b18]",
+      tone: "bg-[#f6f7f9] text-[#5c636e]",
       value: String(visibleStatusCounts.error)
     }
   ];
@@ -253,11 +253,11 @@ export const DocumentSummaryPage = ({
     <div className="space-y-6" data-source={dataSource} data-testid="document-summary">
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <div
-          className="min-w-0 overflow-hidden rounded border border-[#0e2d4f]/10 bg-[#24344d] text-white shadow-ambient"
+          className="min-w-0 overflow-hidden rounded border border-[#15181d]/10 bg-[#15181d] text-white shadow-ambient"
           data-testid="document-summary-hero"
         >
           <div className="p-5 md:p-7">
-            <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#ffd37a]">
+            <div className="inline-flex items-center gap-2 rounded bg-white/10 px-3 py-1.5 text-label-sm font-semibold text-[#c7c3f5]">
               <Sparkles aria-hidden="true" className="h-4 w-4" />
               {dashboard.workspaceName}
             </div>
@@ -269,14 +269,14 @@ export const DocumentSummaryPage = ({
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-[#f5b94f] px-4 py-2 text-label-md font-bold text-[#16233a] transition-colors hover:bg-[#ffd37a] focus:outline-none focus:ring-2 focus:ring-[#ffd37a] focus:ring-offset-2 focus:ring-offset-[#24344d]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-[#5a4fe0] px-4 py-2 text-label-md font-bold text-[#15181d] transition-colors hover:bg-[#c7c3f5] focus:outline-none focus:ring-2 focus:ring-[#c7c3f5] focus:ring-offset-2 focus:ring-offset-[#15181d]"
                 href={`/quiz?documentId=${encodedDocumentId}`}
               >
                 สร้างควิซจากสรุปนี้
                 <Bot aria-hidden="true" className="h-5 w-5" />
               </Link>
               <Link
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-white/25 bg-white/10 px-4 py-2 text-label-md font-bold text-white transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#24344d]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-white/25 bg-white/10 px-4 py-2 text-label-md font-bold text-white transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#15181d]"
                 href={`/chat?documentId=${encodedDocumentId}`}
               >
                 ถาม AI จากเอกสารนี้
@@ -297,7 +297,7 @@ export const DocumentSummaryPage = ({
         </div>
 
         <Card className="min-w-0 overflow-hidden" data-testid="document-summary-selected-card">
-          <div className="flex items-center gap-2 text-label-sm font-semibold text-[#24527a]">
+          <div className="flex items-center gap-2 text-label-sm font-semibold text-[#1e3a8a]">
             <FileSearch aria-hidden="true" className="h-4 w-4" />
             เอกสารที่เลือก
           </div>
@@ -358,10 +358,10 @@ export const DocumentSummaryPage = ({
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-label-sm font-semibold text-[#24527a]">สรุปที่เลือก</p>
+              <p className="text-label-sm font-semibold text-[#1e3a8a]">สรุปที่เลือก</p>
               <h3 className="mt-2 text-headline-md text-on-surface">{selectedDetail.filename}</h3>
             </div>
-            <span className="rounded bg-[#e6f6ee] px-3 py-1.5 text-label-sm font-bold text-[#216148]">
+            <span className="rounded bg-[#e5f6ef] px-3 py-1.5 text-label-sm font-bold text-[#0a5c42]">
               พร้อมใช้งานกับ AI
             </span>
           </div>
@@ -373,7 +373,7 @@ export const DocumentSummaryPage = ({
               </h4>
               <div className="mt-3 grid gap-3">
                 {parsedSections.map((section) => (
-                  <article className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4" key={section.id}>
+                  <article className="rounded border border-outline-variant/40 bg-[#ffffff] p-4" key={section.id}>
                     <h5 className="text-body-lg font-bold text-on-surface">{section.title}</h5>
                     <p className="mt-2 whitespace-pre-line text-body-md text-on-surface-variant">{section.body}</p>
                   </article>
@@ -417,7 +417,7 @@ export const DocumentSummaryPage = ({
                   >
                     <div
                       aria-hidden="true"
-                      className="h-full rounded-full bg-[#24527a]"
+                      className="h-full rounded-full bg-[#1e3a8a]"
                       style={{ width: `${topic.confidencePercent}%` }}
                     />
                   </div>
@@ -431,7 +431,7 @@ export const DocumentSummaryPage = ({
             <div className="mt-4 grid gap-3">
               {selectedDetail.relatedDocuments.map((document) => (
                 <Link
-                  className="group rounded border border-outline-variant/40 bg-[#fbfcff] p-4 transition-colors hover:border-primary-fixed-dim hover:bg-surface-container-lowest"
+                  className="group rounded border border-outline-variant/40 bg-[#ffffff] p-4 transition-colors hover:border-primary-fixed-dim hover:bg-surface-container-lowest"
                   href={document.href}
                   key={document.id}
                 >
@@ -455,12 +455,12 @@ export const DocumentSummaryPage = ({
           <Card>
             <h3 className="text-headline-md text-on-surface">เอกสารในคลัง</h3>
             {deleteMessage && (
-              <p className="mt-3 rounded border border-[#b7dfc8] bg-[#eefaf3] px-3 py-2 text-label-sm font-semibold text-[#216148]" role="status">
+              <p className="mt-3 rounded border border-[#cdeadd] bg-[#e5f6ef] px-3 py-2 text-label-sm font-semibold text-[#0a5c42]" role="status">
                 {deleteMessage}
               </p>
             )}
             {deleteError && (
-              <p className="mt-3 rounded border border-[#f2b8b5] bg-[#fff8f7] px-3 py-2 text-label-sm font-semibold text-[#8c1d18]" role="alert">
+              <p className="mt-3 rounded border border-[#f5c6c6] bg-[#fce9e9] px-3 py-2 text-label-sm font-semibold text-[#a11d21]" role="alert">
                 {deleteError}
               </p>
             )}
@@ -468,7 +468,7 @@ export const DocumentSummaryPage = ({
               {previewDocuments.map((document) => (
                 <article
                   aria-label={`เอกสารในคลัง ${document.filename}`}
-                  className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4"
+                  className="rounded border border-outline-variant/40 bg-[#ffffff] p-4"
                   key={document.id}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -519,7 +519,7 @@ export const DocumentSummaryPage = ({
 
       {isLibraryDialogOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#07111f]/55 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#15181d]/55 p-4"
           onClick={() => {
             setIsLibraryDialogOpen(false);
           }}
@@ -535,7 +535,7 @@ export const DocumentSummaryPage = ({
           >
             <header className="flex flex-wrap items-start justify-between gap-4 border-b border-outline-variant/40 p-5">
               <div className="min-w-0">
-                <p className="text-label-sm font-semibold text-[#24527a]">คลังเอกสาร</p>
+                <p className="text-label-sm font-semibold text-[#1e3a8a]">คลังเอกสาร</p>
                 <h3 id="document-library-dialog-title" className="mt-1 text-headline-md text-on-surface">
                   เอกสารทั้งหมดในคลัง
                 </h3>
@@ -559,7 +559,7 @@ export const DocumentSummaryPage = ({
                 {latestDocuments.map((document) => (
                   <article
                     aria-label={`เอกสารทั้งหมดในคลัง ${document.filename}`}
-                    className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4"
+                    className="rounded border border-outline-variant/40 bg-[#ffffff] p-4"
                     key={`dialog-${document.id}`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
