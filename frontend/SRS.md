@@ -131,6 +131,16 @@ Requirements:
 - ไม่ใช้คำว่าแดชบอร์ดครู/แดชบอร์ดนักเรียนใน core page
 - Metrics ต้องมาจากข้อมูลของ current user เท่านั้น
 
+Current implementation status after `UnifiedStudyDashboard`:
+
+- หน้า `/` ใช้ `frontend/src/features/study-dashboard/` เป็น dashboard เดียวสำหรับผู้ใช้ทุกคน
+- Legacy `frontend/src/features/student-dashboard/` และ `frontend/src/features/teacher-dashboard/` ถูกถอดออกจาก core frontend แล้ว
+- Dashboard ใช้ข้อมูลจาก `/api/analytics/dashboard` ผ่าน server-side API wrapper และ validate response ด้วย Zod ก่อน map เข้า UI
+- ไม่มีการเก็บ token ฝั่ง browser และไม่มีการส่ง user id จาก client เพื่อ scope data
+- Empty state ตั้งใจให้เริ่มจากเอกสารเป็นลำดับแรก พร้อม CTA ไป `/documents`, `/quiz`, และ `/analytics`
+- Copy หลักเป็น Thai-first และไม่ใช้คำว่าแดชบอร์ดครู/แดชบอร์ดนักเรียนใน core page
+- Metric cards, onboarding steps, recent scores, score trend, and review targets แสดงเฉพาะข้อมูลของ current authenticated user
+
 ### 4.4 Documents
 
 หน้า `/documents` คือพื้นที่เอกสารของผู้ใช้
@@ -218,15 +228,14 @@ Frontend ต้องทำตาม `AGENTS_FRONTEND.md`:
 
 ## 7. Current Codebase Direction
 
-Codebase ปัจจุบันยังมี legacy structure จากช่วงที่แยก student/teacher:
+Codebase ปัจจุบันหลัง Phase 5.5.1-5.5.3:
 
-- `frontend/src/features/student-dashboard/`
-- `frontend/src/features/teacher-dashboard/`
-- `/teacher`
-- role-specific navigation and route policy
-- copy ที่พูดถึงครู/นักเรียนใน auth/dashboard/quiz/analytics บางส่วน
+- Auth ไม่ให้ผู้ใช้เลือกบทบาทครู/นักเรียนใน core UI แล้ว
+- App Shell ใช้ navigation เดียวสำหรับทุก authenticated user
+- `/teacher` และ dashboard แยก role ถูกถอดออกจาก core route/dashboard flow แล้ว
+- หน้า `/` เป็น single-user study dashboard ผ่าน `features/study-dashboard`
 
-Phase 5.5 ต้องค่อย ๆ รวมสิ่งเหล่านี้ให้เป็น single-user product โดยไม่ทำลาย auth/session/API security ที่ทำไว้แล้ว
+Phase 5.5 ที่เหลือต้องปรับหน้าที่เกี่ยวกับเอกสาร แชท ควิซ สถิติ คอร์ส และ settings ให้เป็น personal study workspace เดียวกัน โดยไม่ทำลาย auth/session/API security ที่ทำไว้แล้ว
 
 ## 8. Planned Branch Sequence
 
@@ -286,3 +295,11 @@ git diff --check
 - Course marketplace
 
 รายการเหล่านี้อาจกลับมาเป็น Phase 6+ ได้เมื่อ core personal study flow เสถียรแล้ว
+
+## 12. Auth UI Polish Notes
+
+- Login และ Register ใช้ panel ขนาดเท่ากันบน desktop เพื่อให้การสลับหน้าไม่กระโดดหรือรู้สึกเป็นคนละ layout
+- Register ลด copy ที่ซ้ำซ้อนออก เหลือเฉพาะโลโก้ ฟอร์ม เงื่อนไข ปุ่มสมัคร และ social login mock
+- AuthShell รองรับ mirror layout: หน้า Login วางภาพประกอบซ้ายและฟอร์มขวา ส่วนหน้า Register วางฟอร์มซ้ายและภาพประกอบขวา พร้อม transition และ `prefers-reduced-motion`
+- Register form fields are stacked vertically on every viewport so the account creation flow reads top-to-bottom and does not feel cramped.
+- Login/Register route changes use a subtle slide-and-fade panel motion to make the form/illustration swap visible while still honoring `prefers-reduced-motion`.

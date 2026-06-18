@@ -1,19 +1,16 @@
 "use client";
 
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import type { FormEvent } from "react";
 
+import { AiTutorLogo } from "../../components/brand/AiTutorLogo";
 import { Button } from "../../components/ui/Button";
 import { AuthDivider, AuthField, MockSocialButton, MockStatus } from "./AuthFormFields";
 import { AuthShell } from "./AuthShell";
 import { submitRegister } from "./authApiClient";
-import {
-  AUTH_COPY,
-  AUTH_MESSAGES,
-  INITIAL_REGISTER_FORM
-} from "./authContent";
+import { AUTH_COPY, AUTH_MESSAGES, INITIAL_REGISTER_FORM } from "./authContent";
 import { validateRegister } from "./authValidation";
 import type { AuthSubmissionStatus, RegisterInput } from "./types";
 
@@ -68,14 +65,11 @@ export const RegisterPage = () => {
 
   return (
     <AuthShell mode="register">
-      <div className="mb-8">
-        <p className="text-label-md font-bold uppercase tracking-[0.12em] text-[#a9660a]">
-          {AUTH_COPY.register.eyebrow}
-        </p>
-        <h1 className="auth-display mt-2 text-[42px] font-bold leading-tight text-[#10253f]">
-          {AUTH_COPY.register.heading}
-        </h1>
-        <p className="mt-3 text-body-lg text-[#596273]">{AUTH_COPY.register.intro}</p>
+      <div className="mb-7 text-center">
+        <div className="mb-4 flex justify-center">
+          <AiTutorLogo className="h-24 w-full max-w-[240px] rounded-md" priority sizes="240px" />
+        </div>
+        <h1 className="sr-only">{AUTH_COPY.register.heading}</h1>
       </div>
 
       <form className="space-y-5" noValidate onSubmit={handleSubmit}>
@@ -101,60 +95,48 @@ export const RegisterPage = () => {
           </div>
         )}
 
-        <div className="rounded-lg border border-[#d8deea] bg-[#f8f9ff] p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#10253f] text-[#f4b35b]">
-              <Sparkles aria-hidden="true" className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-label-md font-bold text-[#10253f]">บัญชีเดียวสำหรับพื้นที่เรียนรู้ของคุณ</p>
-              <p className="text-label-sm text-[#596273]">
-                หลังสมัครแล้วคุณจะอัปโหลดเอกสาร สรุป ถาม AI และสร้างควิซทบทวนได้จากพื้นที่เดียวกัน
-              </p>
-            </div>
-          </div>
+        <div className="grid gap-4">
+          <AuthField
+            autoComplete="name"
+            error={fieldErrors.fullName}
+            id="register-full-name"
+            label="ชื่อ-นามสกุล"
+            onChange={(event) => updateField("fullName", event.target.value)}
+            placeholder="ระบุชื่อ-นามสกุล"
+            type="text"
+            value={form.fullName}
+          />
+          <AuthField
+            autoComplete="email"
+            error={fieldErrors.email}
+            id="register-email"
+            label="อีเมล"
+            onChange={(event) => updateField("email", event.target.value)}
+            placeholder="ระบุอีเมล"
+            type="email"
+            value={form.email}
+          />
+          <AuthField
+            autoComplete="new-password"
+            error={fieldErrors.password}
+            id="register-password"
+            label="รหัสผ่าน"
+            onChange={(event) => updateField("password", event.target.value)}
+            placeholder="สร้างรหัสผ่าน"
+            type="password"
+            value={form.password}
+          />
+          <AuthField
+            autoComplete="new-password"
+            error={fieldErrors.confirmPassword}
+            id="register-confirm-password"
+            label="ยืนยันรหัสผ่าน"
+            onChange={(event) => updateField("confirmPassword", event.target.value)}
+            placeholder="ยืนยันรหัสผ่านอีกครั้ง"
+            type="password"
+            value={form.confirmPassword}
+          />
         </div>
-
-        <AuthField
-          autoComplete="name"
-          error={fieldErrors.fullName}
-          id="register-full-name"
-          label="ชื่อ-นามสกุล"
-          onChange={(event) => updateField("fullName", event.target.value)}
-          placeholder="ระบุชื่อ-นามสกุลของคุณ"
-          type="text"
-          value={form.fullName}
-        />
-        <AuthField
-          autoComplete="email"
-          error={fieldErrors.email}
-          id="register-email"
-          label="อีเมล"
-          onChange={(event) => updateField("email", event.target.value)}
-          placeholder="ระบุอีเมลของคุณ"
-          type="email"
-          value={form.email}
-        />
-        <AuthField
-          autoComplete="new-password"
-          error={fieldErrors.password}
-          id="register-password"
-          label="รหัสผ่าน"
-          onChange={(event) => updateField("password", event.target.value)}
-          placeholder="สร้างรหัสผ่าน"
-          type="password"
-          value={form.password}
-        />
-        <AuthField
-          autoComplete="new-password"
-          error={fieldErrors.confirmPassword}
-          id="register-confirm-password"
-          label="ยืนยันรหัสผ่าน"
-          onChange={(event) => updateField("confirmPassword", event.target.value)}
-          placeholder="ยืนยันรหัสผ่านอีกครั้ง"
-          type="password"
-          value={form.confirmPassword}
-        />
 
         <div>
           <label className="flex items-start gap-3 text-body-md text-[#3e4a5c]" htmlFor="register-terms">

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AUTH_MESSAGES } from "./authContent";
+import { AUTH_COPY, AUTH_MESSAGES } from "./authContent";
 import { RegisterPage } from "./RegisterPage";
 
 const jsonResponse = (body: unknown, init: ResponseInit = {}) => {
@@ -24,7 +24,7 @@ const fillValidRegistration = () => {
   fireEvent.change(screen.getByLabelText("ยืนยันรหัสผ่าน"), {
     target: { value: "secure-pass" }
   });
-  fireEvent.click(screen.getByLabelText("ฉันยอมรับข้อตกลงและเงื่อนไขการใช้งาน"));
+  fireEvent.click(screen.getByLabelText(AUTH_COPY.register.termsLabel));
 };
 
 describe("RegisterPage", () => {
@@ -32,19 +32,21 @@ describe("RegisterPage", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders a single-user account form without exposing role selection", () => {
+  it("renders a compact single-user account form without exposing role selection", () => {
     render(<RegisterPage />);
 
-    expect(screen.getByRole("heading", { name: "สร้างบัญชีใหม่" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: AUTH_COPY.register.heading })).toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "นักเรียน" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "ผู้สอน" })).not.toBeInTheDocument();
-    expect(screen.getByText("บัญชีเดียวสำหรับพื้นที่เรียนรู้ของคุณ")).toBeInTheDocument();
+    expect(screen.queryByText("บัญชีเดียวสำหรับพื้นที่เรียนรู้ของคุณ")).not.toBeInTheDocument();
+    expect(screen.queryByText(/หลังสมัครแล้วคุณจะอัปโหลดเอกสาร/)).not.toBeInTheDocument();
+    expect(screen.queryByText("พื้นที่เรียนส่วนตัว")).not.toBeInTheDocument();
     expect(screen.getByLabelText("ชื่อ-นามสกุล")).toBeInTheDocument();
     expect(screen.getByLabelText("อีเมล")).toHaveAttribute("type", "email");
     expect(screen.getByLabelText("รหัสผ่าน")).toHaveAttribute("type", "password");
     expect(screen.getByLabelText("ยืนยันรหัสผ่าน")).toHaveAttribute("type", "password");
-    expect(screen.getByLabelText("ฉันยอมรับข้อตกลงและเงื่อนไขการใช้งาน")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
+    expect(screen.getByLabelText(AUTH_COPY.register.termsLabel)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: AUTH_COPY.register.footerLink })).toHaveAttribute("href", "/login");
   });
 
   it("shows validation errors for mismatched passwords and missing terms", () => {
@@ -62,7 +64,7 @@ describe("RegisterPage", () => {
     fireEvent.change(screen.getByLabelText("ยืนยันรหัสผ่าน"), {
       target: { value: "different123" }
     });
-    fireEvent.click(screen.getByRole("button", { name: "สมัครสมาชิก" }));
+    fireEvent.click(screen.getByRole("button", { name: AUTH_COPY.register.submitLabel }));
 
     expect(screen.getByText("รหัสผ่านยืนยันไม่ตรงกัน")).toBeInTheDocument();
     expect(screen.getByText("กรุณายอมรับเงื่อนไขการใช้งาน")).toBeInTheDocument();
@@ -82,7 +84,7 @@ describe("RegisterPage", () => {
     render(<RegisterPage />);
 
     fillValidRegistration();
-    fireEvent.click(screen.getByRole("button", { name: "สมัครสมาชิก" }));
+    fireEvent.click(screen.getByRole("button", { name: AUTH_COPY.register.submitLabel }));
 
     expect(await screen.findByText(AUTH_MESSAGES.registerSuccess)).toBeInTheDocument();
     expect(screen.queryByText("เส้นทางผู้สอน")).not.toBeInTheDocument();
@@ -97,11 +99,12 @@ describe("RegisterPage", () => {
   });
 
   it("shows a login action after local dev email verification completes", async () => {
+    const devMessage = "สมัครสมาชิกและยืนยันอีเมลสำหรับ local dev แล้ว กรุณาเข้าสู่ระบบ";
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       jsonResponse(
         {
           email: "learner@example.com",
-          message: "สมัครสมาชิกและยืนยันอีเมลสำหรับ local dev แล้ว กรุณาเข้าสู่ระบบ",
+          message: devMessage,
           ok: true,
           requiresEmailVerification: false,
           verifiedInDevelopment: true
@@ -112,11 +115,9 @@ describe("RegisterPage", () => {
     render(<RegisterPage />);
 
     fillValidRegistration();
-    fireEvent.click(screen.getByRole("button", { name: "สมัครสมาชิก" }));
+    fireEvent.click(screen.getByRole("button", { name: AUTH_COPY.register.submitLabel }));
 
-    expect(
-      await screen.findByText("สมัครสมาชิกและยืนยันอีเมลสำหรับ local dev แล้ว กรุณาเข้าสู่ระบบ")
-    ).toBeInTheDocument();
+    expect(await screen.findByText(devMessage)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "ไปหน้าเข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
   });
 
@@ -131,7 +132,7 @@ describe("RegisterPage", () => {
     render(<RegisterPage />);
 
     fillValidRegistration();
-    fireEvent.click(screen.getByRole("button", { name: "สมัครสมาชิก" }));
+    fireEvent.click(screen.getByRole("button", { name: AUTH_COPY.register.submitLabel }));
 
     const pendingStatus = await screen.findByRole("status");
     expect(pendingStatus).toHaveTextContent(AUTH_MESSAGES.registerSubmitting);

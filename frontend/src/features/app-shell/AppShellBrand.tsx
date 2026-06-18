@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { AiTutorLogo } from "../../components/brand/AiTutorLogo";
 
 type AppShellBrandProps = {
   compact?: boolean;
@@ -6,17 +6,14 @@ type AppShellBrandProps = {
 
 export const AppShellBrand = ({ compact = false }: AppShellBrandProps) => {
   return (
-    <div aria-label="AI Tutor Learning Platform" className="flex min-w-0 items-center gap-3">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary text-on-primary shadow-control">
-        <Sparkles aria-hidden="true" className="h-5 w-5" />
-      </div>
-      {!compact && (
-        <div className="min-w-0">
-          <p className="truncate text-headline-md font-bold leading-tight text-primary">AI Tutor</p>
-          <p className="text-label-sm text-on-surface-variant">Learning Platform</p>
-        </div>
-      )}
-      {compact && <p className="truncate text-headline-md font-bold leading-tight text-primary">AI Tutor</p>}
+    <div aria-label="AI Tutor Learning Platform" className="flex w-full min-w-0 items-center justify-center">
+      <span className="sr-only">AI Tutor</span>
+      <span className="sr-only">Learning Platform</span>
+      <AiTutorLogo
+        className={compact ? "h-10 w-[124px] shrink-0" : "h-[88px] w-full max-w-[220px] shrink-0 rounded-md"}
+        priority
+        sizes={compact ? "124px" : "220px"}
+      />
     </div>
   );
 };

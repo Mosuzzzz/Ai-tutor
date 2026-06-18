@@ -3,18 +3,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthSession } from "@/features/auth/types";
 
-const studentSession: AuthSession = {
+const userSession: AuthSession = {
   mode: "http-only-cookie",
   storesTokenInClient: false,
   user: {
-    displayName: "Student One",
-    email: "student@example.com",
+    displayName: "Study User",
+    email: "study@example.com",
     role: "user"
   }
 };
 
 const requirePageSession = vi.hoisted(() => vi.fn());
-const loadStudentDashboardForSession = vi.hoisted(() => vi.fn());
+const loadStudyDashboardForSession = vi.hoisted(() => vi.fn());
 const loadDocumentSummaryForSession = vi.hoisted(() => vi.fn());
 const loadAiChatSummaryForSession = vi.hoisted(() => vi.fn());
 const loadQuizGeneratorForSession = vi.hoisted(() => vi.fn());
@@ -24,8 +24,8 @@ vi.mock("@/features/auth/authGuard", () => ({
   requirePageSession
 }));
 
-vi.mock("@/features/student-dashboard/studentDashboardApi", () => ({
-  loadStudentDashboardForSession
+vi.mock("@/features/study-dashboard/studyDashboardApi", () => ({
+  loadStudyDashboardForSession
 }));
 
 vi.mock("@/features/document-summary/documentSummaryApi", () => ({
@@ -47,9 +47,10 @@ vi.mock("@/features/learning-analytics/learningAnalyticsApi", () => ({
 describe("protected app routes", () => {
   beforeEach(() => {
     requirePageSession.mockReset();
-    requirePageSession.mockResolvedValue(studentSession);
-    loadStudentDashboardForSession.mockReset();
-    loadStudentDashboardForSession.mockResolvedValue({
+    requirePageSession.mockResolvedValue(userSession);
+
+    loadStudyDashboardForSession.mockReset();
+    loadStudyDashboardForSession.mockResolvedValue({
       dashboard: {
         apiResponse: {
           average_score: 88,
@@ -59,15 +60,32 @@ describe("protected app routes", () => {
           score_trend: [],
           streak_days: 3
         },
-        assistantPrompts: [],
-        continueLearning: [],
-        generatedAtLabel: "5 มิ.ย. 2569 10:00",
-        learnerName: "Student One",
-        nextMilestone: "เริ่มเรียนจากเอกสารแรกของคุณ",
-        roleLabel: "ผู้เรียน"
+        generatedAtLabel: "5 Jun 2026, 10:00",
+        headline: "Study plan ready",
+        metrics: [
+          {
+            helper: "Ready after document processing",
+            id: "ready-documents",
+            label: "Ready documents",
+            value: "4"
+          }
+        ],
+        nextMilestone: "Practice from your latest document",
+        onboardingSteps: [],
+        primaryAction: {
+          description: "Upload a document",
+          href: "/documents",
+          id: "upload-document",
+          title: "Upload first document",
+          tone: "primary"
+        },
+        secondaryActions: [],
+        summary: "A single-user study dashboard",
+        userName: "Study User"
       },
       status: "ready"
     });
+
     loadDocumentSummaryForSession.mockReset();
     loadDocumentSummaryForSession.mockResolvedValue({
       dashboard: {
@@ -91,6 +109,7 @@ describe("protected app routes", () => {
       },
       status: "empty"
     });
+
     loadAiChatSummaryForSession.mockReset();
     loadAiChatSummaryForSession.mockResolvedValue({
       chat: {
@@ -111,6 +130,7 @@ describe("protected app routes", () => {
       },
       status: "empty"
     });
+
     loadQuizGeneratorForSession.mockReset();
     loadQuizGeneratorForSession.mockResolvedValue({
       quiz: {
@@ -142,6 +162,7 @@ describe("protected app routes", () => {
       },
       status: "empty"
     });
+
     loadLearningAnalyticsForSession.mockReset();
     loadLearningAnalyticsForSession.mockResolvedValue({
       analytics: {
@@ -164,13 +185,16 @@ describe("protected app routes", () => {
     });
   });
 
-  it("guards the student dashboard route before rendering", async () => {
+  it("guards the unified study dashboard route before rendering", async () => {
     const { default: HomePage } = await import("./page");
 
     render(await HomePage());
 
     expect(requirePageSession).toHaveBeenCalledWith("/");
-    expect(screen.getByRole("main")).toHaveTextContent("แดชบอร์ดผู้เรียน");
+    expect(loadStudyDashboardForSession).toHaveBeenCalledWith({
+      session: userSession
+    });
+    expect(screen.getByTestId("study-dashboard")).toHaveAttribute("data-source", "api");
   });
 
   it("guards the shared quiz route for a normal authenticated session", async () => {

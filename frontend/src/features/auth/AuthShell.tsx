@@ -1,9 +1,7 @@
-import { GraduationCap, ShieldCheck, Sparkles } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { AUTH_COPY, AUTH_VISUAL_SLIDES } from "./authContent";
+import { AUTH_ILLUSTRATION_IMAGE } from "./authContent";
 
 type AuthShellProps = {
   children: ReactNode;
@@ -11,77 +9,41 @@ type AuthShellProps = {
 };
 
 export const AuthShell = ({ children, mode }: AuthShellProps) => {
-  const isRegister = mode === "register";
-  const shellCopy = isRegister ? AUTH_COPY.register : AUTH_COPY.login;
+  const isRegisterMode = mode === "register";
+  const visualPanelOrder = isRegisterMode ? "lg:order-2" : "lg:order-1";
+  const formPanelOrder = isRegisterMode ? "lg:order-1" : "lg:order-2";
+  const visualPanelMotion = isRegisterMode ? "auth-panel-enter-from-right" : "auth-panel-enter-from-left";
+  const formPanelMotion = isRegisterMode ? "auth-panel-enter-from-left" : "auth-panel-enter-from-right";
+  const visualLabel = isRegisterMode ? "ภาพประกอบหน้าสมัครสมาชิก" : "ภาพประกอบหน้าเข้าสู่ระบบ";
 
   return (
     <main className="auth-body min-h-screen bg-[#f4f7fb] px-4 py-6 text-[#132238] md:px-8 md:py-10">
       <div className="mx-auto grid min-h-[calc(100vh-80px)] w-full max-w-[1220px] overflow-hidden rounded-xl border border-[#c7cfdd] bg-white shadow-[0_24px_80px_rgba(15,35,61,0.10)] lg:grid-cols-2">
-        <section className="relative hidden min-h-[680px] overflow-hidden bg-[#0f243d] p-10 text-white lg:flex lg:flex-col lg:justify-between">
-          <div
-            aria-hidden="true"
-            className="animate-auth-carousel absolute inset-0"
-            data-testid="auth-visual-carousel"
-          >
-            {AUTH_VISUAL_SLIDES.map((slide) => (
-              <Image
-                alt=""
-                className="auth-carousel-slide absolute inset-0 h-full w-full object-cover brightness-[0.52] contrast-[0.92] saturate-[0.85]"
-                data-testid="auth-visual-slide"
-                fill
-                key={slide}
-                priority={slide === AUTH_VISUAL_SLIDES[0]}
-                sizes="(min-width: 1024px) 50vw, 100vw"
-                src={slide}
-              />
-            ))}
-          </div>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(244,179,91,0.22),transparent_28%),linear-gradient(140deg,rgba(7,17,31,0.92),rgba(9,30,52,0.74)_45%,rgba(4,12,24,0.95))]" />
-          <div className="relative z-10">
-            <Link
-              className="inline-flex items-center gap-3 rounded-lg bg-white/10 px-4 py-3 text-label-md font-bold text-white ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
-              href="/"
-            >
-              <Sparkles aria-hidden="true" className="h-5 w-5 text-[#f4b35b]" />
-              AI Tutor Platform
-            </Link>
-          </div>
-
-          <div className="relative z-10 max-w-md">
-            <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-[#f4b35b] text-[#10253f] shadow-[0_16px_40px_rgba(244,179,91,0.28)]">
-              {isRegister ? (
-                <GraduationCap aria-hidden="true" className="h-7 w-7" />
-              ) : (
-                <ShieldCheck aria-hidden="true" className="h-7 w-7" />
-              )}
-            </div>
-            <p className="auth-display text-[44px] font-bold leading-tight text-white">
-              {shellCopy.shellHeadline}
-            </p>
-            <p className="mt-5 text-body-lg text-[#d9e5f6]">
-              {shellCopy.shellDescription}
-            </p>
-          </div>
-
-          <div className="relative z-10 grid grid-cols-2 gap-3">
-            <AuthInsight label="Learning path" value="Personalized AI" />
-            <AuthInsight label="Study mode" value="Safe by design" />
+        <section
+          aria-label={visualLabel}
+          className={`relative hidden min-h-[660px] items-center justify-center overflow-hidden bg-white px-10 py-12 transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none lg:flex ${visualPanelOrder} ${visualPanelMotion}`}
+          data-testid="auth-visual-panel"
+        >
+          <div className="relative h-full min-h-[560px] w-full max-w-[520px]">
+            <Image
+              alt=""
+              className="object-contain"
+              data-testid="auth-illustration"
+              fill
+              priority
+              sizes="(min-width: 1024px) 520px, 100vw"
+              src={AUTH_ILLUSTRATION_IMAGE}
+            />
           </div>
         </section>
 
-        <section className="flex min-h-[680px] items-center justify-center px-5 py-10 sm:px-10">
+        <section
+          className={`flex min-h-[660px] items-center justify-center px-5 py-10 transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none sm:px-10 ${formPanelOrder} ${formPanelMotion}`}
+          data-testid="auth-form-panel"
+        >
           <div className="w-full max-w-[470px]">{children}</div>
         </section>
       </div>
     </main>
-  );
-};
-
-const AuthInsight = ({ label, value }: { label: string; value: string }) => {
-  return (
-    <div className="rounded-lg border border-white/15 bg-white/10 p-4 backdrop-blur">
-      <p className="text-label-sm uppercase tracking-[0.08em] text-[#f6d39a]">{label}</p>
-      <p className="mt-1 text-label-md font-bold text-white">{value}</p>
-    </div>
   );
 };

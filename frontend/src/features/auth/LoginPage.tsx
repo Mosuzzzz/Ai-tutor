@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowRight, GraduationCap } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { FormEvent } from "react";
 
+import { AiTutorLogo } from "../../components/brand/AiTutorLogo";
 import { Button } from "../../components/ui/Button";
 import { AuthDivider, AuthField, MockSocialButton, MockStatus } from "./AuthFormFields";
 import { AuthShell } from "./AuthShell";
@@ -63,10 +64,10 @@ export const LoginPage = () => {
   return (
     <AuthShell mode="login">
       <div className="mb-10 text-center">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-[#10253f] text-[#f4b35b] shadow-[0_18px_44px_rgba(16,37,63,0.18)]">
-          <GraduationCap aria-hidden="true" className="h-8 w-8" />
+        <div className="mb-5 flex justify-center">
+          <AiTutorLogo className="h-24 w-full max-w-[240px] rounded-md" priority sizes="240px" />
         </div>
-        <h1 className="auth-display text-[44px] font-bold leading-tight text-[#10253f]">
+        <h1 className="sr-only">
           {AUTH_COPY.login.heading}
         </h1>
         <p className="mt-3 text-body-lg text-[#596273]">{AUTH_COPY.login.intro}</p>
