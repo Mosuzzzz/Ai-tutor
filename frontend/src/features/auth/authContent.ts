@@ -1,10 +1,6 @@
 import type { LoginInput, RegisterInput } from "./types";
 
-export const AUTH_VISUAL_SLIDES = [
-  "/auth/login-slide-1.webp",
-  "/auth/login-slide-2.webp",
-  "/auth/login-slide-3.webp"
-] as const;
+export const AUTH_ILLUSTRATION_IMAGE = "/auth/Gemini_Generated_Image_wwfdchwwfdchwwfd.png";
 
 export const INITIAL_LOGIN_FORM: LoginInput = {
   email: "",
@@ -31,8 +27,6 @@ export const AUTH_COPY = {
   login: {
     heading: "AI Tutor",
     intro: "เข้าสู่ระบบเพื่อดำเนินการต่อ",
-    shellHeadline: "กลับเข้าสู่พื้นที่เรียนรู้ของคุณ",
-    shellDescription: "พื้นที่เข้าสู่ระบบที่เรียบง่าย ปลอดภัย และพร้อมเชื่อม backend เมื่อทีม API เปิดใช้งาน",
     submitLabel: "เข้าสู่ระบบ",
     divider: "หรือเข้าสู่ระบบด้วย",
     footerPrompt: "ยังไม่มีบัญชี?",
@@ -43,8 +37,6 @@ export const AUTH_COPY = {
     eyebrow: "พื้นที่เรียนส่วนตัว",
     heading: "สร้างบัญชีใหม่",
     intro: "สร้างพื้นที่ของคุณสำหรับอัปโหลดเอกสาร สรุปบทเรียน ถาม AI และทำควิซทบทวน",
-    shellHeadline: "พื้นที่เรียนรู้ AI ส่วนตัวของคุณ",
-    shellDescription: "เริ่มจากบัญชีเดียว ใช้งานเอกสาร แชท และควิซได้ในพื้นที่เรียนรู้ส่วนตัว โดยไม่ต้องเลือกบทบาท",
     submitLabel: "สมัครสมาชิก",
     divider: "หรือสมัครสมาชิกด้วย",
     footerPrompt: "มีบัญชีอยู่แล้ว?",

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthSession } from "@/features/auth/types";
 import HomePage from "./page";
 
-const studentSession: AuthSession = {
+const studySession: AuthSession = {
   mode: "http-only-cookie",
   storesTokenInClient: false,
   user: {
@@ -15,22 +15,22 @@ const studentSession: AuthSession = {
 };
 
 const requirePageSession = vi.hoisted(() => vi.fn());
-const loadStudentDashboardForSession = vi.hoisted(() => vi.fn());
+const loadStudyDashboardForSession = vi.hoisted(() => vi.fn());
 
 vi.mock("@/features/auth/authGuard", () => ({
   requirePageSession
 }));
 
-vi.mock("@/features/student-dashboard/studentDashboardApi", () => ({
-  loadStudentDashboardForSession
+vi.mock("@/features/study-dashboard/studyDashboardApi", () => ({
+  loadStudyDashboardForSession
 }));
 
-describe("Student dashboard page", () => {
+describe("Study dashboard page", () => {
   beforeEach(() => {
     requirePageSession.mockReset();
-    requirePageSession.mockResolvedValue(studentSession);
-    loadStudentDashboardForSession.mockReset();
-    loadStudentDashboardForSession.mockResolvedValue({
+    requirePageSession.mockResolvedValue(studySession);
+    loadStudyDashboardForSession.mockReset();
+    loadStudyDashboardForSession.mockResolvedValue({
       dashboard: {
         apiResponse: {
           average_score: 88,
@@ -40,40 +40,61 @@ describe("Student dashboard page", () => {
           score_trend: [],
           streak_days: 3
         },
-        assistantPrompts: [],
-        continueLearning: [],
         generatedAtLabel: "5 มิ.ย. 2569 10:00",
-        learnerName: "Student One",
-        nextMilestone: "เริ่มเรียนจากเอกสารแรกของคุณ",
-        roleLabel: "ผู้เรียน"
+        headline: "แผนทบทวนของคุณพร้อมแล้ว",
+        metrics: [
+          {
+            helper: "จะเริ่มนับหลังอัปโหลดและประมวลผลเสร็จ",
+            id: "ready-documents",
+            label: "เอกสารพร้อมอ่าน",
+            value: "4"
+          },
+          {
+            helper: "คะแนนแรกจะปรากฏหลังส่งคำตอบ",
+            id: "completed-quizzes",
+            label: "ควิซที่ทำแล้ว",
+            value: "7"
+          }
+        ],
+        nextMilestone: "ต่อยอดด้วยควิซทบทวนชุดถัดไป",
+        onboardingSteps: [],
+        primaryAction: {
+          description: "ให้ระบบสรุปและเตรียมเนื้อหา",
+          href: "/documents",
+          id: "upload-document",
+          title: "อัปโหลดเอกสารแรก",
+          tone: "primary"
+        },
+        secondaryActions: [],
+        summary: "Student One มีเอกสาร 4 รายการและควิซ 7 ชุดในเส้นทางทบทวนล่าสุด",
+        userName: "Student One"
       },
       status: "ready"
     });
   });
 
-  it("renders the AI Tutor shell with the API-ready student dashboard", async () => {
+  it("renders the AI Tutor shell with the API-ready study dashboard", async () => {
     render(await HomePage());
 
     expect(requirePageSession).toHaveBeenCalledWith("/");
-    expect(loadStudentDashboardForSession).toHaveBeenCalledWith({
-      session: studentSession
+    expect(loadStudyDashboardForSession).toHaveBeenCalledWith({
+      session: studySession
     });
-    expect(screen.getByRole("banner")).toHaveTextContent("AI Tutor");
-    expect(screen.getByRole("main")).toHaveTextContent("แดชบอร์ดผู้เรียน");
+    expect(screen.getAllByText("AI Tutor").length).toBeGreaterThan(0);
+    expect(screen.getByRole("main")).toHaveTextContent("แดชบอร์ดของฉัน");
     expect(screen.getByRole("main")).toHaveTextContent("7");
-    expect(screen.getByRole("main")).toHaveTextContent("88%");
-    expect(screen.getByTestId("student-dashboard")).toHaveAttribute("data-source", "api");
+    expect(screen.getByTestId("study-dashboard")).toHaveAttribute("data-source", "api");
   });
 
   it("renders dashboard error state inside the protected app shell", async () => {
-    loadStudentDashboardForSession.mockResolvedValue({
-      errorMessage: "ไม่สามารถโหลดแดชบอร์ดผู้เรียนได้",
+    loadStudyDashboardForSession.mockResolvedValue({
+      errorMessage: "ไม่สามารถโหลดแดชบอร์ดได้",
       status: "error"
     });
 
     render(await HomePage());
 
     expect(requirePageSession).toHaveBeenCalledWith("/");
-    expect(screen.getByRole("alert")).toHaveTextContent("ไม่สามารถโหลดแดชบอร์ดผู้เรียนได้");
+    expect(screen.getByRole("alert")).toHaveTextContent("ไม่สามารถโหลดแดชบอร์ดได้");
   });
 });
