@@ -15,8 +15,7 @@ export const backendDocumentDashboardResponse: DocumentLibraryResponse = {
       status: "ready",
       summary_available: true,
       summary_markdown:
-        "## Overview\nReview safety checklist before entering the lab.\n\n## Key Actions\n- Wear goggles\n- Report incidents",
-      uploaded_by: "Trainer One"
+        "## Overview\nReview safety checklist before entering the lab.\n\n## Key Actions\n- Wear goggles\n- Report incidents"
     },
     {
       created_at: "2026-06-04T08:00:00.000Z",
@@ -25,8 +24,7 @@ export const backendDocumentDashboardResponse: DocumentLibraryResponse = {
       related_exams_count: 1,
       status: "ready",
       summary_available: false,
-      summary_markdown: null,
-      uploaded_by: "Trainer Two"
+      summary_markdown: null
     },
     {
       created_at: "2026-06-03T08:00:00.000Z",
@@ -35,8 +33,7 @@ export const backendDocumentDashboardResponse: DocumentLibraryResponse = {
       related_exams_count: 0,
       status: "processing",
       summary_available: false,
-      summary_markdown: null,
-      uploaded_by: "Trainer One"
+      summary_markdown: null
     }
   ],
   status_counts: {
@@ -58,7 +55,6 @@ export const backendDocumentDetailResponse: DocumentDetailResponse = {
       created_at: "2026-06-05T09:00:00.000Z",
       id: "exam-1",
       score: 86,
-      status: "published",
       taken_at: null
     }
   ],
@@ -67,8 +63,7 @@ export const backendDocumentDetailResponse: DocumentDetailResponse = {
   summary_available: true,
   summary_markdown:
     "## Overview\nReview safety checklist before entering the lab.\n\n## Key Actions\n- Wear goggles\n- Report incidents",
-  tenant_id: "tenant-1",
-  uploaded_by: "user-1"
+  user_id: "user-1"
 };
 
 export const backendDocumentStatusResponse: FileStatusResponse = {

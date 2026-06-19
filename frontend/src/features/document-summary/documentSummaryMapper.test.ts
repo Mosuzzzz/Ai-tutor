@@ -26,7 +26,6 @@ describe("document summary mapper", () => {
     expect(dashboard.apiResponse.total_documents).toBe(3);
     expect(dashboard.selectedDocumentId).toBe("file-ready");
     expect(dashboard.documentDetails[0]?.filename).toBe("safety-handbook.pdf");
-    expect(dashboard.documentDetails[0]?.uploadedByLabel).toContain("Trainer One");
     expect(dashboard.documentDetails[0]?.keyTopics.map((topic) => topic.title)).toContain("ภาพรวม");
     expect(dashboard.documentDetails[0]?.relatedDocuments.map((document) => document.id)).toContain("file-needs-recap");
     expect(dashboard.documentDetails[0]?.relatedDocuments.find((document) => document.id === "file-needs-recap")?.href).toBe(

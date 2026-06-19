@@ -18,10 +18,10 @@ export const AiTutorLogo = ({
   sizes = "(max-width: 768px) 180px, 240px"
 }: AiTutorLogoProps) => {
   return (
-    <div className={cn("flex items-center justify-center overflow-hidden bg-white", className)}>
+    <div className={cn("flex items-center justify-center overflow-hidden", className)}>
       <Image
         alt={AI_TUTOR_LOGO_ALT}
-        className={cn("h-full w-full object-contain", imageClassName)}
+        className={cn("h-full w-full object-contain mix-blend-multiply", imageClassName)}
         height={401}
         priority={priority}
         sizes={sizes}

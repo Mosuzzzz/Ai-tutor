@@ -302,8 +302,7 @@ export const DocumentSummaryPage = ({
             เอกสารที่เลือก
           </div>
           <h3 className="mt-3 break-words text-headline-md text-on-surface">{selectedDetail.filename}</h3>
-          <p className="mt-2 text-body-md text-on-surface-variant">{selectedDetail.uploadedByLabel}</p>
-          <p className="mt-1 text-body-md text-on-surface-variant">{selectedDetail.generatedAtLabel}</p>
+          <p className="mt-2 text-body-md text-on-surface-variant">{selectedDetail.generatedAtLabel}</p>
           <div className="mt-5 flex flex-wrap gap-2">
             <Link
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-primary-container/20 bg-surface-container-low px-4 py-2 text-label-md font-bold text-primary transition-all duration-200 hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
@@ -475,7 +474,7 @@ export const DocumentSummaryPage = ({
                     <div className="min-w-0">
                       <p className="truncate text-body-md font-bold text-on-surface">{document.filename}</p>
                       <p className="mt-1 text-label-sm text-on-surface-variant">
-                        โดย {document.uploaded_by} - ควิซ {document.related_exams_count} ชุด
+                        ควิซ {document.related_exams_count} ชุด
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -566,7 +565,7 @@ export const DocumentSummaryPage = ({
                       <div className="min-w-0">
                         <p className="truncate text-body-md font-bold text-on-surface">{document.filename}</p>
                         <p className="mt-1 text-label-sm text-on-surface-variant">
-                          โดย {document.uploaded_by} - ควิซ {document.related_exams_count} ชุด
+                          ควิซ {document.related_exams_count} ชุด
                         </p>
                       </div>
                       <div className="flex shrink-0 flex-wrap items-center gap-2">

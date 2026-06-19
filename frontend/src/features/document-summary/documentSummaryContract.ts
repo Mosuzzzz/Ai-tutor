@@ -23,8 +23,7 @@ const documentLibraryItemSchema = z.object({
   related_exams_count: z.number().int().nonnegative(),
   status: documentProcessingStatusSchema,
   summary_available: z.boolean(),
-  summary_markdown: z.string().nullable(),
-  uploaded_by: z.string()
+  summary_markdown: z.string().nullable()
 });
 
 export const documentLibraryResponseSchema = z.object({
@@ -37,7 +36,6 @@ const relatedExamSchema = z.object({
   created_at: z.string(),
   id: z.string(),
   score: z.number().nullable().optional(),
-  status: z.string(),
   taken_at: z.string().nullable().optional()
 });
 
@@ -51,8 +49,7 @@ export const documentDetailResponseSchema = z.object({
   storage_url: z.string(),
   summary_available: z.boolean(),
   summary_markdown: z.string().nullable(),
-  tenant_id: z.string(),
-  uploaded_by: z.string()
+  user_id: z.string()
 });
 
 export const fileStatusResponseSchema = z.object({
@@ -68,8 +65,7 @@ export const fileUploadResponseSchema = z.object({
   id: z.string(),
   status: documentProcessingStatusSchema,
   storage_url: z.string(),
-  tenant_id: z.string(),
-  uploaded_by: z.string()
+  user_id: z.string()
 });
 
 export const recapResponseSchema = z.object({

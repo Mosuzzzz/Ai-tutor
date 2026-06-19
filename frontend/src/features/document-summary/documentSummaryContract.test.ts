@@ -32,8 +32,7 @@ describe("document summary Backend contract", () => {
         id: "file-ready",
         status: "pending",
         storage_url: "/secure/uploads/safety-handbook.pdf",
-        tenant_id: "tenant-1",
-        uploaded_by: "trainer-1"
+        user_id: "user-1"
       }).status
     ).toBe("pending");
   });

@@ -99,8 +99,7 @@ const toDocumentSummaryDetail = ({
     keyTopics: buildKeyTopics(sections, detail.filename),
     relatedDocuments: buildRelatedDocuments(dashboard, detail.id),
     sourcePreview: localizeKnownAiText(detail.extracted_text_preview),
-    summaryMarkdown,
-    uploadedByLabel: `อัปโหลดโดย ${libraryDocument?.uploaded_by ?? detail.uploaded_by}`
+    summaryMarkdown
   };
 };
 
