@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "../../lib/cn";
@@ -20,7 +21,7 @@ const buttonVariantClassNames: Record<ButtonVariant, string> = {
     "border border-error-container bg-error-container text-on-error-container hover:border-error hover:bg-error hover:text-on-error"
 };
 
-export const Button = ({
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
   children,
   className,
   disabled,
@@ -29,7 +30,7 @@ export const Button = ({
   type = "button",
   variant = "primary",
   ...props
-}: ButtonProps) => {
+}, ref) => {
   const isDisabled = disabled || isLoading;
 
   return (
@@ -43,6 +44,7 @@ export const Button = ({
         className
       )}
       disabled={isDisabled}
+      ref={ref}
       type={type}
     >
       {isLoading ? (
@@ -58,4 +60,6 @@ export const Button = ({
       )}
     </button>
   );
-};
+});
+
+Button.displayName = "Button";

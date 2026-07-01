@@ -12,10 +12,12 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("DocumentUploadPanel", () => {
-  it("renders a disabled learner state when the role cannot upload", () => {
+  it("renders a disabled personal workspace state when backend upload permission is unavailable", () => {
     render(<DocumentUploadPanel canUpload={false} />);
 
-    expect(screen.getByText("การอัปโหลดสำหรับผู้สอนและแอดมิน")).toBeInTheDocument();
+    expect(screen.getByText("ยังไม่สามารถอัปโหลดเอกสารได้")).toBeInTheDocument();
+    expect(screen.getByText(/สิทธิ์อัปโหลดจาก backend ยังไม่เปิด/)).toBeInTheDocument();
+    expect(screen.queryByText(/ผู้สอน|แอดมิน|ผู้เรียน/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText("เลือกไฟล์เอกสาร")).not.toBeInTheDocument();
   });
 

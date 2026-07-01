@@ -152,7 +152,7 @@ Files:
 
 Status: merge แล้วผ่าน PR #40 (`ProductDirectionSingleUser`) เอกสารหลักสะท้อน single-user direction แล้ว
 
-## 5.5.1 `UnifiedAuthAndSession`
+## 5.5.1 `UnifiedAuthAndSession` ✅
 
 เป้าหมาย:
 
@@ -184,7 +184,7 @@ Acceptance:
 - ไม่มี token ใน client storage
 - Test/lint/build/audit ผ่าน
 
-## 5.5.2 `UnifiedAppShellNavigation`
+## 5.5.2 `UnifiedAppShellNavigation` ✅
 
 เป้าหมาย:
 
@@ -218,7 +218,7 @@ Acceptance:
 - Mobile/desktop navigation สอดคล้องกัน
 - Test/lint/build/audit ผ่าน
 
-## 5.5.3 `UnifiedStudyDashboard`
+## 5.5.3 `UnifiedStudyDashboard` ✅
 
 เป้าหมาย:
 
@@ -254,7 +254,7 @@ Acceptance:
 - ผู้ใช้ใหม่เข้าใจว่าควรเริ่มจากเอกสาร
 - Test/lint/build/audit ผ่าน
 
-## 5.5.4 `PersonalDocumentWorkspace`
+## 5.5.4 `PersonalDocumentWorkspace` ✅
 
 เป้าหมาย:
 

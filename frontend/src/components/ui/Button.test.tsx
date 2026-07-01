@@ -46,6 +46,14 @@ describe("Button", () => {
     expect(button).toHaveClass("text-on-surface-variant");
   });
 
+  it("forwards refs for accessible focus restoration", () => {
+    const buttonRef = { current: null as HTMLButtonElement | null };
+
+    render(<Button ref={buttonRef}>Open document library</Button>);
+
+    expect(buttonRef.current).toBe(screen.getByRole("button", { name: "Open document library" }));
+  });
+
   it("exposes loading state without dropping the accessible label", () => {
     render(
       <Button isLoading loadingLabel="กำลังบันทึก">

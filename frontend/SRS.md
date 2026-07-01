@@ -303,3 +303,16 @@ git diff --check
 - AuthShell รองรับ mirror layout: หน้า Login วางภาพประกอบซ้ายและฟอร์มขวา ส่วนหน้า Register วางฟอร์มซ้ายและภาพประกอบขวา พร้อม transition และ `prefers-reduced-motion`
 - Register form fields are stacked vertically on every viewport so the account creation flow reads top-to-bottom and does not feel cramped.
 - Login/Register route changes use a subtle slide-and-fade panel motion to make the form/illustration swap visible while still honoring `prefers-reduced-motion`.
+
+## 13. Personal Document Workspace Notes
+
+- หน้า `/documents` ต้องเป็นพื้นที่เอกสารส่วนตัวของผู้ใช้คนเดียว ไม่ใช้ภาษา teacher/student หรือ share-to-classroom เป็น core flow
+- Empty state ต้องอธิบายเส้นทางต่อไปแบบตั้งใจ: อัปโหลดเอกสาร รอประมวลผล แล้วต่อยอดเป็นสรุป แชทกับเอกสาร หรือควิซทบทวน
+- คลังเอกสารด้านข้างแสดงเอกสารล่าสุด 2 รายการก่อน เพื่อลดความแน่นของหน้า
+- ปุ่ม `ดูเอกสารทั้งหมดในคลัง` เปิด dialog รายการทั้งหมด พร้อมปิดด้วย Escape และคืน focus กลับปุ่มเดิม
+- Delete document ต้องผ่าน BFF/same-origin API เดิม ไม่ expose backend endpoint หรือ token ลง DOM และต้องแสดง error แบบปลอดภัยเมื่อ backend ลบไม่สำเร็จ
+- Upload disabled state ต้องอธิบายเป็น capability จาก backend ไม่ใช่ข้อจำกัดตาม role เพื่อให้สอดคล้องกับ single-user product direction
+- Document summary loader ต้องใช้ cached recap ก่อน และถ้า Backend ตอบ 404 ว่ายังไม่มี summary ให้เรียก `POST /api/recap/{fileId}` เพื่อ generate summary จริงจาก Backend แทนการแสดง mock
+- Frontend ต้องแยก `document-derived` summary ออกจาก fallback/mock summary อย่างชัดเจน และต้องปิด AI actions เมื่อ Backend ยังไม่ได้ส่งสรุปจากเนื้อหาเอกสารจริง
+- Contract schema ของ document dashboard ต้อง reject unknown status และ dashboard payload ที่ shape ไม่ครบ เพื่อไม่ normalize ข้อมูลผิดให้ดูเหมือนพร้อมใช้งาน
+- หน้า `/documents` ต้องผูกปุ่ม Chat/Quiz และ badge AI readiness กับ `canUseAiActions`; ถ้า summary ยังเป็น fallback/mock ต้องแสดง notice แทน link ไปใช้งาน AI เพื่อไม่หลอกผู้ใช้ว่าเอกสารพร้อมแล้ว
