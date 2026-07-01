@@ -26,7 +26,7 @@ describe("document summary mapper", () => {
     expect(dashboard.apiResponse.total_documents).toBe(3);
     expect(dashboard.selectedDocumentId).toBe("file-ready");
     expect(dashboard.documentDetails[0]?.filename).toBe("safety-handbook.pdf");
-    expect(dashboard.documentDetails[0]?.uploadedByLabel).toContain("Trainer One");
+    expect(dashboard.documentDetails[0]?.uploadedByLabel).toBe("อัปโหลดโดย Learner One");
     expect(dashboard.documentDetails[0]?.keyTopics.map((topic) => topic.title)).toContain("ภาพรวม");
     expect(dashboard.documentDetails[0]?.relatedDocuments.map((document) => document.id)).toContain("file-needs-recap");
     expect(dashboard.documentDetails[0]?.relatedDocuments.find((document) => document.id === "file-needs-recap")?.href).toBe(
@@ -127,28 +127,14 @@ describe("document summary mapper", () => {
     expect(detail?.summaryQuality).toBe("needs-backend-summary");
     expect(detail?.summaryNotice).toBeTruthy();
     expect(detail?.keyTopics).toEqual([]);
-  });
-  it("falls back to the session display name when the backend omits uploader fields", () => {
+  });  it("uses the session display name for personal upload labels without exposing backend user ids", () => {
     const dashboard = toDocumentSummaryViewModel({
-      dashboard: {
-        ...backendDocumentDashboardResponse,
-        documents: [
-          {
-            ...backendDocumentDashboardResponse.documents[0],
-            uploaded_by: ""
-          }
-        ]
-      },
-      details: [
-        {
-          ...backendDocumentDetailResponse,
-          uploaded_by: ""
-        }
-      ],
+      dashboard: backendDocumentDashboardResponse,
+      details: [backendDocumentDetailResponse],
       session
     });
 
-    expect(dashboard.apiResponse.documents[0]?.uploaded_by).toBe("Learner One");
+    expect(JSON.stringify(dashboard)).not.toContain("user-1");
     expect(dashboard.documentDetails[0]?.uploadedByLabel).toBe("อัปโหลดโดย Learner One");
   });
 

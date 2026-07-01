@@ -7,7 +7,6 @@ export const documentDetailApiPath = (fileId: string) => `/api/files/${encodeURI
 export const fileStatusApiPath = (fileId: string) => `/api/files/${encodeURIComponent(fileId)}/status`;
 export const recapApiPath = (fileId: string) => `/api/recap/${encodeURIComponent(fileId)}`;
 
-
 const safeStringSchema = z.preprocess((value) => {
   if (typeof value === "string") {
     return value;
@@ -102,8 +101,7 @@ const documentLibraryItemSchema = z.object({
   related_exams_count: safeCountSchema.optional().default(0),
   status: documentProcessingStatusSchema.optional().default("processing"),
   summary_available: safeBooleanSchema.optional().default(false),
-  summary_markdown: safeNullableStringSchema,
-  uploaded_by: safeStringSchema.optional().default("")
+  summary_markdown: safeNullableStringSchema
 }).passthrough();
 
 const normalizeDocumentLibraryPayload = (value: unknown) => {
@@ -147,8 +145,7 @@ export const documentDetailResponseSchema = z.object({
   storage_url: safeStringSchema.optional().default(""),
   summary_available: safeBooleanSchema.optional().default(false),
   summary_markdown: safeNullableStringSchema,
-  tenant_id: safeStringSchema.optional().default(""),
-  uploaded_by: safeStringSchema.optional().default("")
+  user_id: safeStringSchema.optional().default("")
 }).passthrough();
 
 export const fileStatusResponseSchema = z.object({
@@ -164,8 +161,7 @@ export const fileUploadResponseSchema = z.object({
   id: safeStringSchema,
   status: documentProcessingStatusSchema.optional().default("processing"),
   storage_url: safeStringSchema.optional().default(""),
-  tenant_id: safeStringSchema.optional().default(""),
-  uploaded_by: safeStringSchema.optional().default("")
+  user_id: safeStringSchema.optional().default("")
 }).passthrough();
 
 export const recapResponseSchema = z.object({

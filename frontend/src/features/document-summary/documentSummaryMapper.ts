@@ -48,11 +48,10 @@ export const toDocumentSummaryViewModel = ({
   timestamp = new Date()
 }: DocumentSummaryViewModelInput): DocumentSummaryViewModel => {
   const uploaderFallback = buildUploaderFallback(session);
-  const normalizedDashboard = withDocumentUploaderFallback(dashboard, uploaderFallback);
-  const selectedDocument = selectDocumentForDetail(normalizedDashboard, selectedDocumentId);
+  const selectedDocument = selectDocumentForDetail(dashboard, selectedDocumentId);
   const documentDetails = details.map((detail) =>
     toDocumentSummaryDetail({
-      dashboard: normalizedDashboard,
+      dashboard,
       detail,
       recap: recaps.find((recap) => recap.file_id === detail.id),
       uploaderFallback
@@ -61,7 +60,7 @@ export const toDocumentSummaryViewModel = ({
 
   return {
     apiEndpoint: documentSummaryMock.apiEndpoint,
-    apiResponse: normalizedDashboard,
+    apiResponse: dashboard,
     detailEndpointPattern: documentSummaryMock.detailEndpointPattern,
     documentDetails,
     generatedAtLabel: formatGeneratedAt(timestamp),
@@ -139,7 +138,7 @@ const toDocumentSummaryDetail = ({
       ? undefined
       : "backend ยังไม่ได้ส่งสรุปที่สร้างจากเนื้อหาเอกสารจริง ระบบจึงปิดการถาม AI และสร้างควิซชั่วคราวเพื่อไม่ให้เข้าใจผิด",
     summaryQuality: hasDocumentSummary ? "document-derived" : "needs-backend-summary",
-    uploadedByLabel: `อัปโหลดโดย ${resolveUploaderName(libraryDocument?.uploaded_by ?? detail.uploaded_by, uploaderFallback)}`
+    uploadedByLabel: `อัปโหลดโดย ${uploaderFallback}`
   };
 };
 
@@ -195,22 +194,6 @@ const buildUploaderFallback = (session: AuthSession) => {
   return session.user.displayName?.trim() || "คุณ";
 };
 
-const withDocumentUploaderFallback = (
-  dashboard: DocumentLibraryResponse,
-  uploaderFallback: string
-): DocumentLibraryResponse => {
-  return {
-    ...dashboard,
-    documents: dashboard.documents.map((document) => ({
-      ...document,
-      uploaded_by: resolveUploaderName(document.uploaded_by, uploaderFallback)
-    }))
-  };
-};
-
-const resolveUploaderName = (value: string | undefined, fallback: string) => {
-  return value?.trim() || fallback;
-};
 
 const buildWorkspaceName = (session: AuthSession) => {
   const displayName = session.user.displayName?.trim();

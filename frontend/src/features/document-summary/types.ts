@@ -7,7 +7,6 @@ export type DocumentLibraryItem = {
   filename: string;
   status: DocumentProcessingStatus;
   created_at: string;
-  uploaded_by: string;
   summary_available: boolean;
   summary_markdown: string | null;
   related_exams_count: number;

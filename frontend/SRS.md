@@ -316,3 +316,4 @@ git diff --check
 - Frontend ต้องแยก `document-derived` summary ออกจาก fallback/mock summary อย่างชัดเจน และต้องปิด AI actions เมื่อ Backend ยังไม่ได้ส่งสรุปจากเนื้อหาเอกสารจริง
 - Contract schema ของ document dashboard ต้อง reject unknown status และ dashboard payload ที่ shape ไม่ครบ เพื่อไม่ normalize ข้อมูลผิดให้ดูเหมือนพร้อมใช้งาน
 - หน้า `/documents` ต้องผูกปุ่ม Chat/Quiz และ badge AI readiness กับ `canUseAiActions`; ถ้า summary ยังเป็น fallback/mock ต้องแสดง notice แทน link ไปใช้งาน AI เพื่อไม่หลอกผู้ใช้ว่าเอกสารพร้อมแล้ว
+- Document summary frontend ต้องตาม contract ล่าสุดที่ใช้ `user_id` ฝั่ง detail/upload และไม่พึ่ง `uploaded_by` ใน dashboard response; UI ห้ามแสดง raw `user_id` เป็นชื่อผู้อัปโหลด

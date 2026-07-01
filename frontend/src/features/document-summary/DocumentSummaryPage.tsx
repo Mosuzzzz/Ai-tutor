@@ -512,7 +512,7 @@ export const DocumentSummaryPage = ({
                     <div className="min-w-0">
                       <p className="truncate text-body-md font-bold text-on-surface">{document.filename}</p>
                       <p className="mt-1 text-label-sm text-on-surface-variant">
-                        โดย {document.uploaded_by} - ควิซ {document.related_exams_count} ชุด
+                        ควิซ {document.related_exams_count} ชุด
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -607,7 +607,7 @@ export const DocumentSummaryPage = ({
                       <div className="min-w-0">
                         <p className="truncate text-body-md font-bold text-on-surface">{document.filename}</p>
                         <p className="mt-1 text-label-sm text-on-surface-variant">
-                          โดย {document.uploaded_by} - ควิซ {document.related_exams_count} ชุด
+                          ควิซ {document.related_exams_count} ชุด
                         </p>
                       </div>
                       <div className="flex shrink-0 flex-wrap items-center gap-2">

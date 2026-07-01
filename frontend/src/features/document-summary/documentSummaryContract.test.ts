@@ -32,12 +32,12 @@ describe("document summary Backend contract", () => {
         id: "file-ready",
         status: "pending",
         storage_url: "/secure/uploads/safety-handbook.pdf",
-        tenant_id: "tenant-1",
-        uploaded_by: "trainer-1"
+        user_id: "user-1"
       }).status
     ).toBe("pending");
   });
-  it("accepts the current backend payload when optional ownership fields are omitted", () => {
+
+  it("accepts current backend payloads when optional ownership fields are omitted", () => {
     const parsedDashboard = documentLibraryResponseSchema.parse({
       documents: [
         {
@@ -84,11 +84,10 @@ describe("document summary Backend contract", () => {
       status: "pending"
     });
 
-    expect(parsedDashboard.documents[0]?.uploaded_by).toBe("");
+    expect(parsedDashboard.documents[0]?.summary_available).toBe(true);
     expect(parsedDetail.related_exams[0]?.status).toBe("completed");
-    expect(parsedDetail.tenant_id).toBe("");
-    expect(parsedDetail.uploaded_by).toBe("");
-    expect(parsedUpload.uploaded_by).toBe("");
+    expect(parsedDetail.user_id).toBe("");
+    expect(parsedUpload.user_id).toBe("");
   });
 
   it("rejects unknown document status values", () => {
