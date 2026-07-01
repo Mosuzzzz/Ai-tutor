@@ -31,9 +31,11 @@ def process_document_pipeline(file_id: str):
         file_record.status = "processing"
         db.commit()
 
-        # 1. Text Extraction
+        # 1. Text Extraction — empty/unreadable content is an error, not "ready".
         local_path = file_record.storage_url
         extracted_text = extract_text_from_file(local_path)
+        if not extracted_text or not extracted_text.strip():
+            raise ValueError("No readable text could be extracted from the document.")
         file_record.extracted_text = extracted_text
 
         # 2. Text Chunking (~800 characters)

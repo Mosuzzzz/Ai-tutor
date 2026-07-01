@@ -327,8 +327,7 @@ export const DocumentSummaryPage = ({
             เอกสารที่เลือก
           </div>
           <h3 className="mt-3 break-words text-headline-md text-on-surface">{selectedDetail.filename}</h3>
-          <p className="mt-2 text-body-md text-on-surface-variant">{selectedDetail.uploadedByLabel}</p>
-          <p className="mt-1 text-body-md text-on-surface-variant">{selectedDetail.generatedAtLabel}</p>
+          <p className="mt-2 text-body-md text-on-surface-variant">{selectedDetail.generatedAtLabel}</p>
           <div className="mt-5 flex flex-wrap gap-2">
             <Link
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-primary-container/20 bg-surface-container-low px-4 py-2 text-label-md font-bold text-primary transition-all duration-200 hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"

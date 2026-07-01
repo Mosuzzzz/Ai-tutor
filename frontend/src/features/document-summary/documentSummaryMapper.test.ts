@@ -33,6 +33,7 @@ describe("document summary mapper", () => {
       "/documents/file-needs-recap"
     );
     expect(JSON.stringify(dashboard)).not.toContain("learner@example.com");
+    expect(JSON.stringify(dashboard)).not.toContain("user-1");
   });
 
   it("keeps source-grounded SOP summaries available for AI actions", () => {
@@ -69,6 +70,7 @@ describe("document summary mapper", () => {
     expect(dashboard.documentDetails[0]?.canUseAiActions).toBe(true);
     expect(dashboard.documentDetails[0]?.summaryMarkdown).toContain("East Stairwell");
   });
+
   it("uses recap markdown when a ready document has no cached summary in detail", () => {
     const dashboard = toDocumentSummaryViewModel({
       dashboard: backendDocumentDashboardResponse,
@@ -127,7 +129,9 @@ describe("document summary mapper", () => {
     expect(detail?.summaryQuality).toBe("needs-backend-summary");
     expect(detail?.summaryNotice).toBeTruthy();
     expect(detail?.keyTopics).toEqual([]);
-  });  it("uses the session display name for personal upload labels without exposing backend user ids", () => {
+  });
+
+  it("uses the session display name for personal upload labels without exposing backend user ids", () => {
     const dashboard = toDocumentSummaryViewModel({
       dashboard: backendDocumentDashboardResponse,
       details: [backendDocumentDetailResponse],

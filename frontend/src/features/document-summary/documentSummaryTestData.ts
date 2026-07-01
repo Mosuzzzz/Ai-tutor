@@ -55,7 +55,7 @@ export const backendDocumentDetailResponse: DocumentDetailResponse = {
       created_at: "2026-06-05T09:00:00.000Z",
       id: "exam-1",
       score: 86,
-      status: "published",
+      status: "completed",
       taken_at: null
     }
   ],
