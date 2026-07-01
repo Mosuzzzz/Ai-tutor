@@ -3,7 +3,6 @@ from typing import List
 from pypdf import PdfReader
 import docx
 from pptx import Presentation
-from PIL import Image
 
 def extract_text_from_file(file_path: str) -> str:
     """Extracts raw text content from PDF, DOCX, PPTX, or Image files."""
@@ -74,11 +73,11 @@ def extract_text_from_pptx(file_path: str) -> str:
             raise e
 
 def extract_text_from_image(file_path: str) -> str:
-    with Image.open(file_path) as img:
-        width, height = img.size
-        # Since local systems may lack tesseract binary for OCR, 
-        # we parse image metadata as corporate text representation
-        return f"Document Image: {os.path.basename(file_path)}\nFormat: {img.format}\nDimensions: {width}x{height} pixels.\nContent metadata matches corporate training manual visual visual-flow chart."
+    """Runs real OCR via a vision model. Raises if OCR is unavailable or the
+    image has no readable text, so the pipeline marks the doc 'error' instead of
+    fabricating text. Never derive summary text from image metadata."""
+    from services.ai_service import ocr_image
+    return ocr_image(file_path)
 
 def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150) -> List[str]:
     """Splits raw text into overlapping structural chunks."""

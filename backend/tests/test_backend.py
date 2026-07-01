@@ -1,3 +1,4 @@
+import base64
 import io
 from starlette.testclient import TestClient
 import os
@@ -87,14 +88,15 @@ def test_integration_flow():
     document_detail = client.get(f"/api/files/{file_id}/detail", headers=headers)
     assert document_detail.status_code == 200
     assert document_detail.json()["summary_available"] is True
-    assert "Overview" in document_detail.json()["summary_markdown"]
+    # Sandbox recap must be grounded in the document's own text, not boilerplate.
+    assert "STANDARD OPERATING PROCEDURE" in document_detail.json()["summary_markdown"]
 
     print_banner("3. AI recap (summary)")
     recap_exec = client.post(f"/api/recap/{file_id}", json={"detail_level": "executive"}, headers=headers)
     assert recap_exec.status_code == 200
     recap_detail = client.post(f"/api/recap/{file_id}", json={"detail_level": "detailed"}, headers=headers)
     assert recap_detail.status_code == 200
-    assert "Overview" in recap_detail.json()["summary_markdown"]
+    assert "STANDARD OPERATING PROCEDURE" in recap_detail.json()["summary_markdown"]
 
     print_banner("4. Personal review quiz: generate -> take -> submit")
     quiz_resp = client.post("/api/exams/generate", json={"file_id": file_id, "num_questions": 5}, headers=headers)
@@ -176,6 +178,32 @@ def test_integration_flow():
     assert isinstance(audit_resp.json(), list)
 
     print_banner("ALL INTEGRATION TESTS PASSED SUCCESSFULLY!")
+
+
+def test_image_upload_without_ocr_backend_is_error():
+    """An image with no OCR backend must end as 'error' — never fabricated text."""
+    setup_test_db()
+    token = _register_and_login("imgowner@example.com")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1x1 PNG; no GROQ vision backend in tests, so OCR must fail cleanly.
+    png_bytes = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+    )
+    file_payload = {"file": ("screenshot.png", io.BytesIO(png_bytes), "image/png")}
+    upload_resp = client.post("/api/files/upload", files=file_payload, headers=headers)
+    assert upload_resp.status_code == 201
+    file_id = upload_resp.json()["id"]
+
+    detail = client.get(f"/api/files/{file_id}/detail", headers=headers).json()
+    assert detail["status"] == "error"
+    assert detail["summary_available"] is False
+    # No fabricated metadata leaked into extracted text.
+    assert "corporate training manual" not in (detail["extracted_text_preview"] or "").lower()
+
+    # Recap generation is refused for a failed document.
+    recap = client.post(f"/api/recap/{file_id}", json={"detail_level": "executive"}, headers=headers)
+    assert recap.status_code == 400
 
 
 if __name__ == "__main__":
