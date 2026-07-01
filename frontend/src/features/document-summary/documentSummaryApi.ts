@@ -127,7 +127,7 @@ export const loadDocumentSummaryForSession = async ({
       details.push(detail);
 
       if (detail.status === "ready" && !detail.summary_markdown) {
-        const recap = await loadCachedRecap({
+        const recap = await loadOrGenerateRecap({
           accessToken,
           backendRequest,
           fileId: selectedDocument.id
@@ -169,7 +169,7 @@ export const loadDocumentSummaryDetailForSession = async (
   });
 };
 
-const loadCachedRecap = async ({
+const loadOrGenerateRecap = async ({
   accessToken,
   backendRequest,
   fileId
@@ -185,10 +185,16 @@ const loadCachedRecap = async ({
       schema: recapResponseSchema
     });
   } catch (error) {
-    if (error instanceof ApiClientError && error.code === "not_found") {
-      return undefined;
+    if (!(error instanceof ApiClientError && error.code === "not_found")) {
+      throw error;
     }
-
-    throw error;
   }
+
+  return backendRequest({
+    accessToken,
+    body: { detail_level: "executive" },
+    method: "POST",
+    path: recapApiPath(fileId),
+    schema: recapResponseSchema
+  });
 };

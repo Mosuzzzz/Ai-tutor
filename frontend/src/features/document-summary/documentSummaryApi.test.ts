@@ -129,6 +129,67 @@ describe("loadDocumentSummaryForSession", () => {
     );
   });
 
+  it("generates a recap when a ready document has no cached summary yet", async () => {
+    const backendRequest = vi.fn(async ({ method, path }: BackendJsonRequestOptions<unknown>) => {
+      if (path === "/api/files/dashboard") {
+        return backendDocumentDashboardResponse;
+      }
+
+      if (path === "/api/files/file-needs-recap/detail") {
+        return {
+          ...backendDocumentDetailResponse,
+          filename: "ethics-guide.pdf",
+          id: "file-needs-recap",
+          summary_available: false,
+          summary_markdown: null
+        };
+      }
+
+      if (path === "/api/files/file-needs-recap/status") {
+        return {
+          ...backendDocumentStatusResponse,
+          file_id: "file-needs-recap",
+          filename: "ethics-guide.pdf"
+        };
+      }
+
+      if (path === "/api/recap/file-needs-recap" && method !== "POST") {
+        throw new ApiClientError({
+          code: "not_found",
+          message: "Summary not yet generated",
+          status: 404
+        });
+      }
+
+      if (path === "/api/recap/file-needs-recap" && method === "POST") {
+        return backendRecapResponse;
+      }
+
+      throw new Error(`Unexpected path ${path}`);
+    }) as unknown as ReturnType<typeof vi.fn> & DocumentSummaryBackendRequest;
+
+    const result = await loadDocumentSummaryForSession({
+      backendRequest,
+      cookieStore: createCookieStore("server-cookie-token"),
+      selectedDocumentId: "file-needs-recap",
+      session
+    });
+
+    expect(result.status).toBe("ready");
+    expect(result.dashboard?.documentDetails[0]?.summaryMarkdown).toContain("AI ethics guidance");
+    expect(backendRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: "/api/recap/file-needs-recap"
+      })
+    );
+    expect(backendRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: { detail_level: "executive" },
+        method: "POST",
+        path: "/api/recap/file-needs-recap"
+      })
+    );
+  });
   it("returns empty without detail calls when the document library has no files", async () => {
     const backendRequest = vi.fn(async () => ({
       documents: [],

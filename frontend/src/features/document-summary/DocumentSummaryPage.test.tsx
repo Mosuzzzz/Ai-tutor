@@ -54,10 +54,37 @@ describe("DocumentSummaryPage", () => {
       "href",
       "/chat?documentId=doc-lab-safety"
     );
-    expect(screen.getByRole("button", { name: "ส่งออกสรุป" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "แชร์สรุป" })).toBeDisabled();
+    const selectedCard = screen.getByTestId("document-summary-selected-card");
+    expect(within(selectedCard).getByText("พร้อมใช้งานกับ AI")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "ส่งออกสรุป" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "แชร์สรุป" })).not.toBeInTheDocument();
   });
 
+  it("blocks AI actions when the selected document only has a backend fallback summary", () => {
+    const dashboard: DocumentSummaryViewModel = {
+      ...documentSummaryMock,
+      documentDetails: [
+        {
+          ...documentSummaryMock.documentDetails[0],
+          canUseAiActions: false,
+          detailedBreakdown: [],
+          keyTopics: [],
+          summaryMarkdown: "",
+          summaryNotice: "backend ยังไม่ได้ส่งสรุปที่สร้างจากเนื้อหาเอกสารจริง",
+          summaryQuality: "needs-backend-summary"
+        }
+      ],
+      selectedDocumentId: "doc-lab-safety"
+    };
+
+    render(<DocumentSummaryPage dashboard={dashboard} selectedDocumentId="doc-lab-safety" />);
+
+    expect(screen.queryByRole("link", { name: /สร้างควิซจากสรุปนี้/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /ถาม AI จากเอกสารนี้/ })).not.toBeInTheDocument();
+    expect(screen.getAllByText("รอสรุปจริงจาก Backend").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/backend ยังไม่ได้ส่งสรุปที่สร้างจากเนื้อหาเอกสารจริง/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/ยังไม่มีหัวข้อสำคัญจนกว่า backend จะส่งสรุป/)).toBeInTheDocument();
+  });
   it("keeps core AI flow actions scoped and resilient for long filenames", () => {
     render(<DocumentSummaryPage />);
 
@@ -90,10 +117,10 @@ describe("DocumentSummaryPage", () => {
   it("renders an empty state instead of crashing when the document library is empty", () => {
     render(<DocumentSummaryPage dashboard={emptyDocumentSummary} />);
 
-    expect(screen.getByRole("status")).toHaveTextContent("ยังไม่มีเอกสารที่พร้อมสรุป");
-    expect(screen.getByText(/รอให้ระบบประมวลผลเสร็จก่อน/)).toBeInTheDocument();
-    expect(screen.getByText(/รอครูแชร์เอกสารประกอบบทเรียน/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "ดูคอร์สเรียน" })).toHaveAttribute("href", "/courses");
+    expect(screen.getByRole("status")).toHaveTextContent("ยังไม่มีเอกสารพร้อมสรุป");
+    expect(screen.getByText(/อัปโหลดเอกสารแรกหรือรอให้ระบบประมวลผลเสร็จ/)).toBeInTheDocument();
+    expect(screen.queryByText(/รอครูแชร์|ผู้เรียน|ผู้สอน/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "ดูคอร์สเรียน" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "กลับแดชบอร์ด" })).toHaveAttribute("href", "/");
     expect(screen.queryByRole("link", { name: /สร้างควิซจากสรุปนี้/ })).not.toBeInTheDocument();
   });
@@ -132,13 +159,30 @@ describe("DocumentSummaryPage", () => {
     expect(within(libraryDialog).getAllByRole("article")).toHaveLength(latestDocuments.length);
     expect(within(libraryDialog).getByText(latestDocuments[2].filename)).toBeInTheDocument();
     expect(within(libraryDialog).getByText(`รวม ${latestDocuments.length} รายการ เรียงจากล่าสุดก่อน`)).toBeInTheDocument();
+    expect(within(libraryDialog).getByRole("button", { name: "ปิดคลังเอกสารทั้งหมด" })).toHaveFocus();
 
     fireEvent.click(within(libraryDialog).getByRole("button", { name: "ปิดคลังเอกสารทั้งหมด" }));
 
     expect(screen.queryByRole("dialog", { name: "เอกสารทั้งหมดในคลัง" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "ดูเอกสารทั้งหมดในคลัง" })).toHaveFocus();
   });
 
-  it("lets teachers delete an uploaded document from the library after confirmation", async () => {
+  it("closes the document library popup with Escape and restores focus to the opener", async () => {
+    render(<DocumentSummaryPage canUploadDocuments dashboard={documentSummaryMock} selectedDocumentId="doc-lab-safety" />);
+
+    const opener = screen.getByRole("button", { name: "ดูเอกสารทั้งหมดในคลัง" });
+    fireEvent.click(opener);
+
+    const libraryDialog = screen.getByRole("dialog", { name: "เอกสารทั้งหมดในคลัง" });
+    fireEvent.keyDown(libraryDialog, { key: "Escape" });
+
+    expect(screen.queryByRole("dialog", { name: "เอกสารทั้งหมดในคลัง" })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(opener).toHaveFocus();
+    });
+  });
+
+  it("lets a user delete an uploaded document from the library after confirmation", async () => {
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     const fetchMock = vi.fn(async () => {
       return new Response(
@@ -177,7 +221,9 @@ describe("DocumentSummaryPage", () => {
     });
 
     expect(confirmSpy).toHaveBeenCalledWith("ต้องการลบเอกสาร \"แนวทางจริยธรรม AI สำหรับห้องเรียน.pdf\" ออกจากคลังใช่ไหม?");
-    expect(screen.queryByRole("article", { name: "เอกสารในคลัง แนวทางจริยธรรม AI สำหรับห้องเรียน.pdf" })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole("article", { name: "เอกสารในคลัง แนวทางจริยธรรม AI สำหรับห้องเรียน.pdf" })).not.toBeInTheDocument();
+    });
     expect(screen.getByRole("status")).toHaveTextContent("ลบเอกสารออกจากคลังแล้ว");
   });
 

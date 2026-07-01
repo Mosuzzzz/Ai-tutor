@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { AuthSession } from "../auth/types";
 import { backendDocumentDashboardResponse, backendDocumentDetailResponse, backendRecapResponse } from "./documentSummaryTestData";
-import { isDocumentLibraryEmpty, selectDocumentForDetail, toDocumentSummaryViewModel } from "./documentSummaryMapper";
+import { isBackendFallbackSummary, isDocumentLibraryEmpty, selectDocumentForDetail, toDocumentSummaryViewModel } from "./documentSummaryMapper";
 
 const session: AuthSession = {
   mode: "http-only-cookie",
@@ -26,12 +26,49 @@ describe("document summary mapper", () => {
     expect(dashboard.apiResponse.total_documents).toBe(3);
     expect(dashboard.selectedDocumentId).toBe("file-ready");
     expect(dashboard.documentDetails[0]?.filename).toBe("safety-handbook.pdf");
+    expect(dashboard.documentDetails[0]?.uploadedByLabel).toBe("อัปโหลดโดย Learner One");
     expect(dashboard.documentDetails[0]?.keyTopics.map((topic) => topic.title)).toContain("ภาพรวม");
     expect(dashboard.documentDetails[0]?.relatedDocuments.map((document) => document.id)).toContain("file-needs-recap");
     expect(dashboard.documentDetails[0]?.relatedDocuments.find((document) => document.id === "file-needs-recap")?.href).toBe(
       "/documents/file-needs-recap"
     );
     expect(JSON.stringify(dashboard)).not.toContain("learner@example.com");
+    expect(JSON.stringify(dashboard)).not.toContain("user-1");
+  });
+
+  it("keeps source-grounded SOP summaries available for AI actions", () => {
+    const summaryMarkdown =
+      "# Fire Safety Notes\n\n" +
+      "## 1. Overview\n" +
+      "ACME FIRE SAFETY EMERGENCY STANDARD OPERATING PROCEDURE for evacuation drills.\n\n" +
+      "## 2. Key Guidelines & Operational Procedures\n" +
+      "- Employees must sound the alarm immediately.\n" +
+      "- Evacuate via the East Stairwell to Assembly Point Delta.";
+
+    expect(isBackendFallbackSummary(summaryMarkdown)).toBe(false);
+
+    const dashboard = toDocumentSummaryViewModel({
+      dashboard: {
+        ...backendDocumentDashboardResponse,
+        documents: [
+          {
+            ...backendDocumentDashboardResponse.documents[0],
+            summary_markdown: summaryMarkdown
+          }
+        ]
+      },
+      details: [
+        {
+          ...backendDocumentDetailResponse,
+          extracted_text_preview: "Employees must sound the alarm and evacuate via the East Stairwell.",
+          summary_markdown: summaryMarkdown
+        }
+      ],
+      session
+    });
+
+    expect(dashboard.documentDetails[0]?.canUseAiActions).toBe(true);
+    expect(dashboard.documentDetails[0]?.summaryMarkdown).toContain("East Stairwell");
   });
 
   it("uses recap markdown when a ready document has no cached summary in detail", () => {
@@ -55,7 +92,7 @@ describe("document summary mapper", () => {
     expect(dashboard.documentDetails[0]?.summaryMarkdown).toContain("AI ethics guidance");
   });
 
-  it("localizes known backend sandbox recap copy before rendering it to Thai users", () => {
+  it("blocks known backend sandbox recap copy instead of presenting it as real AI output", () => {
     const dashboard = toDocumentSummaryViewModel({
       dashboard: {
         ...backendDocumentDashboardResponse,
@@ -87,12 +124,22 @@ describe("document summary mapper", () => {
 
     const detail = dashboard.documentDetails[0];
 
-    expect(detail?.summaryMarkdown).not.toContain("Corporate Manual");
-    expect(detail?.summaryMarkdown).not.toContain("Enterprise AI Local Engine");
-    expect(detail?.summaryMarkdown).not.toContain("Key Guidelines & Operational Procedures");
-    expect(detail?.summaryMarkdown).toContain("คู่มือการเรียนรู้");
-    expect(detail?.summaryMarkdown).toContain("ระบบ AI Tutor");
-    expect(detail?.keyTopics.map((topic) => topic.title)).toContain("ภาพรวม");
+    expect(detail?.summaryMarkdown).toBe("");
+    expect(detail?.canUseAiActions).toBe(false);
+    expect(detail?.summaryQuality).toBe("needs-backend-summary");
+    expect(detail?.summaryNotice).toBeTruthy();
+    expect(detail?.keyTopics).toEqual([]);
+  });
+
+  it("uses the session display name for personal upload labels without exposing backend user ids", () => {
+    const dashboard = toDocumentSummaryViewModel({
+      dashboard: backendDocumentDashboardResponse,
+      details: [backendDocumentDetailResponse],
+      session
+    });
+
+    expect(JSON.stringify(dashboard)).not.toContain("user-1");
+    expect(dashboard.documentDetails[0]?.uploadedByLabel).toBe("อัปโหลดโดย Learner One");
   });
 
   it("detects empty libraries and selects ready documents first", () => {

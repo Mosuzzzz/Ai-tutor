@@ -26,6 +26,20 @@ export const countAvailableSummaries = (documents: DocumentLibraryItem[]) => {
   return documents.filter((document) => document.summary_available).length;
 };
 
+export const getDocumentCreatedTime = (document: DocumentLibraryItem) => {
+  const createdTime = Date.parse(document.created_at);
+
+  return Number.isNaN(createdTime) ? 0 : createdTime;
+};
+
+export const sortDocumentsByLatestUpload = (documents: DocumentLibraryItem[]) => {
+  return [...documents].sort((left, right) => getDocumentCreatedTime(right) - getDocumentCreatedTime(left));
+};
+
+export const getRecentDocuments = (documents: DocumentLibraryItem[], limit = 2) => {
+  return sortDocumentsByLatestUpload(documents).slice(0, Math.max(0, limit));
+};
+
 export const sortDocumentsByReadiness = (documents: DocumentLibraryItem[]) => {
   return [...documents].sort((left, right) => {
     const priorityDifference = statusPriority[left.status] - statusPriority[right.status];
@@ -34,7 +48,7 @@ export const sortDocumentsByReadiness = (documents: DocumentLibraryItem[]) => {
       return priorityDifference;
     }
 
-    return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+    return getDocumentCreatedTime(right) - getDocumentCreatedTime(left);
   });
 };
 

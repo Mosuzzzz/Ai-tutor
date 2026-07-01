@@ -5,11 +5,9 @@ import {
   Bot,
   CheckCircle2,
   Clock3,
-  Download,
   FileSearch,
   FileText,
   MessageSquareText,
-  Share2,
   Sparkles,
   Trash2,
   TriangleAlert,
@@ -17,7 +15,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -25,8 +23,10 @@ import {
   buildDocumentDetailHref,
   countAvailableSummaries,
   formatDocumentStatus,
+  getRecentDocuments,
   getSelectedDocument,
   parseSummaryMarkdown,
+  sortDocumentsByLatestUpload,
   sortDocumentsByReadiness
 } from "./documentSummaryHelpers";
 import { deleteDocumentFromLibrary } from "./documentDeleteClient";
@@ -88,16 +88,6 @@ const countDocumentStatuses = (documents: DocumentLibraryItem[]): DocumentStatus
   );
 };
 
-const getDocumentCreatedTime = (document: DocumentLibraryItem) => {
-  const createdTime = Date.parse(document.created_at);
-
-  return Number.isNaN(createdTime) ? 0 : createdTime;
-};
-
-const sortDocumentsByLatestUpload = (documents: DocumentLibraryItem[]) => {
-  return [...documents].sort((left, right) => getDocumentCreatedTime(right) - getDocumentCreatedTime(left));
-};
-
 export const DocumentSummaryPage = ({
   canUploadDocuments = false,
   dashboard = documentSummaryMock,
@@ -111,6 +101,33 @@ export const DocumentSummaryPage = ({
   const [deleteError, setDeleteError] = useState("");
   const [deleteMessage, setDeleteMessage] = useState("");
   const [isLibraryDialogOpen, setIsLibraryDialogOpen] = useState(false);
+  const libraryDialogCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const libraryDialogOpenerRef = useRef<HTMLButtonElement>(null);
+  const shouldRestoreLibraryFocusRef = useRef(false);
+
+  useLayoutEffect(() => {
+    if (isLibraryDialogOpen) {
+      libraryDialogCloseButtonRef.current?.focus();
+      return;
+    }
+
+    if (shouldRestoreLibraryFocusRef.current) {
+      shouldRestoreLibraryFocusRef.current = false;
+      libraryDialogOpenerRef.current?.focus();
+    }
+  }, [isLibraryDialogOpen]);
+
+  const closeLibraryDialog = () => {
+    shouldRestoreLibraryFocusRef.current = true;
+    setIsLibraryDialogOpen(false);
+  };
+
+  const handleLibraryDialogKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeLibraryDialog();
+    }
+  };
 
   if (status === "loading") {
     return (
@@ -135,7 +152,7 @@ export const DocumentSummaryPage = ({
   const visibleDocumentDetails = dashboard.documentDetails.filter((detail) => !removedDocumentIds.has(detail.id));
   const sortedDocuments = sortDocumentsByReadiness(visibleDocuments);
   const latestDocuments = sortDocumentsByLatestUpload(sortedDocuments);
-  const previewDocuments = latestDocuments.slice(0, 2);
+  const previewDocuments = getRecentDocuments(sortedDocuments, 2);
   const selectedDocument = getSelectedDocument(
     sortedDocuments,
     selectedDocumentId ?? dashboard.selectedDocumentId
@@ -154,18 +171,11 @@ export const DocumentSummaryPage = ({
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded bg-surface-container text-primary">
             <FileSearch aria-hidden="true" className="h-6 w-6" />
           </div>
-          <h2 className="mt-4 text-headline-md text-on-surface">ยังไม่มีเอกสารที่พร้อมสรุป</h2>
+          <h2 className="mt-4 text-headline-md text-on-surface">ยังไม่มีเอกสารพร้อมสรุป</h2>
           <p className="mt-2 text-body-md text-on-surface-variant">
-            อัปโหลดเอกสารหรือรอให้ระบบประมวลผลเสร็จก่อน หากเป็นผู้เรียน ให้รอครูแชร์เอกสารประกอบบทเรียนหรือกลับไปดูคอร์สเรียน
+            อัปโหลดเอกสารแรกหรือรอให้ระบบประมวลผลเสร็จ แล้วต่อยอดเป็นสรุป แชทกับเอกสาร หรือควิซทบทวนได้จากพื้นที่เดียวกัน
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
-            <Link
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-primary-container/20 bg-surface-container-low px-4 py-2 text-label-md font-bold text-primary transition-colors hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
-              href="/courses"
-            >
-              ดูคอร์สเรียน
-              <ArrowRight aria-hidden="true" className="h-4 w-4" />
-            </Link>
             <Link
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-primary-container/20 bg-surface-container-low px-4 py-2 text-label-md font-bold text-primary transition-colors hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
               href="/"
@@ -181,6 +191,12 @@ export const DocumentSummaryPage = ({
 
   const parsedSections = parseSummaryMarkdown(selectedDetail.summaryMarkdown);
   const encodedDocumentId = encodeURIComponent(selectedDetail.id);
+  const canUseSelectedDocumentAiActions = selectedDetail.canUseAiActions;
+  const aiReadinessLabel = canUseSelectedDocumentAiActions ? "พร้อมใช้งานกับ AI" : "รอสรุปจริงจาก Backend";
+  const aiReadinessBadgeClassName = canUseSelectedDocumentAiActions
+    ? "border-[#b7dfc8] bg-[#eefaf3] text-[#216148]"
+    : "border-[#f5d08a] bg-[#fff8e6] text-[#7c4a03]";
+  const AiReadinessIcon = canUseSelectedDocumentAiActions ? CheckCircle2 : TriangleAlert;
   const visibleStatusCounts = countDocumentStatuses(sortedDocuments);
 
   const handleDeleteDocument = async (document: DocumentLibraryItem) => {
@@ -268,20 +284,29 @@ export const DocumentSummaryPage = ({
               เลือกเอกสารที่ผ่านการประมวลผลแล้วเพื่อดูสรุป หัวข้อสำคัญ และต่อยอดไปยังควิซหรือแชทกับ AI Tutor
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-[#f5b94f] px-4 py-2 text-label-md font-bold text-[#16233a] transition-colors hover:bg-[#ffd37a] focus:outline-none focus:ring-2 focus:ring-[#ffd37a] focus:ring-offset-2 focus:ring-offset-[#24344d]"
-                href={`/quiz?documentId=${encodedDocumentId}`}
-              >
-                สร้างควิซจากสรุปนี้
-                <Bot aria-hidden="true" className="h-5 w-5" />
-              </Link>
-              <Link
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-white/25 bg-white/10 px-4 py-2 text-label-md font-bold text-white transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#24344d]"
-                href={`/chat?documentId=${encodedDocumentId}`}
-              >
-                ถาม AI จากเอกสารนี้
-                <MessageSquareText aria-hidden="true" className="h-5 w-5" />
-              </Link>
+              {canUseSelectedDocumentAiActions ? (
+                <>
+                  <Link
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-[#f5b94f] px-4 py-2 text-label-md font-bold text-[#16233a] transition-colors hover:bg-[#ffd37a] focus:outline-none focus:ring-2 focus:ring-[#ffd37a] focus:ring-offset-2 focus:ring-offset-[#24344d]"
+                    href={`/quiz?documentId=${encodedDocumentId}`}
+                  >
+                    สร้างควิซจากสรุปนี้
+                    <Bot aria-hidden="true" className="h-5 w-5" />
+                  </Link>
+                  <Link
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-white/25 bg-white/10 px-4 py-2 text-label-md font-bold text-white transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#24344d]"
+                    href={`/chat?documentId=${encodedDocumentId}`}
+                  >
+                    ถาม AI จากเอกสารนี้
+                    <MessageSquareText aria-hidden="true" className="h-5 w-5" />
+                  </Link>
+                </>
+              ) : (
+                <div className="flex max-w-3xl items-start gap-3 rounded border border-[#f5d08a]/70 bg-[#fff8e6] px-4 py-3 text-body-md font-semibold text-[#7c4a03]" role="status">
+                  <TriangleAlert aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />
+                  <span>{selectedDetail.summaryNotice ?? "กำลังรอสรุปจากเนื้อหาเอกสารจริงก่อนเปิดใช้ AI"}</span>
+                </div>
+              )}
             </div>
             <ol
               aria-label="ลำดับการใช้งาน AI จากเอกสาร"
@@ -311,14 +336,10 @@ export const DocumentSummaryPage = ({
               <FileSearch aria-hidden="true" className="h-4 w-4" />
               ดูรายละเอียดเอกสาร
             </Link>
-            <Button disabled variant="secondary">
-              <Download aria-hidden="true" className="h-4 w-4" />
-              ส่งออกสรุป
-            </Button>
-            <Button disabled variant="ghost">
-              <Share2 aria-hidden="true" className="h-4 w-4" />
-              แชร์สรุป
-            </Button>
+            <span className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border px-4 py-2 text-label-md font-bold ${aiReadinessBadgeClassName}`}>
+              <AiReadinessIcon aria-hidden="true" className="h-4 w-4" />
+              {aiReadinessLabel}
+            </span>
           </div>
         </Card>
       </section>
@@ -360,8 +381,8 @@ export const DocumentSummaryPage = ({
               <p className="text-label-sm font-semibold text-[#24527a]">สรุปที่เลือก</p>
               <h3 className="mt-2 text-headline-md text-on-surface">{selectedDetail.filename}</h3>
             </div>
-            <span className="rounded bg-[#e6f6ee] px-3 py-1.5 text-label-sm font-bold text-[#216148]">
-              พร้อมใช้งานกับ AI
+            <span className={`rounded border px-3 py-1.5 text-label-sm font-bold ${aiReadinessBadgeClassName}`}>
+              {aiReadinessLabel}
             </span>
           </div>
 
@@ -371,12 +392,18 @@ export const DocumentSummaryPage = ({
                 รายละเอียดสรุป
               </h4>
               <div className="mt-3 grid gap-3">
-                {parsedSections.map((section) => (
-                  <article className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4" key={section.id}>
-                    <h5 className="text-body-lg font-bold text-on-surface">{section.title}</h5>
-                    <p className="mt-2 whitespace-pre-line text-body-md text-on-surface-variant">{section.body}</p>
+                {parsedSections.length > 0 ? (
+                  parsedSections.map((section) => (
+                    <article className="rounded border border-outline-variant/40 bg-[#fbfcff] p-4" key={section.id}>
+                      <h5 className="text-body-lg font-bold text-on-surface">{section.title}</h5>
+                      <p className="mt-2 whitespace-pre-line text-body-md text-on-surface-variant">{section.body}</p>
+                    </article>
+                  ))
+                ) : (
+                  <article className="rounded border border-[#f5d08a]/70 bg-[#fff8e6] p-4 text-body-md font-semibold text-[#7c4a03]" role="status">
+                    {selectedDetail.summaryNotice ?? "ยังไม่มีสรุปจากเนื้อหาเอกสารจริง"}
                   </article>
-                ))}
+                )}
               </div>
             </section>
 
@@ -385,12 +412,18 @@ export const DocumentSummaryPage = ({
                 รายละเอียดเชิงลึก
               </h4>
               <div className="mt-3 grid gap-3 md:grid-cols-3">
-                {selectedDetail.detailedBreakdown.map((item) => (
-                  <article className="rounded border border-outline-variant/40 bg-surface-container-low p-4" key={item.id}>
-                    <h5 className="text-body-md font-bold text-on-surface">{item.title}</h5>
-                    <p className="mt-2 text-body-md text-on-surface-variant">{item.body}</p>
+                {selectedDetail.detailedBreakdown.length > 0 ? (
+                  selectedDetail.detailedBreakdown.map((item) => (
+                    <article className="rounded border border-outline-variant/40 bg-surface-container-low p-4" key={item.id}>
+                      <h5 className="text-body-md font-bold text-on-surface">{item.title}</h5>
+                      <p className="mt-2 text-body-md text-on-surface-variant">{item.body}</p>
+                    </article>
+                  ))
+                ) : (
+                  <article className="rounded border border-outline-variant/40 bg-surface-container-low p-4 text-body-md text-on-surface-variant">
+                    รอ backend ส่งตัวอย่างข้อความหรือสรุปจริงจากเอกสาร
                   </article>
-                ))}
+                )}
               </div>
             </section>
           </div>
@@ -400,28 +433,32 @@ export const DocumentSummaryPage = ({
           <Card>
             <h3 className="text-headline-md text-on-surface">หัวข้อสำคัญ</h3>
             <div className="mt-4 grid gap-4">
-              {selectedDetail.keyTopics.map((topic) => (
-                <div key={topic.id}>
-                  <div className="flex items-center justify-between gap-3 text-label-sm">
-                    <span className="font-bold text-on-surface">{topic.title}</span>
-                    <span className="text-on-surface-variant">{topic.confidencePercent}%</span>
-                  </div>
-                  <div
-                    aria-label={`${topic.title} ความมั่นใจ ${topic.confidencePercent}%`}
-                    aria-valuemax={100}
-                    aria-valuemin={0}
-                    aria-valuenow={topic.confidencePercent}
-                    className="mt-2 h-2 overflow-hidden rounded-full bg-surface-container"
-                    role="progressbar"
-                  >
+              {selectedDetail.keyTopics.length > 0 ? (
+                selectedDetail.keyTopics.map((topic) => (
+                  <div key={topic.id}>
+                    <div className="flex items-center justify-between gap-3 text-label-sm">
+                      <span className="font-bold text-on-surface">{topic.title}</span>
+                      <span className="text-on-surface-variant">{topic.confidencePercent}%</span>
+                    </div>
                     <div
-                      aria-hidden="true"
-                      className="h-full rounded-full bg-[#24527a]"
-                      style={{ width: `${topic.confidencePercent}%` }}
-                    />
+                      aria-label={`${topic.title} ความมั่นใจ ${topic.confidencePercent}%`}
+                      aria-valuemax={100}
+                      aria-valuemin={0}
+                      aria-valuenow={topic.confidencePercent}
+                      className="mt-2 h-2 overflow-hidden rounded-full bg-surface-container"
+                      role="progressbar"
+                    >
+                      <div
+                        aria-hidden="true"
+                        className="h-full rounded-full bg-[#24527a]"
+                        style={{ width: `${topic.confidencePercent}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-body-md text-on-surface-variant">ยังไม่มีหัวข้อสำคัญจนกว่า backend จะส่งสรุปจากเอกสารจริง</p>
+              )}
             </div>
           </Card>
 
@@ -506,6 +543,7 @@ export const DocumentSummaryPage = ({
                 onClick={() => {
                   setIsLibraryDialogOpen(true);
                 }}
+                ref={libraryDialogOpenerRef}
                 variant="secondary"
               >
                 ดูเอกสารทั้งหมดในคลัง
@@ -520,17 +558,19 @@ export const DocumentSummaryPage = ({
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-[#07111f]/55 p-4"
           onClick={() => {
-            setIsLibraryDialogOpen(false);
+            closeLibraryDialog();
           }}
         >
           <section
             aria-labelledby="document-library-dialog-title"
             aria-modal="true"
             className="max-h-[min(720px,90vh)] w-full max-w-3xl overflow-hidden rounded-xl border border-outline-variant/50 bg-surface-container-lowest shadow-ambient"
+            onKeyDown={handleLibraryDialogKeyDown}
             onClick={(event) => {
               event.stopPropagation();
             }}
             role="dialog"
+            tabIndex={-1}
           >
             <header className="flex flex-wrap items-start justify-between gap-4 border-b border-outline-variant/40 p-5">
               <div className="min-w-0">
@@ -546,8 +586,9 @@ export const DocumentSummaryPage = ({
                 aria-label="ปิดคลังเอกสารทั้งหมด"
                 className="min-h-10 px-3"
                 onClick={() => {
-                  setIsLibraryDialogOpen(false);
+                  closeLibraryDialog();
                 }}
+                ref={libraryDialogCloseButtonRef}
                 variant="ghost"
               >
                 <X aria-hidden="true" className="h-5 w-5" />

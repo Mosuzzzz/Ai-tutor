@@ -90,9 +90,9 @@ export const DocumentUploadPanel = ({
             <ShieldCheck aria-hidden="true" className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-headline-sm text-on-surface">การอัปโหลดสำหรับผู้สอนและแอดมิน</h3>
+            <h3 className="text-headline-sm text-on-surface">ยังไม่สามารถอัปโหลดเอกสารได้</h3>
             <p className="mt-2 text-body-md text-on-surface-variant">
-              บัญชีผู้เรียนสามารถอ่านสรุปและถาม AI จากเอกสารที่พร้อมใช้งานได้ แต่การอัปโหลดเอกสารใหม่จำกัดเฉพาะผู้สอนและแอดมิน
+              สิทธิ์อัปโหลดจาก backend ยังไม่เปิดสำหรับบัญชีนี้ เมื่อระบบเปิดสิทธิ์แล้วพื้นที่นี้จะใช้เพิ่มเอกสารส่วนตัวได้ทันที
             </p>
           </div>
         </div>
@@ -140,7 +140,7 @@ export const DocumentUploadPanel = ({
             <FileUp aria-hidden="true" className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-headline-sm text-on-surface">อัปโหลดเอกสารประกอบการเรียน</h3>
+            <h3 className="text-headline-sm text-on-surface">อัปโหลดเอกสารของฉัน</h3>
             <p className="mt-2 text-body-md text-on-surface-variant">
               รองรับ PDF, Word, PowerPoint และรูปภาพ ขนาดไม่เกิน 50 MB หลังอัปโหลดระบบจะเริ่มประมวลผลอัตโนมัติ
             </p>

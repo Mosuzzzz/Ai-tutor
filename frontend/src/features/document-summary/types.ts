@@ -37,11 +37,17 @@ export type RelatedDocument = {
   href: string;
 };
 
+export type DocumentSummaryQuality = "document-derived" | "needs-backend-summary";
+
 export type DocumentSummaryDetail = {
   id: string;
   filename: string;
+  uploadedByLabel: string;
   generatedAtLabel: string;
   summaryMarkdown: string;
+  summaryQuality: DocumentSummaryQuality;
+  summaryNotice?: string;
+  canUseAiActions: boolean;
   sourcePreview?: string;
   keyTopics: DocumentSummaryTopic[];
   detailedBreakdown: DocumentBreakdownItem[];
