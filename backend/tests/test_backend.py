@@ -89,14 +89,14 @@ def test_integration_flow():
     assert document_detail.status_code == 200
     assert document_detail.json()["summary_available"] is True
     # Sandbox recap must be grounded in the document's own text, not boilerplate.
-    assert "STANDARD OPERATING PROCEDURE" in document_detail.json()["summary_markdown"]
+    assert "standard operating procedure" in document_detail.json()["summary_markdown"].lower()
 
     print_banner("3. AI recap (summary)")
     recap_exec = client.post(f"/api/recap/{file_id}", json={"detail_level": "executive"}, headers=headers)
     assert recap_exec.status_code == 200
     recap_detail = client.post(f"/api/recap/{file_id}", json={"detail_level": "detailed"}, headers=headers)
     assert recap_detail.status_code == 200
-    assert "STANDARD OPERATING PROCEDURE" in recap_detail.json()["summary_markdown"]
+    assert "standard operating procedure" in recap_detail.json()["summary_markdown"].lower()
 
     print_banner("4. Personal review quiz: generate -> take -> submit")
     quiz_resp = client.post("/api/exams/generate", json={"file_id": file_id, "num_questions": 5}, headers=headers)

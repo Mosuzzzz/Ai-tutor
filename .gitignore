@@ -19,3 +19,4 @@ backend/docker-compose.yml
 **/__pycache__/
 backend/uploads/
 backend/enterprise_platform.db
+backend/test.db
