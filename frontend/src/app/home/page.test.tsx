@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import PublicHomePage from "./page";
+import HomePage from "./page";
+import type { AuthSession } from "@/features/auth/types";
 
 const getServerAuthSession = vi.hoisted(() => vi.fn());
 
@@ -10,13 +11,36 @@ vi.mock("@/features/auth/authGuard", () => ({
 }));
 
 describe("public Home page", () => {
-  it("renders the temporary public Home content and auth links", () => {
-    render(<PublicHomePage />);
+  beforeEach(() => {
+    getServerAuthSession.mockReset();
+  });
 
-    expect(getServerAuthSession).not.toHaveBeenCalled();
-    expect(screen.getByRole("main")).toHaveTextContent("หน้า Home อยู่ระหว่างการออกแบบใหม่");
-    expect(screen.getByRole("img", { name: "AI Tutor Learning Platform" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
-    expect(screen.getByRole("link", { name: "สมัครสมาชิก" })).toHaveAttribute("href", "/register");
+  it("renders the guest landing controls when the server finds no session", async () => {
+    getServerAuthSession.mockResolvedValue(null);
+
+    render(await HomePage());
+
+    expect(getServerAuthSession).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
+    expect(screen.queryByRole("button", { name: "Hello! learner@example.com" })).not.toBeInTheDocument();
+  });
+
+  it("renders the authenticated greeting from the server session", async () => {
+    const session: AuthSession = {
+      mode: "http-only-cookie",
+      storesTokenInClient: false,
+      user: {
+        displayName: "Learner",
+        email: "learner@example.com",
+        role: "user"
+      }
+    };
+    getServerAuthSession.mockResolvedValue(session);
+
+    render(await HomePage());
+
+    expect(getServerAuthSession).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Hello! learner@example.com" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Log in" })).not.toBeInTheDocument();
   });
 });

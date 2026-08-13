@@ -51,7 +51,7 @@ describe("auth route policy", () => {
   it("redirects authenticated users away from public auth routes", () => {
     expect(resolvePublicAuthRouteDecision(null)).toEqual({ type: "render" });
     expect(resolvePublicAuthRouteDecision(createSession("user"))).toEqual({
-      href: "/dashboard",
+      href: "/home",
       type: "redirect"
     });
   });

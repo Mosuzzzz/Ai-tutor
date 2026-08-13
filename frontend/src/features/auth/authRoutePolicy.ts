@@ -21,6 +21,8 @@ export type AuthRouteDecision =
 
 const ALL_AUTH_ROLES = ["user", "admin"] as const;
 
+export const AUTHENTICATED_HOME_ROUTE = "/home";
+
 export const protectedRouteRoles = {
   "/dashboard": ALL_AUTH_ROLES,
   "/analytics": ALL_AUTH_ROLES,
@@ -74,7 +76,7 @@ export const resolvePublicAuthRouteDecision = (session: AuthSession | null): Aut
   }
 
   return {
-    href: getDefaultRouteForRole(session.user.role),
+    href: AUTHENTICATED_HOME_ROUTE,
     type: "redirect"
   };
 };
