@@ -78,6 +78,7 @@ li {
   --home-primary-action: #1769d1;
   --home-primary-hover: #0f55b0;
   --home-primary-icon: #1769d1;
+  --home-error-text: #b42318;
   --home-icon-surface: #e9f2ff;
   --home-focus-ring: #256fd0;
   --home-overlay: rgba(248, 250, 252, 0.96);
@@ -96,6 +97,7 @@ li {
   --home-primary-action: #1769d1;
   --home-primary-hover: #0f55b0;
   --home-primary-icon: #72b1ff;
+  --home-error-text: #ffb4ab;
   --home-icon-surface: #173b67;
   --home-focus-ring: #90c2ff;
   --home-overlay: rgba(13, 23, 38, 0.96);
@@ -123,7 +125,7 @@ li {
 .home-account-dropdown button { background: transparent; border: 0; border-radius: 0.4rem; color: var(--home-text); cursor: pointer; display: block; font: inherit; font-weight: 700; padding: 0.65rem 0.75rem; text-align: left; width: 100%; }
 .home-account-dropdown button:hover { background: var(--home-icon-surface); }
 .home-account-dropdown button:disabled { cursor: wait; opacity: 0.65; }
-.home-account-dropdown [role="status"] { color: #c53030; font-size: 0.8rem; line-height: 1.4; margin: 0.5rem 0.75rem 0.35rem; }
+.home-account-dropdown [role="status"] { color: var(--home-error-text); font-size: 0.8rem; line-height: 1.4; margin: 0.5rem 0.75rem 0.35rem; }
 .home-mobile-menu-layer { inset: 0; position: fixed; z-index: 60; }
 .home-mobile-menu-backdrop { background: rgba(6, 15, 29, 0.55); border: 0; cursor: default; inset: 0; padding: 0; position: absolute; width: 100%; }
 .home-mobile-menu { background: var(--home-navigation); bottom: 0; box-shadow: -16px 0 36px rgba(6, 15, 29, 0.24); color: var(--home-text); display: flex; flex-direction: column; max-width: 22rem; overflow-y: auto; overscroll-behavior: contain; padding: 1rem; position: absolute; right: 0; top: 0; width: min(88vw, 22rem); }

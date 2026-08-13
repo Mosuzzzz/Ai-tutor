@@ -27,10 +27,23 @@ const darkThemeVariable = (name: string) => {
   return value;
 };
 
+const lightThemeVariable = (name: string) => {
+  const lightTheme = css.match(/\.home-page\s*\{([^}]+)\}/)?.[1] ?? "";
+  const value = lightTheme.match(new RegExp(`${name}:\\s*(#[a-f\\d]{6})`, "i"))?.[1];
+  if (!value) throw new Error(`Missing light Home variable ${name}`);
+  return value;
+};
+
 describe("Home style contracts", () => {
   it("keeps white action text WCAG AA against dark-theme primary and hover colors", () => {
     expect(contrastRatio("#ffffff", darkThemeVariable("--home-primary-action"))).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio("#ffffff", darkThemeVariable("--home-primary-hover"))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("keeps account error text WCAG AA against its elevated surface in both themes", () => {
+    expect(contrastRatio(lightThemeVariable("--home-error-text"), lightThemeVariable("--home-elevated-surface"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(darkThemeVariable("--home-error-text"), darkThemeVariable("--home-elevated-surface"))).toBeGreaterThanOrEqual(4.5);
+    expect(css).toMatch(/\.home-account-dropdown \[role="status"\]\s*\{\s*color:\s*var\(--home-error-text\);/);
   });
 
   it("keeps the mobile menu active until the five-link desktop navigation has enough room", () => {
