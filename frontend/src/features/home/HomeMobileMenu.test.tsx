@@ -14,6 +14,33 @@ describe("HomeMobileMenu", () => {
     expect(within(dialog).getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
   });
 
+  it("renders the authenticated account control and lets Escape close its dropdown without closing the mobile dialog", () => {
+    const onClose = vi.fn();
+    render(
+      <HomeMobileMenu
+        isOpen
+        language="en"
+        onClose={onClose}
+        session={{ mode: "http-only-cookie", storesTokenInClient: false, user: { email: "learner@example.com", role: "user" } }}
+        triggerRef={{ current: null }}
+      />
+    );
+    const dialog = screen.getByRole("dialog", { name: "Open navigation menu" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Hello! learner@example.com" }));
+    expect(within(dialog).getByRole("menu")).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(within(dialog).queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Open navigation menu" })).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("uses a localized Thai close-menu label", () => {
+    render(<HomeMobileMenu isOpen language="th" onClose={vi.fn()} session={null} triggerRef={{ current: null }} />);
+    expect(screen.getAllByRole("button", { name: "ปิดเมนูนำทาง" })).toHaveLength(2);
+  });
+
   it("traps focus and closes from backdrop or Escape while restoring trigger focus", () => {
     const onClose = vi.fn();
     const trigger = document.createElement("button");

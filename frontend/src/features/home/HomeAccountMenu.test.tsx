@@ -51,6 +51,10 @@ describe("HomeAccountMenu", () => {
     expect(logoutButton).toBeDisabled();
     fireEvent.click(logoutButton);
     expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher).toHaveBeenCalledWith(
+      "/api/auth/logout",
+      expect.objectContaining({ credentials: "same-origin", method: "POST" })
+    );
 
     resolveLogout(jsonResponse({ message: "Logged out", ok: true }));
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));

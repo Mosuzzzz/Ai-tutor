@@ -34,6 +34,19 @@ describe("HomeLandingPage preferences", () => {
     expect(await screen.findByRole("heading", { name: "เรียนได้ฉลาดขึ้น เข้าใจได้มากกว่า" })).toBeInTheDocument();
   });
 
+  it("persists English when toggling back from Thai", async () => {
+    localStorage.setItem(HOME_LANGUAGE_STORAGE_KEY, "th");
+    matchMedia.mockReturnValue({ matches: false });
+    Object.defineProperty(window, "matchMedia", { configurable: true, value: matchMedia });
+    render(<HomeLandingPage initialSession={null} />);
+
+    const languageButton = await screen.findByRole("button", { name: "ภาษา: TH" });
+    fireEvent.click(languageButton);
+
+    expect(screen.getByRole("heading", { name: "Learn smarter. Understand more." })).toBeInTheDocument();
+    expect(localStorage.getItem(HOME_LANGUAGE_STORAGE_KEY)).toBe("en");
+  });
+
   it("uses the system Dark theme until an explicit stored Light preference wins", async () => {
     matchMedia.mockReturnValue({ matches: true });
     Object.defineProperty(window, "matchMedia", { configurable: true, value: matchMedia });

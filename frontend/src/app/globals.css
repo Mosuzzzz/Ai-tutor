@@ -112,6 +112,25 @@ li {
 .home-login-link:hover, .home-primary-action:hover { background: var(--home-primary-hover); }
 .home-login-icon { display: none; }
 .home-menu-button { display: inline-flex; }
+.home-account-menu { position: relative; }
+.home-account-trigger { align-items: center; background: var(--home-primary-action); border: 0; border-radius: 0.5rem; color: #fff; cursor: pointer; display: inline-flex; font-size: 0.875rem; font-weight: 700; max-width: 15rem; min-height: 2.7rem; padding: 0.65rem 0.9rem; }
+.home-account-trigger:hover { background: var(--home-primary-hover); }
+.home-account-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-account-dropdown { background: var(--home-elevated-surface); border: 1px solid var(--home-border); border-radius: 0.65rem; box-shadow: 0 14px 30px rgba(15, 29, 52, 0.18); min-width: 12rem; padding: 0.35rem; position: absolute; right: 0; top: calc(100% + 0.45rem); z-index: 30; }
+.home-account-dropdown button { background: transparent; border: 0; border-radius: 0.4rem; color: var(--home-text); cursor: pointer; display: block; font: inherit; font-weight: 700; padding: 0.65rem 0.75rem; text-align: left; width: 100%; }
+.home-account-dropdown button:hover { background: var(--home-icon-surface); }
+.home-account-dropdown button:disabled { cursor: wait; opacity: 0.65; }
+.home-account-dropdown [role="status"] { color: #c53030; font-size: 0.8rem; line-height: 1.4; margin: 0.5rem 0.75rem 0.35rem; }
+.home-mobile-menu-layer { inset: 0; position: fixed; z-index: 60; }
+.home-mobile-menu-backdrop { background: rgba(6, 15, 29, 0.55); border: 0; cursor: default; inset: 0; padding: 0; position: absolute; width: 100%; }
+.home-mobile-menu { background: var(--home-navigation); bottom: 0; box-shadow: -16px 0 36px rgba(6, 15, 29, 0.24); color: var(--home-text); display: flex; flex-direction: column; max-width: 22rem; overflow-y: auto; overscroll-behavior: contain; padding: 1rem; position: absolute; right: 0; top: 0; width: min(88vw, 22rem); }
+.home-mobile-menu-close { align-self: flex-end; background: transparent; border: 0; border-radius: 0.5rem; color: var(--home-text); cursor: pointer; min-height: 2.75rem; min-width: 2.75rem; }
+.home-mobile-menu nav { display: grid; gap: 0.2rem; margin: 1.25rem 0; }
+.home-mobile-menu nav a { border-radius: 0.5rem; color: var(--home-text); font-weight: 700; padding: 0.8rem 0.75rem; text-decoration: none; }
+.home-mobile-menu nav a:hover { background: var(--home-icon-surface); }
+.home-mobile-menu .home-login-link, .home-mobile-menu .home-account-menu { align-self: stretch; }
+.home-mobile-menu .home-account-trigger { justify-content: center; max-width: none; width: 100%; }
+.home-mobile-menu .home-account-dropdown { left: 0; right: auto; width: 100%; }
 .home-hero { display: grid; gap: 2rem; margin: 0 auto; max-width: 1280px; overflow: hidden; padding: 3.5rem 1.25rem 2.25rem; }
 .home-hero-copy { align-self: center; max-width: 37rem; }
 .home-eyebrow { color: var(--home-primary-action); font-size: 0.9rem; font-weight: 750; letter-spacing: 0.025em; margin: 0 0 0.9rem; }
@@ -132,6 +151,7 @@ li {
 @media (min-width: 768px) {
   .home-desktop-navigation { display: flex; }
   .home-menu-button { display: none; }
+  .home-mobile-menu-layer { display: none; }
 }
 
 @media (min-width: 1024px) {
@@ -147,6 +167,7 @@ li {
   .home-login-link { min-height: 2.25rem; min-width: 2.25rem; padding: 0.5rem; }
   .home-login-icon { display: block; }
   .home-login-label { display: none; }
+  .home-account-trigger { max-width: 7rem; padding: 0.5rem; }
 }
 
 @media (max-width: 380px) {

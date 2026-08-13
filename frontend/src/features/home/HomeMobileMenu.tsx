@@ -22,6 +22,7 @@ export const HomeMobileMenu = ({ isOpen, language, onClose, session, triggerRef 
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const content = HOME_CONTENT[language];
+  const closeMenuLabel = language === "th" ? "ปิดเมนูนำทาง" : "Close navigation menu";
 
   const close = useCallback(() => {
     onClose();
@@ -33,6 +34,7 @@ export const HomeMobileMenu = ({ isOpen, language, onClose, session, triggerRef 
     closeButtonRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (dialogRef.current?.querySelector('[role="menu"]')) return;
         event.preventDefault();
         close();
         return;
@@ -58,9 +60,9 @@ export const HomeMobileMenu = ({ isOpen, language, onClose, session, triggerRef 
 
   return (
     <div className="home-mobile-menu-layer">
-      <button aria-label="Close navigation menu" className="home-mobile-menu-backdrop" data-testid="home-mobile-backdrop" onClick={close} type="button" />
+      <button aria-label={closeMenuLabel} className="home-mobile-menu-backdrop" data-testid="home-mobile-backdrop" onClick={close} type="button" />
       <div aria-label={content.navbar.menuLabel} aria-modal="true" className="home-mobile-menu" ref={dialogRef} role="dialog">
-        <button aria-label="Close navigation menu" className="home-mobile-menu-close" onClick={close} ref={closeButtonRef} type="button">
+        <button aria-label={closeMenuLabel} className="home-mobile-menu-close" onClick={close} ref={closeButtonRef} type="button">
           <X aria-hidden="true" size={20} />
         </button>
         <nav aria-label="Primary navigation">
