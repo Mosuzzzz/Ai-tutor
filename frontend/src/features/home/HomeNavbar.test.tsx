@@ -49,4 +49,18 @@ describe("HomeNavbar", () => {
     expect(screen.getByText("Log in")).toHaveClass("home-login-label");
     expect(screen.getByRole("button", { name: "Open navigation menu" })).toBeInTheDocument();
   });
+
+  it("replaces the guest login link with the authenticated account trigger", () => {
+    render(
+      <HomeNavbar
+        language="en"
+        session={{ mode: "http-only-cookie", storesTokenInClient: false, user: { email: "learner@example.com", role: "user" } }}
+        theme="light"
+        {...callbacks}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "Hello! learner@example.com" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Log in" })).not.toBeInTheDocument();
+  });
 });

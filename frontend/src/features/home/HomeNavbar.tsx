@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import type { RefObject } from "react";
 import {
   BarChart3,
   Bot,
@@ -15,6 +18,7 @@ import {
 import type { AuthSession } from "../auth/types";
 import { HOME_CONTENT, HOME_NAVIGATION } from "./homeContent";
 import { HomeBrand } from "./HomeBrand";
+import { HomeAccountMenu } from "./HomeAccountMenu";
 import type { HomeLanguage, HomeNavigationIcon, HomeTheme } from "./types";
 
 type HomeNavbarProps = {
@@ -22,6 +26,7 @@ type HomeNavbarProps = {
   onLanguageToggle: () => void;
   onMobileMenuOpen: () => void;
   onThemeToggle: () => void;
+  mobileMenuTriggerRef?: RefObject<HTMLButtonElement | null>;
   session?: AuthSession | null;
   theme: HomeTheme;
 };
@@ -39,6 +44,7 @@ export const HomeNavbar = ({
   onLanguageToggle,
   onMobileMenuOpen,
   onThemeToggle,
+  mobileMenuTriggerRef,
   session = null,
   theme
 }: HomeNavbarProps) => {
@@ -71,11 +77,11 @@ export const HomeNavbar = ({
             {isLight ? <Sun aria-hidden="true" size={17} /> : <Moon aria-hidden="true" size={17} />}
             <span className="sr-only">{isLight ? "Sun" : "Moon"}</span>
           </button>
-          <Link aria-label={content.navbar.loginLabel} className="home-login-link" href="/login">
-            <LogIn aria-hidden="true" className="home-login-icon" size={17} />
-            <span className="home-login-label">{content.navbar.loginLabel}</span>
-          </Link>
-          <button aria-label={content.navbar.menuLabel} className="home-menu-button" onClick={onMobileMenuOpen} type="button">
+          {session ? <HomeAccountMenu language={language} session={session} /> : <Link aria-label={content.navbar.loginLabel} className="home-login-link" href="/login">
+              <LogIn aria-hidden="true" className="home-login-icon" size={17} />
+              <span className="home-login-label">{content.navbar.loginLabel}</span>
+            </Link>}
+          <button aria-label={content.navbar.menuLabel} className="home-menu-button" onClick={onMobileMenuOpen} ref={mobileMenuTriggerRef} type="button">
             <Menu aria-hidden="true" size={20} />
           </button>
         </div>
