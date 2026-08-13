@@ -50,4 +50,17 @@ describe("Home style contracts", () => {
     expect(css).toMatch(/@media \(min-width: 1120px\)[\s\S]*?\.home-desktop-navigation\s*\{\s*display:\s*flex;/);
     expect(css).toMatch(/@media \(max-width: 1119px\)[\s\S]*?\.home-navbar-controls \.home-account-label\s*\{\s*display:\s*none;/);
   });
+
+  it("keeps the hero photograph safely stacked on small screens", () => {
+    expect(css).toMatch(/\.home-hero-image-wrap\s*\{[^}]*aspect-ratio:\s*4\s*\/\s*3;/);
+    expect(css).toMatch(/\.home-page\s*\{[^}]*overflow-x:\s*hidden;/);
+    expect(css).toMatch(/\.home-hero\s*\{[^}]*overflow-x:\s*hidden;/);
+  });
+
+  it("makes the desktop hero photograph full bleed without a frame", () => {
+    expect(css).toMatch(/@media \(min-width: 1024px\)[\s\S]*?\.home-hero\s*\{[^}]*padding-top:\s*0;/);
+    expect(css).toMatch(/@media \(min-width: 1024px\)[\s\S]*?\.home-hero-image-wrap\s*\{[^}]*border:\s*0;[^}]*border-radius:\s*0;/);
+    expect(css).toMatch(/@media \(min-width: 1024px\)[\s\S]*?\.home-hero-image-wrap\s*\{[^}]*margin-right:\s*calc\(/);
+    expect(css).toMatch(/\.home-hero-image-wrap::before\s*\{[^}]*linear-gradient\(90deg,[^}]*transparent/);
+  });
 });
