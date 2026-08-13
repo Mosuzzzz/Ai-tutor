@@ -105,7 +105,7 @@ describe("AppShell navigation", () => {
       </AppShell>
     );
 
-    expect(screen.getByRole("link", { name: /^แดชบอร์ด$/ })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /^แดชบอร์ด$/ })).toHaveAttribute("href", "/dashboard");
     expect(screen.getByRole("link", { name: /ควิซทบทวน/ })).toHaveAttribute("href", "/quiz");
     expect(screen.queryByRole("link", { name: "แดชบอร์ดครู" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "คอร์สเรียน" })).not.toBeInTheDocument();

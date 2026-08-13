@@ -139,7 +139,7 @@ describe("LoginPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "เข้าสู่ระบบ" }));
 
     await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith("/");
+      expect(replace).toHaveBeenCalledWith("/dashboard");
     });
   });
 });

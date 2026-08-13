@@ -19,12 +19,12 @@ const createSession = (role: AuthSession["user"]["role"]): AuthSession => ({
 });
 
 const allRoles: AuthRouteRole[] = ["user", "admin"];
-const sharedRoutes = ["/", "/documents", "/chat", "/quiz", "/analytics", "/courses", "/settings"] as const;
+const sharedRoutes = ["/dashboard", "/documents", "/chat", "/quiz", "/analytics", "/courses", "/settings"] as const;
 
 describe("auth route policy", () => {
   it("routes every authenticated role to the unified personal workspace by default", () => {
     allRoles.forEach((role) => {
-      expect(getDefaultRouteForRole(role)).toBe("/");
+      expect(getDefaultRouteForRole(role)).toBe("/dashboard");
     });
   });
 
@@ -51,7 +51,7 @@ describe("auth route policy", () => {
   it("redirects authenticated users away from public auth routes", () => {
     expect(resolvePublicAuthRouteDecision(null)).toEqual({ type: "render" });
     expect(resolvePublicAuthRouteDecision(createSession("user"))).toEqual({
-      href: "/",
+      href: "/dashboard",
       type: "redirect"
     });
   });

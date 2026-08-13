@@ -121,7 +121,7 @@ describe("DocumentSummaryPage", () => {
     expect(screen.getByText(/อัปโหลดเอกสารแรกหรือรอให้ระบบประมวลผลเสร็จ/)).toBeInTheDocument();
     expect(screen.queryByText(/รอครูแชร์|ผู้เรียน|ผู้สอน/)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "ดูคอร์สเรียน" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "กลับแดชบอร์ด" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "กลับแดชบอร์ด" })).toHaveAttribute("href", "/dashboard");
     expect(screen.queryByRole("link", { name: /สร้างควิซจากสรุปนี้/ })).not.toBeInTheDocument();
   });
 

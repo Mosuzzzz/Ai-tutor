@@ -2,7 +2,7 @@ import type { NavigationItem } from "../app-shell/types";
 import type { AuthRouteRole, AuthSession } from "./types";
 
 export type ProtectedRouteHref =
-  | "/"
+  | "/dashboard"
   | "/analytics"
   | "/chat"
   | "/courses"
@@ -22,7 +22,7 @@ export type AuthRouteDecision =
 const ALL_AUTH_ROLES = ["user", "admin"] as const;
 
 export const protectedRouteRoles = {
-  "/": ALL_AUTH_ROLES,
+  "/dashboard": ALL_AUTH_ROLES,
   "/analytics": ALL_AUTH_ROLES,
   "/chat": ALL_AUTH_ROLES,
   "/courses": ALL_AUTH_ROLES,
@@ -32,7 +32,7 @@ export const protectedRouteRoles = {
 } satisfies Record<ProtectedRouteHref, readonly AuthRouteRole[]>;
 
 export const getDefaultRouteForRole = (_role: AuthRouteRole) => {
-  return "/";
+  return "/dashboard";
 };
 
 export const canAccessRoute = (role: AuthRouteRole, href: string) => {
@@ -87,7 +87,7 @@ export const filterNavigationItemsForRole = <TItem extends NavigationItem>(
 };
 
 const getProtectedRouteForHref = (href: string): ProtectedRouteHref | undefined => {
-  const normalizedHref = href === "/" ? "/" : `/${href.split("?")[0]?.split("#")[0]?.split("/").filter(Boolean)[0] ?? ""}`;
+  const normalizedHref = `/${href.split("?")[0]?.split("#")[0]?.split("/").filter(Boolean)[0] ?? ""}`;
 
   if (normalizedHref in protectedRouteRoles) {
     return normalizedHref as ProtectedRouteHref;

@@ -9,7 +9,7 @@ import {
 import type { AuthRouteRole } from "../auth/types";
 
 const allRoles: AuthRouteRole[] = ["user", "admin"];
-const expectedCoreHrefs = ["/", "/documents", "/chat", "/quiz", "/analytics"];
+const expectedCoreHrefs = ["/dashboard", "/documents", "/chat", "/quiz", "/analytics"];
 
 describe("app shell navigation data", () => {
   it("uses one core navigation model for every authenticated user", () => {
