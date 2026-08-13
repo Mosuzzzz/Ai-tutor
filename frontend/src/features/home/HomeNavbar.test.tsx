@@ -38,4 +38,15 @@ describe("HomeNavbar", () => {
     expect(screen.getByRole("button", { name: "ธีม: Dark" })).toHaveTextContent("Moon");
     expect(screen.getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
   });
+
+  it("keeps the compact mobile controls accessible while marking text for narrow-width reduction", () => {
+    render(<HomeNavbar language="en" session={null} theme="light" {...callbacks} />);
+
+    expect(screen.getByRole("link", { name: "AI Tutor" })).toHaveClass("home-brand");
+    expect(screen.getByRole("button", { name: "Language: EN" })).toHaveClass("home-language-control");
+    expect(screen.getByRole("button", { name: "Theme: Light" })).toHaveClass("home-theme-control");
+    expect(screen.getByRole("link", { name: "Log in" })).toHaveClass("home-login-link");
+    expect(screen.getByText("Log in")).toHaveClass("home-login-label");
+    expect(screen.getByRole("button", { name: "Open navigation menu" })).toBeInTheDocument();
+  });
 });

@@ -9,11 +9,16 @@ type HomeFeatureGridProps = {
 
 const featureIcons = [BrainCircuit, FileQuestion, ChartNoAxesCombined];
 
+const featureSectionLabels: Record<HomeLanguage, string> = {
+  en: "Learning features",
+  th: "ฟีเจอร์การเรียนรู้"
+};
+
 export const HomeFeatureGrid = ({ language }: HomeFeatureGridProps) => {
   const features = HOME_CONTENT[language].features;
 
   return (
-    <section aria-label="Learning features" className="home-feature-grid">
+    <section aria-label={featureSectionLabels[language]} className="home-feature-grid">
       {features.map((feature, index) => {
         const Icon = featureIcons[index];
         return (

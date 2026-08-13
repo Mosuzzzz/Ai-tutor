@@ -5,6 +5,7 @@ import {
   FileText,
   Languages,
   LayoutDashboard,
+  LogIn,
   Menu,
   MessageSquareText,
   Moon,
@@ -62,15 +63,18 @@ export const HomeNavbar = ({
           })}
         </nav>
         <div className="home-navbar-controls">
-          <button aria-label={`${content.navbar.languageLabel}: ${languageValue}`} className="home-control-button" onClick={onLanguageToggle} type="button">
+          <button aria-label={`${content.navbar.languageLabel}: ${languageValue}`} className="home-control-button home-language-control" onClick={onLanguageToggle} type="button">
             <Languages aria-hidden="true" size={17} />
             <span>{languageValue}</span>
           </button>
-          <button aria-label={`${content.navbar.themeLabel}: ${isLight ? "Light" : "Dark"}`} aria-pressed={!isLight} className="home-control-button" onClick={onThemeToggle} type="button">
+          <button aria-label={`${content.navbar.themeLabel}: ${isLight ? "Light" : "Dark"}`} aria-pressed={!isLight} className="home-control-button home-theme-control" onClick={onThemeToggle} type="button">
             {isLight ? <Sun aria-hidden="true" size={17} /> : <Moon aria-hidden="true" size={17} />}
             <span className="sr-only">{isLight ? "Sun" : "Moon"}</span>
           </button>
-          <Link className="home-login-link" href="/login">{content.navbar.loginLabel}</Link>
+          <Link aria-label={content.navbar.loginLabel} className="home-login-link" href="/login">
+            <LogIn aria-hidden="true" className="home-login-icon" size={17} />
+            <span className="home-login-label">{content.navbar.loginLabel}</span>
+          </Link>
           <button aria-label={content.navbar.menuLabel} className="home-menu-button" onClick={onMobileMenuOpen} type="button">
             <Menu aria-hidden="true" size={20} />
           </button>

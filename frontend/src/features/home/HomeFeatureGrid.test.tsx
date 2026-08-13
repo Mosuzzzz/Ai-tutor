@@ -22,6 +22,7 @@ describe("HomeFeatureGrid", () => {
   it("localizes all three feature card headings in Thai", () => {
     render(<HomeFeatureGrid language="th" />);
 
+    expect(screen.getByRole("region", { name: "ฟีเจอร์การเรียนรู้" })).toBeInTheDocument();
     ["การเรียนรู้ที่เหมาะกับคุณ", "AI ตอบจากเอกสาร", "ติดตามความก้าวหน้า"].forEach((title) => {
       expect(screen.getByRole("heading", { level: 2, name: title })).toBeInTheDocument();
     });
