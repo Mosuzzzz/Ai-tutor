@@ -164,7 +164,7 @@ li {
   .home-hero { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); min-height: calc(100vh - 4.75rem); overflow-x: visible; padding-top: 0; }
   .home-hero-copy { padding: 3.5rem 0; }
   .home-hero-image-wrap { align-self: stretch; aspect-ratio: auto; border: 0; border-radius: 0; margin-right: calc(min(0px, (1280px - 100vw) / 2) - 1.25rem); min-height: 40rem; }
-  .home-hero-image-wrap::before { background: linear-gradient(90deg, var(--home-overlay) 0%, var(--home-overlay) 48%, transparent 55%); }
+  .home-hero-image-wrap::before { background: linear-gradient(90deg, var(--home-page) 0%, transparent 52%); }
   .home-feature-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 

@@ -60,7 +60,10 @@ describe("Home style contracts", () => {
   it("makes the desktop hero photograph full bleed without a frame", () => {
     expect(css).toMatch(/@media \(min-width: 1024px\)[\s\S]*?\.home-hero\s*\{[^}]*padding-top:\s*0;/);
     expect(css).toMatch(/@media \(min-width: 1024px\)[\s\S]*?\.home-hero-image-wrap\s*\{[^}]*border:\s*0;[^}]*border-radius:\s*0;/);
-    expect(css).toMatch(/@media \(min-width: 1024px\)[\s\S]*?\.home-hero-image-wrap\s*\{[^}]*margin-right:\s*calc\(/);
-    expect(css).toMatch(/\.home-hero-image-wrap::before\s*\{[^}]*linear-gradient\(90deg,[^}]*transparent/);
+    expect(css).toMatch(/@media \(min-width: 1024px\)[\s\S]*?\.home-hero-image-wrap\s*\{[^}]*margin-right:\s*calc\(min\(0px,\s*\(1280px\s*-\s*100vw\)\s*\/\s*2\)\s*-\s*1\.25rem\);/);
+  });
+
+  it("progressively fades the desktop hero image from the page surface by halfway", () => {
+    expect(css).toMatch(/@media \(min-width: 1024px\)[\s\S]*?\.home-hero-image-wrap::before\s*\{[^}]*linear-gradient\(90deg,\s*var\(--home-page\)\s*0%,\s*transparent\s*(?:4[5-9]|5[0-5])%/);
   });
 });
