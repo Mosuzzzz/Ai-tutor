@@ -51,6 +51,8 @@ export const HomeNavbar = ({
   const content = HOME_CONTENT[language];
   const languageValue = language.toUpperCase();
   const isLight = theme === "light";
+  const themeStateLabel = isLight ? content.navbar.themeLightLabel : content.navbar.themeDarkLabel;
+  const themeIconLabel = isLight ? content.navbar.themeLightIconLabel : content.navbar.themeDarkIconLabel;
 
   return (
     <header className="home-navbar">
@@ -73,9 +75,9 @@ export const HomeNavbar = ({
             <Languages aria-hidden="true" size={17} />
             <span>{languageValue}</span>
           </button>
-          <button aria-label={`${content.navbar.themeLabel}: ${isLight ? "Light" : "Dark"}`} aria-pressed={!isLight} className="home-control-button home-theme-control" onClick={onThemeToggle} type="button">
+          <button aria-label={`${content.navbar.themeLabel}: ${themeStateLabel}`} aria-pressed={!isLight} className="home-control-button home-theme-control" onClick={onThemeToggle} type="button">
             {isLight ? <Sun aria-hidden="true" size={17} /> : <Moon aria-hidden="true" size={17} />}
-            <span className="sr-only">{isLight ? "Sun" : "Moon"}</span>
+            <span className="sr-only">{themeIconLabel}</span>
           </button>
           {session ? <HomeAccountMenu language={language} session={session} /> : <Link aria-label={content.navbar.loginLabel} className="home-login-link" href="/login">
               <LogIn aria-hidden="true" className="home-login-icon" size={17} />

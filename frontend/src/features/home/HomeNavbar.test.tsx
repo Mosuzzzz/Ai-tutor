@@ -35,7 +35,7 @@ describe("HomeNavbar", () => {
     });
 
     expect(screen.getByRole("button", { name: "ภาษา: TH" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "ธีม: Dark" })).toHaveTextContent("Moon");
+    expect(screen.getByRole("button", { name: "ธีม: มืด" })).toHaveTextContent("ดวงจันทร์");
     expect(screen.getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
   });
 
@@ -60,7 +60,16 @@ describe("HomeNavbar", () => {
       />
     );
 
-    expect(screen.getByRole("button", { name: "Hello! learner@example.com" })).toBeInTheDocument();
+    const accountTrigger = screen.getByRole("button", { name: "Hello! learner@example.com" });
+    expect(accountTrigger).toBeInTheDocument();
+    expect(accountTrigger.querySelector(".home-account-icon")).toBeInTheDocument();
+    expect(accountTrigger.querySelector(".home-account-label")).toHaveTextContent("Hello! learner@example.com");
     expect(screen.queryByRole("link", { name: "Log in" })).not.toBeInTheDocument();
+  });
+
+  it("localizes Thai light theme state and icon text", () => {
+    render(<HomeNavbar language="th" session={null} theme="light" {...callbacks} />);
+
+    expect(screen.getByRole("button", { name: "ธีม: สว่าง" })).toHaveTextContent("ดวงอาทิตย์");
   });
 });

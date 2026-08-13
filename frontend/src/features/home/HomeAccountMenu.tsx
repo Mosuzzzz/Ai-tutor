@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CircleUserRound } from "lucide-react";
 
 import { logout } from "../auth/authApiClient";
 import type { AuthSession } from "../auth/types";
@@ -73,7 +74,8 @@ export const HomeAccountMenu = ({ language, session }: HomeAccountMenuProps) => 
         title={greeting}
         type="button"
       >
-        <span aria-hidden="true">{greeting}</span>
+        <CircleUserRound aria-hidden="true" className="home-account-icon" size={18} />
+        <span aria-hidden="true" className="home-account-label">{greeting}</span>
       </button>
       {isOpen ? (
         <div aria-label={greeting} className="home-account-dropdown" id={menuId} role="menu">

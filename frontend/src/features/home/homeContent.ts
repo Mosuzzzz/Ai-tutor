@@ -13,6 +13,10 @@ export const HOME_CONTENT: Record<HomeLanguage, HomeContent> = {
     navbar: {
       languageLabel: "Language",
       themeLabel: "Theme",
+      themeLightLabel: "Light",
+      themeDarkLabel: "Dark",
+      themeLightIconLabel: "Sun",
+      themeDarkIconLabel: "Moon",
       menuLabel: "Open navigation menu",
       loginLabel: "Log in",
       accountGreeting: "Hello! {email}",
@@ -53,6 +57,10 @@ export const HOME_CONTENT: Record<HomeLanguage, HomeContent> = {
     navbar: {
       languageLabel: "ภาษา",
       themeLabel: "ธีม",
+      themeLightLabel: "สว่าง",
+      themeDarkLabel: "มืด",
+      themeLightIconLabel: "ดวงอาทิตย์",
+      themeDarkIconLabel: "ดวงจันทร์",
       menuLabel: "เปิดเมนูนำทาง",
       loginLabel: "เข้าสู่ระบบ",
       accountGreeting: "สวัสดี! {email}",

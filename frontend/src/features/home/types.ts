@@ -12,6 +12,10 @@ export type HomeNavigationItem = {
 export type HomeNavbarContent = {
   languageLabel: string;
   themeLabel: string;
+  themeLightLabel: string;
+  themeDarkLabel: string;
+  themeLightIconLabel: string;
+  themeDarkIconLabel: string;
   menuLabel: string;
   loginLabel: string;
   accountGreeting: string;

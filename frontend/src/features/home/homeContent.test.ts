@@ -22,6 +22,10 @@ describe("Home content", () => {
       expect.objectContaining({
         languageLabel: expect.any(String),
         themeLabel: expect.any(String),
+        themeLightLabel: expect.any(String),
+        themeDarkLabel: expect.any(String),
+        themeLightIconLabel: expect.any(String),
+        themeDarkIconLabel: expect.any(String),
         menuLabel: expect.any(String),
         loginLabel: expect.any(String),
         accountGreeting: expect.any(String),
@@ -61,6 +65,10 @@ describe("Home content", () => {
       navbar: {
         languageLabel: "Language",
         themeLabel: "Theme",
+        themeLightLabel: "Light",
+        themeDarkLabel: "Dark",
+        themeLightIconLabel: "Sun",
+        themeDarkIconLabel: "Moon",
         menuLabel: "Open navigation menu",
         loginLabel: "Log in",
         accountGreeting: "Hello! {email}",
@@ -104,6 +112,10 @@ describe("Home content", () => {
       navbar: {
         languageLabel: "ภาษา",
         themeLabel: "ธีม",
+        themeLightLabel: "สว่าง",
+        themeDarkLabel: "มืด",
+        themeLightIconLabel: "ดวงอาทิตย์",
+        themeDarkIconLabel: "ดวงจันทร์",
         menuLabel: "เปิดเมนูนำทาง",
         loginLabel: "เข้าสู่ระบบ",
         accountGreeting: "สวัสดี! {email}",
