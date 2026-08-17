@@ -14,7 +14,7 @@ import type { NavigationItem, ShellAction } from "./types";
 
 const ALL_AUTH_ROLES = ["user", "admin"] as const;
 export const primaryNavigation = [
-  { allowedRoles: ALL_AUTH_ROLES, href: "/", icon: LayoutDashboard, label: "แดชบอร์ด" },
+  { allowedRoles: ALL_AUTH_ROLES, href: "/dashboard", icon: LayoutDashboard, label: "แดชบอร์ด" },
   { allowedRoles: ALL_AUTH_ROLES, href: "/documents", icon: FileText, label: "เอกสารของฉัน" },
   { allowedRoles: ALL_AUTH_ROLES, href: "/chat", icon: MessageSquareText, label: "แชทกับเอกสาร" },
   { allowedRoles: ALL_AUTH_ROLES, href: "/quiz", icon: Bot, label: "ควิซทบทวน" },

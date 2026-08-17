@@ -186,11 +186,11 @@ describe("protected app routes", () => {
   });
 
   it("guards the unified study dashboard route before rendering", async () => {
-    const { default: HomePage } = await import("./page");
+    const { default: DashboardPage } = await import("./dashboard/page");
 
-    render(await HomePage());
+    render(await DashboardPage());
 
-    expect(requirePageSession).toHaveBeenCalledWith("/");
+    expect(requirePageSession).toHaveBeenCalledWith("/dashboard");
     expect(loadStudyDashboardForSession).toHaveBeenCalledWith({
       session: userSession
     });

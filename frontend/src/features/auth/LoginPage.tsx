@@ -12,7 +12,7 @@ import { AuthDivider, AuthField, MockSocialButton, MockStatus } from "./AuthForm
 import { AuthShell } from "./AuthShell";
 import { submitLogin } from "./authApiClient";
 import { AUTH_COPY, AUTH_MESSAGES, INITIAL_LOGIN_FORM } from "./authContent";
-import { getDefaultRouteForRole } from "./authRoutePolicy";
+import { AUTHENTICATED_HOME_ROUTE } from "./authRoutePolicy";
 import { validateLogin } from "./authValidation";
 import type { AuthSubmissionStatus, LoginInput } from "./types";
 
@@ -53,7 +53,7 @@ export const LoginPage = () => {
       setSubmissionMessage(submission.message);
 
       if (submission.ok && submission.session) {
-        router.replace(getDefaultRouteForRole(submission.session.user.role));
+        router.replace(AUTHENTICATED_HOME_ROUTE);
       }
     } catch {
       setSubmissionStatus("error");

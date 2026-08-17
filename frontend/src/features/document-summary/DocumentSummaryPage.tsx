@@ -178,7 +178,7 @@ export const DocumentSummaryPage = ({
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <Link
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded border border-primary-container/20 bg-surface-container-low px-4 py-2 text-label-md font-bold text-primary transition-colors hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2"
-              href="/"
+              href="/dashboard"
             >
               กลับแดชบอร์ด
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
