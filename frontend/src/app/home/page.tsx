@@ -1,5 +1,6 @@
 import { getServerAuthSession } from "@/features/auth/authGuard";
 import { HomeLandingPage } from "@/features/home/HomeLandingPage";
+import "@/features/home/home.css";
 
 export const dynamic = "force-dynamic";
 

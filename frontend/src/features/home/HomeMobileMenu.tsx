@@ -66,9 +66,9 @@ export const HomeMobileMenu = ({ isOpen, language, onClose, session, triggerRef 
           <X aria-hidden="true" size={20} />
         </button>
         <nav aria-label="Primary navigation">
-          {HOME_NAVIGATION.map(({ href, icon }) => <Link href={href} key={href}>{content.navigation[icon]}</Link>)}
+          {HOME_NAVIGATION.map(({ href, key }) => <Link href={href} key={href} onClick={close}>{content.navigation[key]}</Link>)}
         </nav>
-        {session ? <HomeAccountMenu language={language} session={session} /> : <Link className="home-login-link" href="/login">{content.navbar.loginLabel}</Link>}
+        {session ? <><Link className="home-workspace-link" href="/dashboard" onClick={close}>{content.navigation.myWorkspace}</Link><HomeAccountMenu language={language} session={session} /></> : <><Link className="home-login-link" href="/login">{content.navbar.loginLabel}</Link><Link className="home-workspace-link" href="/register">{content.navigation.startStudying}</Link></>}
       </div>
     </div>
   );

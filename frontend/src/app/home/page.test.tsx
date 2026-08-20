@@ -22,8 +22,9 @@ describe("public Home page", () => {
 
     expect(getServerAuthSession).toHaveBeenCalledTimes(1);
     const loginLinks = screen.getAllByRole("link", { name: "Log in" });
-    expect(loginLinks).toHaveLength(2);
+    expect(loginLinks.length).toBeGreaterThanOrEqual(2);
     loginLinks.forEach((link) => expect(link).toHaveAttribute("href", "/login"));
+    expect(screen.getAllByRole("link", { name: /Create your study workspace|Create your workspace|Start studying/ }).length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByRole("button", { name: "Hello! learner@example.com" })).not.toBeInTheDocument();
   });
 

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+const css = readFileSync(join(process.cwd(), "src/features/home/home.css"), "utf8");
 
 const channelToLinear = (channel: number) => {
   const value = channel / 255;
@@ -57,24 +57,22 @@ describe("Home style contracts", () => {
     expect(css).toMatch(/\.home-account-dropdown \[role="status"\]\s*\{\s*color:\s*var\(--home-error-text\);/);
   });
 
-  it("keeps the mobile menu active until the five-link desktop navigation has enough room", () => {
+  it("keeps the mobile menu active until the marketing navigation has enough room", () => {
     expect(css).toMatch(/@media \(min-width: 1120px\)[\s\S]*?\.home-desktop-navigation\s*\{\s*display:\s*flex;/);
     expect(css).toMatch(/@media \(max-width: 1119px\)[\s\S]*?\.home-navbar-controls \.home-account-label\s*\{\s*display:\s*none;/);
   });
 
-  it("uses the approved responsive gutters and content width", () => {
-    expect(css).toMatch(/\.home-page\s*\{[^}]*overflow-x:\s*hidden;/);
-    expect(css).toMatch(/\.home-hero\s*\{[^}]*max-width:\s*1200px;[^}]*padding:\s*3\.5rem 1\.25rem 2\.25rem;/);
+  it("uses responsive gutters and a bounded content width", () => {
+    expect(css).toMatch(/\.home-page\s*\{[^}]*overflow-x:\s*clip;/);
+    expect(css).toMatch(/\.home-hero\s*\{[^}]*max-width:\s*1200px;[^}]*padding:\s*4\.25rem 1\.25rem 4rem;/);
     expect(css).toMatch(/@media \(min-width:\s*768px\)[\s\S]*?\.home-hero\s*\{[^}]*padding-left:\s*2rem;[^}]*padding-right:\s*2rem;/);
-    expect(css).toMatch(/@media \(min-width:\s*1024px\)[\s\S]*?\.home-hero\s*\{[^}]*padding-left:\s*2\.5rem;[^}]*padding-right:\s*2\.5rem;/);
+    expect(css).toMatch(/@media \(min-width:\s*1024px\)[\s\S]*?\.home-hero\s*\{[^}]*padding:\s*4rem 2\.5rem 5rem;/);
     expect(css).toMatch(/@media \(min-width:\s*1280px\)[\s\S]*?\.home-hero\s*\{[^}]*padding-left:\s*3rem;[^}]*padding-right:\s*3rem;/);
   });
 
-  it("keeps the static study-paper prototype stacked before using a desktop two-column hero", () => {
-    expect(css).toMatch(/\.home-study-preview\s*\{[^}]*border-radius:\s*1\.125rem;[^}]*box-shadow:\s*0 8px 24px rgba\(23, 35, 27, 0\.07\);/);
-    expect(css).toMatch(/\.home-study-paper-highlight\s*\{[^}]*background:\s*var\(--home-primary-soft\);/);
-    expect(css).toMatch(/@media \(min-width:\s*1024px\)[\s\S]*?\.home-hero\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1\.08fr\) minmax\(0, 0\.92fr\);/);
-    const previewRule = css.match(/\.home-study-preview\s*\{[^}]*\}/)?.[0] ?? "";
-    expect(previewRule).not.toContain("animation:");
+  it("reserves the study-scene layout and simplifies it for reduced motion", () => {
+    expect(css).toMatch(/\.home-study-scene\s*\{[^}]*min-height:\s*31rem;/);
+    expect(css).toMatch(/@media \(min-width:\s*1024px\)[\s\S]*?\.home-hero\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1\.04fr\) minmax\(0, \.96fr\);/);
+    expect(css).toMatch(/@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.home-scene-toggle\s*\{\s*display:\s*none;/);
   });
 });

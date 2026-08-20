@@ -3,16 +3,15 @@ import { describe, expect, it } from "vitest";
 import { HOME_CONTENT, HOME_NAVIGATION } from "./homeContent";
 
 const expectedNavigation = [
-  { href: "/dashboard", icon: "dashboard" },
-  { href: "/documents", icon: "documents" },
-  { href: "/chat", icon: "chat" },
-  { href: "/quiz", icon: "quiz" },
-  { href: "/analytics", icon: "analytics" }
+  { href: "#how-it-works", key: "howItWorks" },
+  { href: "#study-kit", key: "studyKit" },
+  { href: "#progress", key: "progress" },
+  { href: "#faq", key: "faq" }
 ];
 
 describe("Home content", () => {
-  it("uses the specified route and icon keys for product navigation", () => {
-    expect(HOME_NAVIGATION.map(({ href, icon }) => ({ href, icon }))).toEqual(expectedNavigation);
+  it("uses marketing anchors instead of protected workspace routes", () => {
+    expect(HOME_NAVIGATION).toEqual(expectedNavigation);
   });
 
   it.each(["en", "th"] as const)("provides the complete %s Home surface", (language) => {
@@ -33,15 +32,14 @@ describe("Home content", () => {
         logoutError: expect.any(String)
       })
     );
-    expect(content.navigation).toEqual(
-      expect.objectContaining({
-        dashboard: expect.any(String),
-        documents: expect.any(String),
-        chat: expect.any(String),
-        quiz: expect.any(String),
-        analytics: expect.any(String)
-      })
-    );
+    expect(content.navigation).toEqual(expect.objectContaining({
+      howItWorks: expect.any(String),
+      studyKit: expect.any(String),
+      progress: expect.any(String),
+      faq: expect.any(String),
+      startStudying: expect.any(String),
+      myWorkspace: expect.any(String)
+    }));
     expect(content.hero).toEqual(
       expect.objectContaining({
         eyebrow: expect.any(String),
@@ -54,20 +52,22 @@ describe("Home content", () => {
         supportingLine: expect.any(String)
       })
     );
-    expect(content.studyPreview).toEqual(
+    expect(content.studyScene).toEqual(
       expect.objectContaining({
         ariaLabel: expect.any(String),
         documentLabel: expect.any(String),
-        steps: expect.any(Array)
+        summaryLabel: expect.any(String),
+        questionLabel: expect.any(String),
+        answerLabel: expect.any(String),
+        quizLabel: expect.any(String),
+        resultLabel: expect.any(String),
+        pauseLabel: expect.any(String),
+        playLabel: expect.any(String)
       })
     );
-    expect(content.studyPreview.steps).toHaveLength(5);
-    expect(content.features).toHaveLength(3);
-    expect(content.features).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ title: expect.any(String), description: expect.any(String) })
-      ])
-    );
+    expect(content.features).toHaveLength(4);
+    expect(content.walkthrough.items).toHaveLength(3);
+    expect(content.faq.items.length).toBeGreaterThanOrEqual(5);
   });
 
   it("matches the approved English copy", () => {
@@ -86,41 +86,23 @@ describe("Home content", () => {
         logoutError: "Unable to log out. Please try again."
       },
       navigation: {
-        dashboard: "Dashboard",
-        documents: "Documents",
-        chat: "AI Chat",
-        quiz: "Quiz",
-        analytics: "Analytics"
+        howItWorks: "How it works",
+        studyKit: "Study kit",
+        progress: "Progress",
+        faq: "FAQ",
+        startStudying: "Start studying",
+        myWorkspace: "My workspace"
       },
       hero: {
-        eyebrow: "Your personal AI study partner",
-        heading: "Learn smarter. Understand more.",
-        body: "Turn your documents into clear summaries, grounded AI answers, review quizzes, and progress you can act on.",
-        guestCta: "Get started for free",
-        authenticatedCta: "Start with a document",
+        eyebrow: "Your material, one connected study loop.",
+        heading: "Turn your documents into an AI study workspace.",
+        body: "Upload your material, read a clear summary, ask questions tied to the selected document, build a review quiz, and see what to study next.",
+        guestCta: "Create your study workspace",
+        authenticatedCta: "Open my documents",
         guestSecondaryCta: "Log in",
-        authenticatedSecondaryCta: "Go to dashboard",
-        supportingLine: "Built for focused, document-based learning."
-      },
-      studyPreview: {
-        ariaLabel: "AI study workflow: Document to Highlight to Summary to Ask to Quiz",
-        documentLabel: "Study document",
-        steps: ["Document", "Highlight", "Summary", "Ask", "Quiz"]
-      },
-      features: [
-        {
-          title: "Personalized learning",
-          description: "Move from your own documents to the next useful study action."
-        },
-        {
-          title: "Grounded AI help",
-          description: "Ask questions and keep answers connected to your learning material."
-        },
-        {
-          title: "Track your progress",
-          description: "Review quiz results and see what deserves your attention next."
-        }
-      ]
+        authenticatedSecondaryCta: "Go to my dashboard",
+        supportingLine: "Summary, document-based questions, review quizzes, and progress in one focused flow."
+      }
     });
   });
 
@@ -140,41 +122,23 @@ describe("Home content", () => {
         logoutError: "ไม่สามารถออกจากระบบได้ โปรดลองอีกครั้ง"
       },
       navigation: {
-        dashboard: "แดชบอร์ด",
-        documents: "เอกสาร",
-        chat: "AI แชท",
-        quiz: "ควิซ",
-        analytics: "สถิติ"
+        howItWorks: "วิธีการทำงาน",
+        studyKit: "ชุดเครื่องมือเรียน",
+        progress: "ความก้าวหน้า",
+        faq: "คำถามที่พบบ่อย",
+        startStudying: "เริ่มเรียน",
+        myWorkspace: "พื้นที่เรียนของฉัน"
       },
       hero: {
-        eyebrow: "ผู้ช่วยเรียน AI ส่วนตัวของคุณ",
-        heading: "เรียนได้ฉลาดขึ้น เข้าใจได้มากกว่า",
-        body: "เปลี่ยนเอกสารของคุณเป็นสรุปที่เข้าใจง่าย คำตอบ AI ที่อ้างอิงเนื้อหา ควิซทบทวน และสถิติที่นำไปใช้ต่อได้",
-        guestCta: "เริ่มต้นใช้งานฟรี",
-        authenticatedCta: "เริ่มจากเอกสาร",
+        eyebrow: "จากเอกสารของคุณ สู่การเรียนที่ต่อเนื่อง",
+        heading: "เปลี่ยนเอกสารของคุณให้เป็นพื้นที่เรียนกับ AI",
+        body: "อัปโหลดเนื้อหา อ่านสรุป ถามคำถามจากเอกสารที่เลือก สร้างควิซทบทวน และดูว่าควรกลับไปเรียนเรื่องใดต่อ",
+        guestCta: "สร้างพื้นที่เรียนของฉัน",
+        authenticatedCta: "เปิดเอกสารของฉัน",
         guestSecondaryCta: "เข้าสู่ระบบ",
-        authenticatedSecondaryCta: "ไปที่แดชบอร์ด",
-        supportingLine: "ออกแบบเพื่อการเรียนรู้จากเอกสารอย่างมีสมาธิ"
-      },
-      studyPreview: {
-        ariaLabel: "ขั้นตอนการเรียนด้วย AI: เอกสาร ไฮไลต์ สรุป ถาม และควิซ",
-        documentLabel: "เอกสารสำหรับเรียน",
-        steps: ["เอกสาร", "ไฮไลต์", "สรุป", "ถาม", "ควิซ"]
-      },
-      features: [
-        {
-          title: "การเรียนรู้ที่เหมาะกับคุณ",
-          description: "ต่อยอดจากเอกสารของคุณไปยังขั้นตอนการเรียนที่เหมาะสม"
-        },
-        {
-          title: "AI ตอบจากเอกสาร",
-          description: "ถามคำถามและรับคำตอบที่เชื่อมโยงกับเนื้อหาที่คุณเรียน"
-        },
-        {
-          title: "ติดตามความก้าวหน้า",
-          description: "ดูผลควิซและรู้ว่าควรกลับไปทบทวนเรื่องใดต่อ"
-        }
-      ]
+        authenticatedSecondaryCta: "ไปที่แดชบอร์ดของฉัน",
+        supportingLine: "สรุป แชทจากเอกสาร ควิซทบทวน และความก้าวหน้าใน flow เดียว"
+      }
     });
   });
 });

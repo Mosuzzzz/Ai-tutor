@@ -2,24 +2,13 @@
 
 import Link from "next/link";
 import type { RefObject } from "react";
-import {
-  BarChart3,
-  Bot,
-  FileText,
-  Languages,
-  LayoutDashboard,
-  LogIn,
-  Menu,
-  MessageSquareText,
-  Moon,
-  Sun
-} from "lucide-react";
+import { Languages, LogIn, Menu, Moon, Sun } from "lucide-react";
 
 import type { AuthSession } from "../auth/types";
 import { HOME_CONTENT, HOME_NAVIGATION } from "./homeContent";
 import { HomeBrand } from "./HomeBrand";
 import { HomeAccountMenu } from "./HomeAccountMenu";
-import type { HomeLanguage, HomeNavigationIcon, HomeTheme } from "./types";
+import type { HomeLanguage, HomeTheme } from "./types";
 
 type HomeNavbarProps = {
   language: HomeLanguage;
@@ -29,14 +18,6 @@ type HomeNavbarProps = {
   mobileMenuTriggerRef?: RefObject<HTMLButtonElement | null>;
   session?: AuthSession | null;
   theme: HomeTheme;
-};
-
-const navigationIcons: Record<HomeNavigationIcon, typeof LayoutDashboard> = {
-  dashboard: LayoutDashboard,
-  documents: FileText,
-  chat: MessageSquareText,
-  quiz: Bot,
-  analytics: BarChart3
 };
 
 export const HomeNavbar = ({
@@ -59,12 +40,10 @@ export const HomeNavbar = ({
       <div className="home-navbar-inner">
         <HomeBrand />
         <nav aria-label="Primary navigation" className="home-desktop-navigation">
-          {HOME_NAVIGATION.map(({ href, icon }) => {
-            const Icon = navigationIcons[icon];
-            const label = content.navigation[icon];
+          {HOME_NAVIGATION.map(({ href, key }) => {
+            const label = content.navigation[key];
             return (
               <Link className="home-nav-link" href={href} key={href}>
-                <Icon aria-hidden="true" size={16} strokeWidth={1.9} />
                 {label}
               </Link>
             );
@@ -79,10 +58,10 @@ export const HomeNavbar = ({
             {isLight ? <Sun aria-hidden="true" size={17} /> : <Moon aria-hidden="true" size={17} />}
             <span className="sr-only">{themeIconLabel}</span>
           </button>
-          {session ? <HomeAccountMenu language={language} session={session} /> : <Link aria-label={content.navbar.loginLabel} className="home-login-link" href="/login">
+          {session ? <><Link className="home-workspace-link" href="/dashboard">{content.navigation.myWorkspace}</Link><HomeAccountMenu language={language} session={session} /></> : <><Link aria-label={content.navbar.loginLabel} className="home-login-link home-login-secondary" href="/login">
               <LogIn aria-hidden="true" className="home-login-icon" size={17} />
               <span className="home-login-label">{content.navbar.loginLabel}</span>
-            </Link>}
+            </Link><Link className="home-workspace-link" href="/register">{content.navigation.startStudying}</Link></>}
           <button aria-label={content.navbar.menuLabel} className="home-menu-button" onClick={onMobileMenuOpen} ref={mobileMenuTriggerRef} type="button">
             <Menu aria-hidden="true" size={20} />
           </button>

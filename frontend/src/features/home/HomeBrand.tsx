@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const HOME_LOGO_SOURCE = "/brand/ChatGPT Image 13 ส.ค. 2569 22_46_03.png";
+const HOME_LOGO_SOURCE = "/brand/ai-tutor-wordmark-green.png";
 
 export const HomeBrand = () => (
-  <Link aria-label="AI Tutor" className="home-brand" href="/home">
-    <Image alt="AI Tutor" height={72} priority sizes="(max-width: 640px) 118px, 144px" src={HOME_LOGO_SOURCE} width={270} />
+  <Link aria-label="AI Tutor home" className="home-brand" href="/home">
+    <Image alt="" height={120} priority sizes="(max-width: 640px) 112px, 144px" src={HOME_LOGO_SOURCE} width={360} />
   </Link>
 );
