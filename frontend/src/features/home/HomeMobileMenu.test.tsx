@@ -4,14 +4,16 @@ import { describe, expect, it, vi } from "vitest";
 import { HomeMobileMenu } from "./HomeMobileMenu";
 
 describe("HomeMobileMenu", () => {
-  it("contains all protected links and the guest account control", () => {
+  it("contains marketing anchors and the guest account controls", () => {
     render(<HomeMobileMenu isOpen language="en" onClose={vi.fn()} session={null} triggerRef={{ current: null }} />);
     const dialog = screen.getByRole("dialog", { name: "Open navigation menu" });
 
-    ["Dashboard", "Documents", "AI Chat", "Quiz", "Analytics"].forEach((label) => {
+    ["How it works", "Study kit", "Progress", "FAQ"].forEach((label) => {
       expect(within(dialog).getByRole("link", { name: label })).toBeInTheDocument();
     });
+    expect(within(dialog).queryByRole("link", { name: "Dashboard" })).not.toBeInTheDocument();
     expect(within(dialog).getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
+    expect(within(dialog).getByRole("link", { name: "Start studying" })).toHaveAttribute("href", "/register");
   });
 
   it("renders the authenticated account control and lets Escape close its dropdown without closing the mobile dialog", () => {
@@ -48,11 +50,11 @@ describe("HomeMobileMenu", () => {
     render(<HomeMobileMenu isOpen language="en" onClose={onClose} session={null} triggerRef={{ current: trigger }} />);
     const dialog = screen.getByRole("dialog");
     const closeButton = within(dialog).getByRole("button", { name: "Close navigation menu" });
-    const login = within(dialog).getByRole("link", { name: "Log in" });
+    const register = within(dialog).getByRole("link", { name: "Start studying" });
     closeButton.focus();
     fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
-    expect(login).toHaveFocus();
-    login.focus();
+    expect(register).toHaveFocus();
+    register.focus();
     fireEvent.keyDown(document, { key: "Tab" });
     expect(closeButton).toHaveFocus();
 

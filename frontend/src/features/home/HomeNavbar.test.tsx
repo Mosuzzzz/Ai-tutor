@@ -13,36 +13,39 @@ describe("HomeNavbar", () => {
   it("renders the English destinations, light controls, login link, and Home brand", () => {
     render(<HomeNavbar language="en" session={null} theme="light" {...callbacks} />);
 
-    expect(screen.getByRole("link", { name: "AI Tutor" })).toHaveAttribute("href", "/home");
-    expect(decodeURIComponent(screen.getByRole("img", { name: "AI Tutor" }).getAttribute("src") ?? "")).toContain(
-      "/brand/ChatGPT Image 13 ส.ค. 2569 22_46_03.png"
+    expect(screen.getByRole("link", { name: "AI Tutor home" })).toHaveAttribute("href", "/home");
+    expect(decodeURIComponent(screen.getByRole("link", { name: "AI Tutor home" }).querySelector("img")?.getAttribute("src") ?? "")).toContain(
+      "/brand/ai-tutor-wordmark-green.png"
     );
 
-    ["Dashboard", "Documents", "AI Chat", "Quiz", "Analytics"].forEach((label) => {
+    ["How it works", "Study kit", "Progress", "FAQ"].forEach((label) => {
       expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
     });
+    expect(screen.queryByRole("link", { name: "Dashboard" })).not.toBeInTheDocument();
 
     expect(screen.getByRole("button", { name: "Language: EN" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Theme: Light" })).toHaveTextContent("Sun");
     expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "Start studying" })).toHaveAttribute("href", "/register");
   });
 
   it("localizes the Thai navigation and guest account control", () => {
     render(<HomeNavbar language="th" session={null} theme="dark" {...callbacks} />);
 
-    ["แดชบอร์ด", "เอกสาร", "AI แชท", "ควิซ", "สถิติ"].forEach((label) => {
+    ["วิธีการทำงาน", "ชุดเครื่องมือเรียน", "ความก้าวหน้า", "คำถามที่พบบ่อย"].forEach((label) => {
       expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
     });
 
     expect(screen.getByRole("button", { name: "ภาษา: TH" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ธีม: มืด" })).toHaveTextContent("ดวงจันทร์");
     expect(screen.getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "เริ่มเรียน" })).toHaveAttribute("href", "/register");
   });
 
   it("keeps the compact mobile controls accessible while marking text for narrow-width reduction", () => {
     render(<HomeNavbar language="en" session={null} theme="light" {...callbacks} />);
 
-    expect(screen.getByRole("link", { name: "AI Tutor" })).toHaveClass("home-brand");
+    expect(screen.getByRole("link", { name: "AI Tutor home" })).toHaveClass("home-brand");
     expect(screen.getByRole("button", { name: "Language: EN" })).toHaveClass("home-language-control");
     expect(screen.getByRole("button", { name: "Theme: Light" })).toHaveClass("home-theme-control");
     expect(screen.getByRole("link", { name: "Log in" })).toHaveClass("home-login-link");
@@ -65,6 +68,7 @@ describe("HomeNavbar", () => {
     expect(accountTrigger.querySelector(".home-account-icon")).toBeInTheDocument();
     expect(accountTrigger.querySelector(".home-account-label")).toHaveTextContent("Hello! learner@example.com");
     expect(screen.queryByRole("link", { name: "Log in" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "My workspace" })).toHaveAttribute("href", "/dashboard");
   });
 
   it("localizes Thai light theme state and icon text", () => {
