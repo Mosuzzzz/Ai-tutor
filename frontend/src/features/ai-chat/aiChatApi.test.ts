@@ -52,7 +52,10 @@ describe("loadAiChatSummaryForSession", () => {
     });
 
     expect(result.status).toBe("ready");
-    expect(result.chat?.selectedDocumentId).toBe("file-ready");
+    if (result.status === "error") {
+      throw new Error("Expected a chat summary result");
+    }
+    expect(result.chat.selectedDocumentId).toBe("file-ready");
     expect(backendRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         accessToken: "server-cookie-token",
@@ -130,6 +133,9 @@ describe("loadAiChatSummaryForSession", () => {
     });
 
     expect(result.status).toBe("error");
+    if (result.status !== "error") {
+      throw new Error("Expected an error result");
+    }
     expect(result.errorMessage).toBeTruthy();
     expect(backendRequest).not.toHaveBeenCalled();
   });
@@ -149,6 +155,9 @@ describe("loadAiChatSummaryForSession", () => {
     });
 
     expect(result.status).toBe("error");
+    if (result.status !== "error") {
+      throw new Error("Expected an error result");
+    }
     expect(result.errorMessage).toBeTruthy();
   });
 });

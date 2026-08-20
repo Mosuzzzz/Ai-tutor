@@ -12,6 +12,7 @@ import {
   toDocumentContextChatMessages,
   toAiChatSummaryViewModel
 } from "./aiChatMapper";
+import { chatHistoryResponseSchema } from "./aiChatContract";
 
 const session: AuthSession = {
   mode: "http-only-cookie",
@@ -27,7 +28,7 @@ describe("AI chat mapper", () => {
   it("maps Backend documents and chat history into the existing view model", () => {
     const chat = toAiChatSummaryViewModel({
       documentsResponse: backendChatDocumentsResponse,
-      history: backendChatHistoryResponse,
+      history: chatHistoryResponseSchema.parse(backendChatHistoryResponse),
       session
     });
 

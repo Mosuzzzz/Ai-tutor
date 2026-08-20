@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import type { AuthSession } from "../auth/types";
 import { toStudyDashboardViewModel } from "./studyDashboardMapper";
 import { StudyDashboardPage } from "./StudyDashboardPage";
 
@@ -12,7 +13,7 @@ const session = {
     email: "siwakorn@example.com",
     role: "user" as const
   }
-};
+} satisfies AuthSession;
 
 const emptyDashboard = toStudyDashboardViewModel({
   response: {

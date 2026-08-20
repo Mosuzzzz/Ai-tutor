@@ -5,7 +5,8 @@ import {
   ApiClientError,
   backendFormDataRequest,
   backendJsonRequest,
-  mapApiErrorToMessage
+  mapApiErrorToMessage,
+  type ApiFetcher
 } from "./backendClient";
 
 const profileSchema = z.object({
@@ -132,7 +133,7 @@ describe("backendFormDataRequest", () => {
   it("sends multipart data without forcing a JSON content type", async () => {
     const formData = new FormData();
     formData.set("file", new File(["training manual"], "training-manual.pdf", { type: "application/pdf" }));
-    const fetcher = vi.fn(async () => jsonResponse({ email: "admin@example.com", role: "admin" }));
+    const fetcher = vi.fn<ApiFetcher>(async () => jsonResponse({ email: "admin@example.com", role: "admin" }));
 
     const result = await backendFormDataRequest({
       accessToken: "access-token-from-http-only-cookie",
@@ -156,7 +157,10 @@ describe("backendFormDataRequest", () => {
       })
     );
 
-    const init = fetcher.mock.calls[0]?.[1] as RequestInit;
+    const init = fetcher.mock.calls[0]?.[1];
+    if (!init) {
+      throw new Error("Expected multipart request options");
+    }
     expect(new Headers(init.headers).has("Content-Type")).toBe(false);
   });
 });

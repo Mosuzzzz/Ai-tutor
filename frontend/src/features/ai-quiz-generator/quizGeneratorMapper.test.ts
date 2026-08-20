@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { AuthSession } from "../auth/types";
-import { trainerExamResponseSchema } from "./quizGeneratorContract";
+import { learnerExamResponseSchema, trainerExamResponseSchema } from "./quizGeneratorContract";
 import {
   isQuizGeneratorEmpty,
   selectQuizSourceForGeneration,
@@ -128,7 +128,7 @@ describe("quizGeneratorMapper", () => {
   it("maps a submitted learner attempt into score feedback without exposing raw answer-key fields", () => {
     const viewModel = toQuizGeneratorViewModel({
       documentsResponse: backendQuizDocumentsResponse,
-      examResponse: backendLearnerExamResponse,
+      examResponse: learnerExamResponseSchema.parse(backendLearnerExamResponse),
       session: userSession
     });
 
@@ -159,7 +159,7 @@ describe("quizGeneratorMapper", () => {
   it("localizes known backend sandbox learner attempt feedback", () => {
     const viewModel = toQuizGeneratorViewModel({
       documentsResponse: backendQuizDocumentsResponse,
-      examResponse: backendLearnerExamResponse,
+      examResponse: learnerExamResponseSchema.parse(backendLearnerExamResponse),
       session: userSession
     });
 
