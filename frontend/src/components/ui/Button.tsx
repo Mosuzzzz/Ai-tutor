@@ -38,7 +38,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
       {...props}
       aria-busy={isLoading ? "true" : undefined}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded px-4 py-2 text-label-md font-bold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 py-2 text-label-md font-bold transition-[background-color,border-color,color,box-shadow,transform] duration-control ease-standard motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim focus-visible:ring-offset-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60 disabled:active:translate-y-0",
         isLoading && "cursor-wait",
         buttonVariantClassNames[variant],
         className
@@ -51,7 +51,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
         <>
           <span
             aria-hidden="true"
-            className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent"
+            className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent motion-safe:animate-spin"
           />
           {loadingLabel}
         </>

@@ -33,7 +33,7 @@ export const Card = ({
   return (
     <div
       className={cn(
-        "rounded",
+        "rounded-md",
         cardPaddingClassNames[padding],
         cardVariantClassNames[variant],
         className

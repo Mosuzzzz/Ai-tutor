@@ -21,7 +21,9 @@ describe("public Home page", () => {
     render(await HomePage());
 
     expect(getServerAuthSession).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
+    const loginLinks = screen.getAllByRole("link", { name: "Log in" });
+    expect(loginLinks).toHaveLength(2);
+    loginLinks.forEach((link) => expect(link).toHaveAttribute("href", "/login"));
     expect(screen.queryByRole("button", { name: "Hello! learner@example.com" })).not.toBeInTheDocument();
   });
 

@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 import type { AuthSession } from "../auth/types";
 import { HOME_CONTENT } from "./homeContent";
+import { HomeStudyPreview } from "./HomeStudyPreview";
 import type { HomeLanguage } from "./types";
 
 type HomeHeroProps = {
@@ -13,6 +13,7 @@ type HomeHeroProps = {
 
 export const HomeHero = ({ language, session = null }: HomeHeroProps) => {
   const hero = HOME_CONTENT[language].hero;
+  const studyPreview = HOME_CONTENT[language].studyPreview;
   const isAuthenticated = session !== null;
 
   return (
@@ -21,23 +22,18 @@ export const HomeHero = ({ language, session = null }: HomeHeroProps) => {
         <p className="home-eyebrow">{hero.eyebrow}</p>
         <h1 id="home-hero-heading">{hero.heading}</h1>
         <p className="home-hero-body">{hero.body}</p>
-        <Link className="home-primary-action" href={isAuthenticated ? "/documents" : "/register"}>
-          {isAuthenticated ? hero.authenticatedCta : hero.guestCta}
-          <ArrowRight aria-hidden="true" size={18} />
-        </Link>
+        <div className="home-hero-actions">
+          <Link className="home-primary-action" href={isAuthenticated ? "/documents" : "/register"}>
+            {isAuthenticated ? hero.authenticatedCta : hero.guestCta}
+            <ArrowRight aria-hidden="true" size={18} />
+          </Link>
+          <Link className="home-secondary-action" href={isAuthenticated ? "/dashboard" : "/login"}>
+            {isAuthenticated ? hero.authenticatedSecondaryCta : hero.guestSecondaryCta}
+          </Link>
+        </div>
         <p className="home-supporting-line"><CheckCircle2 aria-hidden="true" size={17} />{hero.supportingLine}</p>
       </div>
-      <div className="home-hero-image-wrap">
-        <Image
-          alt="Learner studying with an AI Tutor"
-          className="home-hero-image"
-          height={1080}
-          priority
-          sizes="(max-width: 1023px) calc(100vw - 2rem), 50vw"
-          src="/home/ChatGPT Image 13 ส.ค. 2569 22_15_52.png"
-          width={1440}
-        />
-      </div>
+      <HomeStudyPreview content={studyPreview} />
     </section>
   );
 };
