@@ -22,6 +22,9 @@ describe("auth validation", () => {
     const result = validateLogin({ email: "not-an-email", password: "short" });
 
     expect(result.ok).toBe(false);
+    if (result.ok) {
+      throw new Error("Expected validation to fail");
+    }
     expect(result.fieldErrors.email).toBe("กรุณากรอกอีเมลให้ถูกต้อง");
     expect(result.fieldErrors.password).toBe("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
   });
@@ -48,6 +51,9 @@ describe("auth validation", () => {
     });
 
     expect(result.ok).toBe(false);
+    if (result.ok) {
+      throw new Error("Expected validation to fail");
+    }
     expect(result.fieldErrors).not.toHaveProperty("role");
     expect(result.fieldErrors.fullName).toBe("กรุณากรอกชื่อ-นามสกุล");
     expect(result.fieldErrors.password).toBe("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");

@@ -38,7 +38,10 @@ describe("loadStudyDashboardForSession", () => {
     });
 
     expect(result.status).toBe("ready");
-    expect(result.dashboard?.userName).toBe("Siwakorn bundi");
+    if (result.status === "error") {
+      throw new Error("Expected a study dashboard result");
+    }
+    expect(result.dashboard.userName).toBe("Siwakorn bundi");
     expect(backendRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         accessToken: "server-cookie-token",
@@ -58,6 +61,9 @@ describe("loadStudyDashboardForSession", () => {
     });
 
     expect(result.status).toBe("error");
+    if (result.status !== "error") {
+      throw new Error("Expected an error result");
+    }
     expect(result.errorMessage).toBeTruthy();
     expect(backendRequest).not.toHaveBeenCalled();
   });
@@ -96,6 +102,9 @@ describe("loadStudyDashboardForSession", () => {
     });
 
     expect(errorResult.status).toBe("error");
+    if (errorResult.status !== "error") {
+      throw new Error("Expected an error result");
+    }
     expect(errorResult.errorMessage).toBeTruthy();
   });
 });

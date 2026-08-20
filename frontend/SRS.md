@@ -122,7 +122,15 @@ Current implementation status after `UnifiedAppShellNavigation`:
 
 ### 4.3 My Study Dashboard
 
-หน้า `/` คือแดชบอร์ดส่วนตัว
+Current routes:
+
+```text
+/          -> redirects to /home
+/home      -> public marketing landing page
+/dashboard -> authenticated personal study dashboard
+```
+
+หน้า `/dashboard` คือแดชบอร์ดส่วนตัว
 
 Requirements:
 
@@ -133,7 +141,7 @@ Requirements:
 
 Current implementation status after `UnifiedStudyDashboard`:
 
-- หน้า `/` ใช้ `frontend/src/features/study-dashboard/` เป็น dashboard เดียวสำหรับผู้ใช้ทุกคน
+- หน้า `/dashboard` ใช้ `frontend/src/features/study-dashboard/` เป็น dashboard เดียวสำหรับผู้ใช้ทุกคน
 - Legacy `frontend/src/features/student-dashboard/` และ `frontend/src/features/teacher-dashboard/` ถูกถอดออกจาก core frontend แล้ว
 - Dashboard ใช้ข้อมูลจาก `/api/analytics/dashboard` ผ่าน server-side API wrapper และ validate response ด้วย Zod ก่อน map เข้า UI
 - ไม่มีการเก็บ token ฝั่ง browser และไม่มีการส่ง user id จาก client เพื่อ scope data
@@ -233,26 +241,13 @@ Codebase ปัจจุบันหลัง Phase 5.5.1-5.5.3:
 - Auth ไม่ให้ผู้ใช้เลือกบทบาทครู/นักเรียนใน core UI แล้ว
 - App Shell ใช้ navigation เดียวสำหรับทุก authenticated user
 - `/teacher` และ dashboard แยก role ถูกถอดออกจาก core route/dashboard flow แล้ว
-- หน้า `/` เป็น single-user study dashboard ผ่าน `features/study-dashboard`
+- หน้า `/dashboard` เป็น single-user study dashboard ผ่าน `features/study-dashboard`
 
 Phase 5.5 ที่เหลือต้องปรับหน้าที่เกี่ยวกับเอกสาร แชท ควิซ สถิติ คอร์ส และ settings ให้เป็น personal study workspace เดียวกัน โดยไม่ทำลาย auth/session/API security ที่ทำไว้แล้ว
 
 ## 8. Planned Branch Sequence
 
-ลำดับ branch หลักอยู่ใน `DESIGN.md`
-
-สรุปลำดับ:
-
-1. `ProductDirectionSingleUser`
-2. `UnifiedAuthAndSession`
-3. `UnifiedAppShellNavigation`
-4. `UnifiedStudyDashboard`
-5. `PersonalDocumentWorkspace`
-6. `PersonalChatWorkspace`
-7. `PersonalQuizReviewFlow`
-8. `PersonalLearningAnalytics`
-9. `UnifiedCoursesAndSettingsPlaceholders`
-10. `SingleUserResponsiveA11yFinal`
+ลำดับ branch และ dependencies สำหรับ frontend redesign อยู่ใน `DESIGN.md` ซึ่งเป็น canonical roadmap. เอกสารนี้เก็บ requirements และ contract reference เท่านั้น เพื่อไม่ให้มี roadmap ที่แข่งขันกัน.
 
 ## 9. Verification Commands
 

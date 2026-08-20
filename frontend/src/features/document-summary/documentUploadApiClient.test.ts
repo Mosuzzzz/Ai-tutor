@@ -5,6 +5,8 @@ import {
   submitDocumentUpload
 } from "./documentUploadApiClient";
 
+type DocumentUploadFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+
 const jsonResponse = (body: unknown, init: ResponseInit = {}) => {
   return new Response(JSON.stringify(body), {
     headers: { "content-type": "application/json" },
@@ -16,7 +18,7 @@ const jsonResponse = (body: unknown, init: ResponseInit = {}) => {
 describe("document upload API client", () => {
   it("submits a document to the BFF without storing tokens or forcing Content-Type", async () => {
     const file = new File(["training manual"], "training-manual.pdf", { type: "application/pdf" });
-    const fetcher = vi.fn(async () =>
+    const fetcher = vi.fn<DocumentUploadFetch>(async () =>
       jsonResponse(
         {
           document: {
@@ -36,7 +38,10 @@ describe("document upload API client", () => {
     const result = await submitDocumentUpload({ file }, fetcher);
 
     expect(result.ok).toBe(true);
-    expect(result.document?.status).toBe("pending");
+    if (!result.ok) {
+      throw new Error("Expected an upload success result");
+    }
+    expect(result.document.status).toBe("pending");
     expect(fetcher).toHaveBeenCalledWith(
       "/api/documents/upload",
       expect.objectContaining({
@@ -45,7 +50,10 @@ describe("document upload API client", () => {
         method: "POST"
       })
     );
-    const init = fetcher.mock.calls[0]?.[1] as RequestInit;
+    const init = fetcher.mock.calls[0]?.[1];
+    if (!init) {
+      throw new Error("Expected upload request options");
+    }
     expect(new Headers(init.headers).has("Content-Type")).toBe(false);
     expect(localStorageSetItem).not.toHaveBeenCalled();
 
@@ -96,7 +104,10 @@ describe("document upload API client", () => {
     const result = await getDocumentProcessingStatus("file-ready", fetcher);
 
     expect(result.ok).toBe(true);
-    expect(result.document?.status).toBe("ready");
+    if (!result.ok) {
+      throw new Error("Expected a document status success result");
+    }
+    expect(result.document.status).toBe("ready");
     expect(fetcher).toHaveBeenCalledWith(
       "/api/documents/file-ready/status",
       expect.objectContaining({

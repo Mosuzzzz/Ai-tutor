@@ -60,7 +60,10 @@ describe("loadDocumentSummaryForSession", () => {
     });
 
     expect(result.status).toBe("ready");
-    expect(result.dashboard?.selectedDocumentId).toBe("file-ready");
+    if (result.status === "error") {
+      throw new Error("Expected a document summary result");
+    }
+    expect(result.dashboard.selectedDocumentId).toBe("file-ready");
     expect(backendRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         accessToken: "server-cookie-token",
@@ -121,7 +124,10 @@ describe("loadDocumentSummaryForSession", () => {
     });
 
     expect(result.status).toBe("ready");
-    expect(result.dashboard?.documentDetails[0]?.summaryMarkdown).toContain("AI ethics guidance");
+    if (result.status === "error") {
+      throw new Error("Expected a document summary result");
+    }
+    expect(result.dashboard.documentDetails[0]?.summaryMarkdown).toContain("AI ethics guidance");
     expect(backendRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         path: "/api/recap/file-needs-recap"
@@ -176,7 +182,10 @@ describe("loadDocumentSummaryForSession", () => {
     });
 
     expect(result.status).toBe("ready");
-    expect(result.dashboard?.documentDetails[0]?.summaryMarkdown).toContain("AI ethics guidance");
+    if (result.status === "error") {
+      throw new Error("Expected a document summary result");
+    }
+    expect(result.dashboard.documentDetails[0]?.summaryMarkdown).toContain("AI ethics guidance");
     expect(backendRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         path: "/api/recap/file-needs-recap"
@@ -222,6 +231,9 @@ describe("loadDocumentSummaryForSession", () => {
     });
 
     expect(result.status).toBe("error");
+    if (result.status !== "error") {
+      throw new Error("Expected an error result");
+    }
     expect(result.errorMessage).toBeTruthy();
     expect(backendRequest).not.toHaveBeenCalled();
   });
@@ -265,8 +277,11 @@ describe("loadDocumentSummaryForSession", () => {
     });
 
     expect(result.status).toBe("ready");
-    expect(result.dashboard?.selectedDocumentId).toBe("file-needs-recap");
-    expect(result.dashboard?.documentDetails[0]?.summaryMarkdown).toContain("AI ethics guidance");
+    if (result.status === "error") {
+      throw new Error("Expected a document summary result");
+    }
+    expect(result.dashboard.selectedDocumentId).toBe("file-needs-recap");
+    expect(result.dashboard.documentDetails[0]?.summaryMarkdown).toContain("AI ethics guidance");
     expect(backendRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         path: "/api/files/file-needs-recap/detail"
@@ -291,6 +306,9 @@ describe("loadDocumentSummaryForSession", () => {
     });
 
     expect(result.status).toBe("error");
+    if (result.status !== "error") {
+      throw new Error("Expected an error result");
+    }
     expect(result.errorMessage).toBeTruthy();
     expect(backendRequest).toHaveBeenCalledTimes(1);
   });
@@ -310,6 +328,9 @@ describe("loadDocumentSummaryForSession", () => {
     });
 
     expect(result.status).toBe("error");
+    if (result.status !== "error") {
+      throw new Error("Expected an error result");
+    }
     expect(result.errorMessage).toBeTruthy();
   });
 });
