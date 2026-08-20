@@ -31,7 +31,15 @@ export type HomeHeroContent = {
   body: string;
   guestCta: string;
   authenticatedCta: string;
+  guestSecondaryCta: string;
+  authenticatedSecondaryCta: string;
   supportingLine: string;
+};
+
+export type HomeStudyPreviewContent = {
+  ariaLabel: string;
+  documentLabel: string;
+  steps: [string, string, string, string, string];
 };
 
 export type HomeFeatureContent = {
@@ -43,5 +51,6 @@ export type HomeContent = {
   navbar: HomeNavbarContent;
   navigation: HomeNavigationContent;
   hero: HomeHeroContent;
+  studyPreview: HomeStudyPreviewContent;
   features: [HomeFeatureContent, HomeFeatureContent, HomeFeatureContent];
 };

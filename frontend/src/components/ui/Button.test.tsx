@@ -13,10 +13,12 @@ describe("Button", () => {
     expect(button).toHaveClass(
       "inline-flex",
       "min-h-11",
-      "rounded",
+      "rounded-md",
       "bg-primary",
       "text-on-primary",
-      "shadow-control"
+      "shadow-control",
+      "active:translate-y-px",
+      "focus-visible:ring-2"
     );
   });
 
@@ -66,6 +68,7 @@ describe("Button", () => {
     expect(button).toBeDisabled();
     expect(button).toHaveAttribute("aria-busy", "true");
     expect(button).toHaveClass("cursor-wait");
+    expect(button.querySelector('[aria-hidden="true"]')).toHaveClass("motion-safe:animate-spin");
   });
 
   it("supports a restrained destructive state", () => {

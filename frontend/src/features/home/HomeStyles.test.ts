@@ -35,12 +35,23 @@ const lightThemeVariable = (name: string) => {
 };
 
 describe("Home style contracts", () => {
-  it("keeps white action text WCAG AA against dark-theme primary and hover colors", () => {
-    expect(contrastRatio("#ffffff", darkThemeVariable("--home-primary-action"))).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio("#ffffff", darkThemeVariable("--home-primary-hover"))).toBeGreaterThanOrEqual(4.5);
+  it("uses the approved warm-light palette with WCAG AA text and action contrast", () => {
+    expect(lightThemeVariable("--home-page")).toBe("#f7f5ef");
+    expect(lightThemeVariable("--home-elevated-surface")).toBe("#ffffff");
+    expect(lightThemeVariable("--home-text")).toBe("#17231b");
+    expect(lightThemeVariable("--home-muted-text")).toBe("#657169");
+    expect(lightThemeVariable("--home-primary-action")).toBe("#176b4d");
+    expect(lightThemeVariable("--home-primary-hover")).toBe("#12583f");
+    expect(contrastRatio(lightThemeVariable("--home-text"), lightThemeVariable("--home-page"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(lightThemeVariable("--home-muted-text"), lightThemeVariable("--home-page"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#ffffff", lightThemeVariable("--home-primary-action"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(lightThemeVariable("--home-control-border"), lightThemeVariable("--home-page"))).toBeGreaterThanOrEqual(3);
   });
 
-  it("keeps account error text WCAG AA against its elevated surface in both themes", () => {
+  it("keeps the existing dark-theme actions and errors readable", () => {
+    expect(contrastRatio("#ffffff", darkThemeVariable("--home-primary-action"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#ffffff", darkThemeVariable("--home-primary-hover"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(darkThemeVariable("--home-control-border"), darkThemeVariable("--home-page"))).toBeGreaterThanOrEqual(3);
     expect(contrastRatio(lightThemeVariable("--home-error-text"), lightThemeVariable("--home-elevated-surface"))).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(darkThemeVariable("--home-error-text"), darkThemeVariable("--home-elevated-surface"))).toBeGreaterThanOrEqual(4.5);
     expect(css).toMatch(/\.home-account-dropdown \[role="status"\]\s*\{\s*color:\s*var\(--home-error-text\);/);
@@ -51,19 +62,19 @@ describe("Home style contracts", () => {
     expect(css).toMatch(/@media \(max-width: 1119px\)[\s\S]*?\.home-navbar-controls \.home-account-label\s*\{\s*display:\s*none;/);
   });
 
-  it("keeps the hero photograph safely stacked on small screens", () => {
-    expect(css).toMatch(/\.home-hero-image-wrap\s*\{[^}]*aspect-ratio:\s*4\s*\/\s*3;/);
+  it("uses the approved responsive gutters and content width", () => {
     expect(css).toMatch(/\.home-page\s*\{[^}]*overflow-x:\s*hidden;/);
-    expect(css).toMatch(/\.home-hero\s*\{[^}]*overflow-x:\s*hidden;/);
+    expect(css).toMatch(/\.home-hero\s*\{[^}]*max-width:\s*1200px;[^}]*padding:\s*3\.5rem 1\.25rem 2\.25rem;/);
+    expect(css).toMatch(/@media \(min-width:\s*768px\)[\s\S]*?\.home-hero\s*\{[^}]*padding-left:\s*2rem;[^}]*padding-right:\s*2rem;/);
+    expect(css).toMatch(/@media \(min-width:\s*1024px\)[\s\S]*?\.home-hero\s*\{[^}]*padding-left:\s*2\.5rem;[^}]*padding-right:\s*2\.5rem;/);
+    expect(css).toMatch(/@media \(min-width:\s*1280px\)[\s\S]*?\.home-hero\s*\{[^}]*padding-left:\s*3rem;[^}]*padding-right:\s*3rem;/);
   });
 
-  it("makes the desktop hero photograph full bleed without a frame", () => {
-    expect(css).toMatch(/@media \(min-width: 1024px\)[\s\S]*?\.home-hero\s*\{[^}]*padding-top:\s*0;/);
-    expect(css).toMatch(/@media \(min-width: 1024px\)[\s\S]*?\.home-hero-image-wrap\s*\{[^}]*border:\s*0;[^}]*border-radius:\s*0;/);
-    expect(css).toMatch(/@media \(min-width: 1024px\)[\s\S]*?\.home-hero-image-wrap\s*\{[^}]*margin-right:\s*calc\(min\(0px,\s*\(1280px\s*-\s*100vw\)\s*\/\s*2\)\s*-\s*1\.25rem\);/);
-  });
-
-  it("progressively fades the desktop hero image from the page surface by halfway", () => {
-    expect(css).toMatch(/@media \(min-width: 1024px\)[\s\S]*?\.home-hero-image-wrap::before\s*\{[^}]*linear-gradient\(90deg,\s*var\(--home-page\)\s*0%,\s*transparent\s*(?:4[5-9]|5[0-5])%/);
+  it("keeps the static study-paper prototype stacked before using a desktop two-column hero", () => {
+    expect(css).toMatch(/\.home-study-preview\s*\{[^}]*border-radius:\s*1\.125rem;[^}]*box-shadow:\s*0 8px 24px rgba\(23, 35, 27, 0\.07\);/);
+    expect(css).toMatch(/\.home-study-paper-highlight\s*\{[^}]*background:\s*var\(--home-primary-soft\);/);
+    expect(css).toMatch(/@media \(min-width:\s*1024px\)[\s\S]*?\.home-hero\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1\.08fr\) minmax\(0, 0\.92fr\);/);
+    const previewRule = css.match(/\.home-study-preview\s*\{[^}]*\}/)?.[0] ?? "";
+    expect(previewRule).not.toContain("animation:");
   });
 });

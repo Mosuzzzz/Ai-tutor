@@ -19,9 +19,11 @@ describe("HomeLandingPage preferences", () => {
     render(<HomeLandingPage initialSession={null} />);
 
     expect(await screen.findByRole("heading", { name: "Learn smarter. Understand more." })).toBeInTheDocument();
+    expect(screen.getByRole("main").parentElement).toHaveAttribute("lang", "en");
     fireEvent.click(screen.getByRole("button", { name: "Language: EN" }));
 
     expect(screen.getByRole("heading", { name: "เรียนได้ฉลาดขึ้น เข้าใจได้มากกว่า" })).toBeInTheDocument();
+    expect(screen.getByRole("main").parentElement).toHaveAttribute("lang", "th");
     expect(localStorage.getItem(HOME_LANGUAGE_STORAGE_KEY)).toBe("th");
   });
 

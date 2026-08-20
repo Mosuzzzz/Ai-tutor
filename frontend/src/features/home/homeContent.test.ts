@@ -49,9 +49,19 @@ describe("Home content", () => {
         body: expect.any(String),
         guestCta: expect.any(String),
         authenticatedCta: expect.any(String),
+        guestSecondaryCta: expect.any(String),
+        authenticatedSecondaryCta: expect.any(String),
         supportingLine: expect.any(String)
       })
     );
+    expect(content.studyPreview).toEqual(
+      expect.objectContaining({
+        ariaLabel: expect.any(String),
+        documentLabel: expect.any(String),
+        steps: expect.any(Array)
+      })
+    );
+    expect(content.studyPreview.steps).toHaveLength(5);
     expect(content.features).toHaveLength(3);
     expect(content.features).toEqual(
       expect.arrayContaining([
@@ -88,7 +98,14 @@ describe("Home content", () => {
         body: "Turn your documents into clear summaries, grounded AI answers, review quizzes, and progress you can act on.",
         guestCta: "Get started for free",
         authenticatedCta: "Start with a document",
+        guestSecondaryCta: "Log in",
+        authenticatedSecondaryCta: "Go to dashboard",
         supportingLine: "Built for focused, document-based learning."
+      },
+      studyPreview: {
+        ariaLabel: "AI study workflow: Document to Highlight to Summary to Ask to Quiz",
+        documentLabel: "Study document",
+        steps: ["Document", "Highlight", "Summary", "Ask", "Quiz"]
       },
       features: [
         {
@@ -135,7 +152,14 @@ describe("Home content", () => {
         body: "เปลี่ยนเอกสารของคุณเป็นสรุปที่เข้าใจง่าย คำตอบ AI ที่อ้างอิงเนื้อหา ควิซทบทวน และสถิติที่นำไปใช้ต่อได้",
         guestCta: "เริ่มต้นใช้งานฟรี",
         authenticatedCta: "เริ่มจากเอกสาร",
+        guestSecondaryCta: "เข้าสู่ระบบ",
+        authenticatedSecondaryCta: "ไปที่แดชบอร์ด",
         supportingLine: "ออกแบบเพื่อการเรียนรู้จากเอกสารอย่างมีสมาธิ"
+      },
+      studyPreview: {
+        ariaLabel: "ขั้นตอนการเรียนด้วย AI: เอกสาร ไฮไลต์ สรุป ถาม และควิซ",
+        documentLabel: "เอกสารสำหรับเรียน",
+        steps: ["เอกสาร", "ไฮไลต์", "สรุป", "ถาม", "ควิซ"]
       },
       features: [
         {

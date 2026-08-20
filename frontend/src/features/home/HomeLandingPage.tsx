@@ -51,7 +51,7 @@ export const HomeLandingPage = ({ initialSession }: { initialSession: AuthSessio
   };
 
   return (
-    <div className="home-page" ref={rootRef}>
+    <div className="home-page" lang={language} ref={rootRef}>
       <HomeNavbar language={language} mobileMenuTriggerRef={mobileTriggerRef} onLanguageToggle={toggleLanguage} onMobileMenuOpen={() => setIsMobileMenuOpen(true)} onThemeToggle={toggleTheme} session={initialSession} theme={theme} />
       <main>
         <HomeHero language={language} session={initialSession} />

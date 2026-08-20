@@ -5,6 +5,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        foundation: {
+          canvas: "#F7F5EF",
+          surface: "#FCFBF7",
+          "surface-elevated": "#FFFFFF",
+          ink: "#17231B",
+          "ink-secondary": "#46564B",
+          "ink-muted": "#657169",
+          "border-subtle": "#D8DED7",
+          "border-control": "#829087",
+          brand: "#176B4D",
+          "brand-hover": "#12583F",
+          "brand-active": "#0D4632",
+          "brand-soft": "#E4F1E9",
+          success: "#1F7A50",
+          warning: "#8A5A00",
+          error: "#B42318",
+          focus: "#0F766E"
+        },
         background: "#f7f8fb",
         "on-background": "#0b1c30",
         surface: "#f7f8fb",
@@ -62,16 +80,23 @@ const config: Config = {
         sans: ["var(--font-noto-thai)", "Noto Sans Thai", "Noto Sans", "system-ui", "sans-serif"]
       },
       fontSize: {
+        "display-xl": ["clamp(2.75rem, 5vw, 4.5rem)", { lineHeight: "1.08", fontWeight: "700" }],
+        "heading-xl": ["clamp(2.25rem, 4vw, 3rem)", { lineHeight: "1.15", fontWeight: "700" }],
         "display-lg": ["48px", { lineHeight: "1.2", fontWeight: "700" }],
         "headline-lg": ["32px", { lineHeight: "1.3", fontWeight: "700" }],
         "headline-lg-mobile": ["28px", { lineHeight: "1.3", fontWeight: "700" }],
         "headline-md": ["24px", { lineHeight: "1.4", fontWeight: "600" }],
         "body-lg": ["18px", { lineHeight: "1.6", fontWeight: "400" }],
         "body-md": ["16px", { lineHeight: "1.6", fontWeight: "400" }],
+        "body-sm": ["14px", { lineHeight: "1.57", fontWeight: "400" }],
         "label-md": ["14px", { lineHeight: "1.4", fontWeight: "500" }],
-        "label-sm": ["12px", { lineHeight: "1.2", fontWeight: "600" }]
+        "label-sm": ["12px", { lineHeight: "1.2", fontWeight: "600" }],
+        caption: ["12px", { lineHeight: "1.5", fontWeight: "500" }]
       },
       borderRadius: {
+        "foundation-sm": "0.375rem",
+        "foundation-md": "0.75rem",
+        "foundation-lg": "1.125rem",
         sm: "0.25rem",
         DEFAULT: "0.5rem",
         md: "0.75rem",
@@ -80,17 +105,42 @@ const config: Config = {
         full: "9999px"
       },
       boxShadow: {
+        "foundation-control": "0 1px 2px rgba(23, 35, 27, 0.07)",
+        "foundation-surface": "0 8px 24px rgba(23, 35, 27, 0.07)",
+        "foundation-overlay": "0 24px 60px rgba(23, 35, 27, 0.14)",
         ambient: "0 4px 20px rgba(0, 0, 0, 0.05)",
         card: "0 1px 2px rgba(11, 28, 48, 0.06)",
         control: "0 1px 2px rgba(11, 28, 48, 0.08)",
         elevated: "0 10px 24px rgba(11, 28, 48, 0.1)"
       },
       spacing: {
+        "page-mobile": "1.25rem",
+        "page-tablet": "2rem",
+        "page-desktop": "2.5rem",
+        "page-wide": "3rem",
+        "section-mobile": "4rem",
+        "section-tablet": "5rem",
+        "section-desktop": "6rem",
+        "section-wide": "7rem",
         sidebar: "280px",
         topbar: "72px"
       },
       maxWidth: {
-        app: "1440px"
+        app: "1440px",
+        content: "1200px",
+        prose: "720px"
+      },
+      transitionDuration: {
+        instant: "120ms",
+        control: "180ms",
+        surface: "260ms",
+        reveal: "420ms",
+        story: "700ms"
+      },
+      transitionTimingFunction: {
+        standard: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        emphasis: "cubic-bezier(0.16, 1, 0.3, 1)",
+        exit: "cubic-bezier(0.4, 0, 1, 1)"
       }
     }
   },

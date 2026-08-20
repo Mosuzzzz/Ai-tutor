@@ -10,7 +10,7 @@ describe("Card", () => {
     const card = screen.getByText("Latest lesson");
 
     expect(card).toHaveClass(
-      "rounded",
+      "rounded-md",
       "border",
       "bg-surface-container-lowest"
     );
