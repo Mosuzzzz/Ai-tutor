@@ -164,6 +164,7 @@ describe("auth API client", () => {
         fetcher
       )
     ).resolves.toEqual({
+      kind: "verification-required",
       message: "กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ",
       ok: false
     });

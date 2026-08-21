@@ -1,25 +1,36 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import type { FormEvent } from "react";
 
-import { AiTutorLogo } from "../../components/brand/AiTutorLogo";
 import { Button } from "../../components/ui/Button";
-import { AuthDivider, AuthField, MockSocialButton, MockStatus } from "./AuthFormFields";
+import { AuthField, AuthStatus, PlannedGoogleAuth } from "./AuthFormFields";
 import { AuthShell } from "./AuthShell";
+import type { AuthVisualState } from "./AuthStudyCompanion";
 import { submitRegister } from "./authApiClient";
-import { AUTH_COPY, AUTH_MESSAGES, INITIAL_REGISTER_FORM } from "./authContent";
+import { AUTH_COPY, AUTH_FEEDBACK, AUTH_MESSAGES, INITIAL_REGISTER_FORM } from "./authContent";
 import { validateRegister } from "./authValidation";
-import type { AuthSubmissionStatus, RegisterInput } from "./types";
+import type { AuthSubmissionResult, AuthSubmissionStatus, RegisterInput } from "./types";
+
+type AuthFeedback = {
+  detail?: string;
+  title: string;
+};
+
+const getRegisterFailureFeedback = (submission: Extract<AuthSubmissionResult, { ok: false }>): AuthFeedback => {
+  return submission.kind === "invalid-input" ? AUTH_FEEDBACK.register.invalidInput : AUTH_FEEDBACK.register.unavailable;
+};
 
 export const RegisterPage = () => {
   const [form, setForm] = useState<RegisterInput>(INITIAL_REGISTER_FORM);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof RegisterInput, string>>>({});
   const [submissionStatus, setSubmissionStatus] = useState<AuthSubmissionStatus>("idle");
-  const [submissionMessage, setSubmissionMessage] = useState("");
-  const [hasDevVerifiedRegistration, setHasDevVerifiedRegistration] = useState(false);
+  const [submissionFeedback, setSubmissionFeedback] = useState<AuthFeedback | null>(null);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isConfirmationPasswordVisible, setIsConfirmationPasswordVisible] = useState(false);
+  const [visualState, setVisualState] = useState<AuthVisualState>("idle");
   const isSubmitting = submissionStatus === "submitting";
 
   const updateField = <TField extends keyof RegisterInput>(
@@ -29,8 +40,8 @@ export const RegisterPage = () => {
     setForm((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
     setSubmissionStatus("idle");
-    setSubmissionMessage("");
-    setHasDevVerifiedRegistration(false);
+    setSubmissionFeedback(null);
+    setVisualState(field === "email" ? "email" : field === "password" || field === "confirmPassword" ? "password" : "document");
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -40,109 +51,159 @@ export const RegisterPage = () => {
     if (!result.ok) {
       setFieldErrors(result.fieldErrors);
       setSubmissionStatus("idle");
-      setSubmissionMessage("");
-      setHasDevVerifiedRegistration(false);
+      setSubmissionFeedback(null);
       return;
     }
 
     setFieldErrors({});
     setSubmissionStatus("submitting");
-    setSubmissionMessage(AUTH_MESSAGES.registerSubmitting);
-    setHasDevVerifiedRegistration(false);
+    setSubmissionFeedback({ title: AUTH_MESSAGES.registerSubmitting });
+    setVisualState("submitting");
 
     try {
       const submission = await submitRegister(result.values);
 
-      setSubmissionStatus(submission.ok ? "success" : "error");
-      setSubmissionMessage(submission.message);
-      setHasDevVerifiedRegistration(submission.ok && Boolean(submission.verifiedInDevelopment));
+      if (submission.ok) {
+        setSubmissionStatus("success");
+        setSubmissionFeedback({
+          detail: submission.requiresEmailVerification
+            ? AUTH_FEEDBACK.register.verificationRequired
+            : AUTH_FEEDBACK.register.verified,
+          title: AUTH_FEEDBACK.register.success
+        });
+        setVisualState("success");
+        return;
+      }
+
+      setSubmissionStatus("error");
+      setSubmissionFeedback(getRegisterFailureFeedback(submission));
+      setVisualState("error");
     } catch {
       setSubmissionStatus("error");
-      setSubmissionMessage(AUTH_MESSAGES.genericError);
-      setHasDevVerifiedRegistration(false);
+      setSubmissionFeedback(AUTH_FEEDBACK.register.unavailable);
+      setVisualState("error");
     }
   };
 
   return (
-    <AuthShell mode="register">
-      <div className="mb-7 text-center">
-        <div className="mb-4 flex justify-center">
-          <AiTutorLogo className="h-24 w-full max-w-[240px] rounded-md" priority sizes="240px" />
-        </div>
-        <h1 className="sr-only">{AUTH_COPY.register.heading}</h1>
+    <AuthShell mode="register" visualState={visualState}>
+      <div className="mb-8">
+        <p className="auth-entrance-item text-label-sm font-bold uppercase tracking-[0.12em] text-foundation-brand" data-auth-enter="0">AI Tutor</p>
+        <h1 className="auth-entrance-item mt-3 font-[var(--font-display)] text-3xl font-bold leading-tight text-foundation-ink sm:text-4xl" data-auth-enter="1">
+          {AUTH_COPY.register.heading}
+        </h1>
+        <p className="auth-entrance-item mt-3 max-w-md text-body-md text-foundation-ink-secondary" data-auth-enter="2">{AUTH_COPY.register.intro}</p>
       </div>
 
       <form className="space-y-5" noValidate onSubmit={handleSubmit}>
-        {submissionStatus !== "idle" && (
-          <MockStatus
+        {submissionStatus !== "idle" && submissionFeedback && (
+          <AuthStatus
+            action={submissionStatus === "success" ? (
+              <Link
+                className="inline-flex min-h-11 items-center justify-center rounded-md bg-foundation-brand px-4 text-label-md font-bold text-white transition-colors duration-control ease-standard hover:bg-foundation-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foundation-focus focus-visible:ring-offset-2"
+                href="/login"
+              >
+                ไปหน้าเข้าสู่ระบบ
+              </Link>
+            ) : undefined}
             tone={
               submissionStatus === "submitting" ? "info" : submissionStatus === "error" ? "error" : "success"
             }
-          >
-            {submissionMessage}
-          </MockStatus>
-        )}
-
-        {hasDevVerifiedRegistration && (
-          <div className="rounded-lg border border-[#c7cfdd] bg-[#f8f9ff] p-4 text-body-md text-[#3e4a5c]">
-            <p>อีเมลถูกยืนยันสำหรับ local dev แล้ว คุณสามารถเข้าสู่ระบบด้วยบัญชีนี้ได้ทันที</p>
-            <Link
-              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#10253f] px-4 text-label-md font-bold text-white transition-colors hover:bg-[#18395e]"
-              href="/login"
-            >
-              ไปหน้าเข้าสู่ระบบ
-            </Link>
-          </div>
+            {...submissionFeedback}
+          />
         )}
 
         <div className="grid gap-4">
-          <AuthField
-            autoComplete="name"
-            error={fieldErrors.fullName}
-            id="register-full-name"
-            label="ชื่อ-นามสกุล"
-            onChange={(event) => updateField("fullName", event.target.value)}
-            placeholder="ระบุชื่อ-นามสกุล"
-            type="text"
-            value={form.fullName}
-          />
-          <AuthField
-            autoComplete="email"
-            error={fieldErrors.email}
-            id="register-email"
-            label="อีเมล"
-            onChange={(event) => updateField("email", event.target.value)}
-            placeholder="ระบุอีเมล"
-            type="email"
-            value={form.email}
-          />
-          <AuthField
-            autoComplete="new-password"
-            error={fieldErrors.password}
-            id="register-password"
-            label="รหัสผ่าน"
-            onChange={(event) => updateField("password", event.target.value)}
-            placeholder="สร้างรหัสผ่าน"
-            type="password"
-            value={form.password}
-          />
-          <AuthField
-            autoComplete="new-password"
-            error={fieldErrors.confirmPassword}
-            id="register-confirm-password"
-            label="ยืนยันรหัสผ่าน"
-            onChange={(event) => updateField("confirmPassword", event.target.value)}
-            placeholder="ยืนยันรหัสผ่านอีกครั้ง"
-            type="password"
-            value={form.confirmPassword}
-          />
+          <div className="auth-entrance-item" data-auth-enter="3">
+            <AuthField
+              autoComplete="name"
+              error={fieldErrors.fullName}
+              id="register-full-name"
+              label="ชื่อ-นามสกุล"
+              onChange={(event) => updateField("fullName", event.target.value)}
+              onFocus={() => setVisualState("document")}
+              placeholder="ระบุชื่อ-นามสกุล"
+              type="text"
+              value={form.fullName}
+            />
+          </div>
+          <div className="auth-entrance-item" data-auth-enter="4">
+            <AuthField
+              autoComplete="email"
+              error={fieldErrors.email}
+              id="register-email"
+              label="อีเมล"
+              onChange={(event) => updateField("email", event.target.value)}
+              onFocus={() => setVisualState("email")}
+              placeholder="ระบุอีเมล"
+              type="email"
+              value={form.email}
+            />
+          </div>
+          <div className="auth-entrance-item" data-auth-enter="5">
+            <AuthField
+              autoComplete="new-password"
+              error={fieldErrors.password}
+              id="register-password"
+              label="รหัสผ่าน"
+              onChange={(event) => updateField("password", event.target.value)}
+              onFocus={() => setVisualState(isPasswordVisible ? "password-visible" : "password")}
+              placeholder="สร้างรหัสผ่าน"
+              description={AUTH_COPY.register.passwordRequirement}
+              trailingAction={
+                <button
+                  aria-label={isPasswordVisible ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm text-foundation-ink-secondary transition-colors duration-control ease-standard hover:bg-foundation-brand-soft hover:text-foundation-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foundation-focus"
+                  onClick={() => setIsPasswordVisible((current) => {
+                    const next = !current;
+                    setVisualState(next ? "password-visible" : "password");
+                    return next;
+                  })}
+                  type="button"
+                >
+                  {isPasswordVisible ? <EyeOff aria-hidden="true" className="h-5 w-5" /> : <Eye aria-hidden="true" className="h-5 w-5" />}
+                </button>
+              }
+              type={isPasswordVisible ? "text" : "password"}
+              value={form.password}
+            />
+          </div>
+          <div className="auth-entrance-item" data-auth-enter="6">
+            <AuthField
+              autoComplete="new-password"
+              error={fieldErrors.confirmPassword}
+              id="register-confirm-password"
+              label="ยืนยันรหัสผ่าน"
+              onChange={(event) => updateField("confirmPassword", event.target.value)}
+              onFocus={() => setVisualState(isConfirmationPasswordVisible ? "password-visible" : "password")}
+              placeholder="ยืนยันรหัสผ่านอีกครั้ง"
+              trailingAction={
+                <button
+                  aria-label={isConfirmationPasswordVisible ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm text-foundation-ink-secondary transition-colors duration-control ease-standard hover:bg-foundation-brand-soft hover:text-foundation-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foundation-focus"
+                  onClick={() => setIsConfirmationPasswordVisible((current) => {
+                    const next = !current;
+                    setVisualState(next ? "password-visible" : "password");
+                    return next;
+                  })}
+                  type="button"
+                >
+                  {isConfirmationPasswordVisible ? <EyeOff aria-hidden="true" className="h-5 w-5" /> : <Eye aria-hidden="true" className="h-5 w-5" />}
+                </button>
+              }
+              type={isConfirmationPasswordVisible ? "text" : "password"}
+              value={form.confirmPassword}
+            />
+          </div>
         </div>
 
-        <div>
-          <label className="flex items-start gap-3 text-body-md text-[#3e4a5c]" htmlFor="register-terms">
+        <div className="auth-entrance-item" data-auth-enter="7">
+          <label className="flex items-start gap-3 text-body-md text-foundation-ink-secondary" htmlFor="register-terms">
             <input
+              aria-describedby={fieldErrors.acceptedTerms ? "register-terms-error" : undefined}
+              aria-invalid={Boolean(fieldErrors.acceptedTerms)}
               checked={form.acceptedTerms}
-              className="mt-1 h-5 w-5 rounded border-[#bcc5d6] text-[#10253f] focus:ring-[#f4b35b]"
+              className="mt-1 h-5 w-5 rounded border-foundation-border-control text-foundation-brand focus:ring-foundation-focus"
               id="register-terms"
               onChange={(event) => updateField("acceptedTerms", event.target.checked)}
               type="checkbox"
@@ -150,26 +211,20 @@ export const RegisterPage = () => {
             <span>{AUTH_COPY.register.termsLabel}</span>
           </label>
           {fieldErrors.acceptedTerms && (
-            <p className="mt-2 text-label-sm text-error">{fieldErrors.acceptedTerms}</p>
+            <p className="mt-2 text-label-sm font-semibold text-foundation-error" id="register-terms-error">{fieldErrors.acceptedTerms}</p>
           )}
         </div>
 
-        <Button className="w-full bg-[#10253f] text-white hover:bg-[#18395e]" disabled={isSubmitting} type="submit">
+        <Button className="auth-entrance-item auth-primary-submit w-full" data-auth-enter="8" isLoading={isSubmitting} loadingLabel={AUTH_COPY.register.loadingLabel} type="submit">
           {AUTH_COPY.register.submitLabel}
           <ArrowRight aria-hidden="true" className="h-5 w-5" />
         </Button>
+        <div className="auth-entrance-item" data-auth-enter="9"><PlannedGoogleAuth /></div>
       </form>
 
-      <AuthDivider>{AUTH_COPY.register.divider}</AuthDivider>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <MockSocialButton provider="Google" />
-        <MockSocialButton provider="Facebook" />
-      </div>
-
-      <p className="mt-8 text-center text-body-md text-[#596273]">
+      <p className="auth-entrance-item mt-7 text-center text-body-md text-foundation-ink-secondary" data-auth-enter="10">
         {AUTH_COPY.register.footerPrompt}{" "}
-        <Link className="font-bold text-[#a9660a] hover:text-[#704512]" href="/login">
+        <Link className="rounded-sm font-bold text-foundation-brand transition-colors hover:text-foundation-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foundation-focus" href="/login">
           {AUTH_COPY.register.footerLink}
         </Link>
       </p>

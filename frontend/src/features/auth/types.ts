@@ -33,6 +33,8 @@ export type RegisterFields = keyof RegisterInput;
 
 export type AuthSubmissionStatus = "idle" | "submitting" | "success" | "error";
 
+export type AuthFailureKind = "invalid-credentials" | "invalid-input" | "unavailable" | "verification-required";
+
 export type AuthSession = {
   mode: "http-only-cookie";
   storesTokenInClient: false;
@@ -55,6 +57,7 @@ export type AuthSubmissionResult =
       verifiedInDevelopment?: boolean;
     }
   | {
+      kind: AuthFailureKind;
       ok: false;
       message: string;
     };
