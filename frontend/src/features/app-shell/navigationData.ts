@@ -4,13 +4,12 @@ import {
   FileText,
   LayoutDashboard,
   MessageSquareText,
-  Settings,
-  Sparkles
+  Settings
 } from "lucide-react";
 
 import { filterNavigationItemsForRole } from "../auth/authRoutePolicy";
 import type { AuthRouteRole } from "../auth/types";
-import type { NavigationItem, ShellAction } from "./types";
+import type { NavigationItem } from "./types";
 
 const ALL_AUTH_ROLES = ["user", "admin"] as const;
 export const primaryNavigation = [
@@ -24,12 +23,6 @@ export const primaryNavigation = [
 export const secondaryNavigation = [
   { allowedRoles: ALL_AUTH_ROLES, href: "/settings", icon: Settings, label: "การตั้งค่า" }
 ] satisfies NavigationItem[];
-
-export const aiAction = {
-  href: "/documents",
-  icon: Sparkles,
-  label: "เริ่มจากเอกสาร"
-} satisfies ShellAction;
 
 export const getPrimaryNavigationForRole = (role: AuthRouteRole) => {
   return filterNavigationItemsForRole(primaryNavigation, role);

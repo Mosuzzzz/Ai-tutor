@@ -1,22 +1,31 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+
 import { isActiveHref } from "./appShellHelpers";
 import { NavigationLink } from "./NavigationLink";
-import type { NavigationItem } from "./types";
+import { getPrimaryNavigationForRole, getSecondaryNavigationForRole } from "./navigationData";
+import type { AuthRouteRole } from "../auth/types";
 
 type AppShellNavigationGroupProps = {
   ariaLabel: string;
   className: string;
-  items: NavigationItem[];
   onNavigate?: () => void;
-  pathname: string;
+  role: AuthRouteRole;
+  variant: "primary" | "secondary";
 };
 
 export const AppShellNavigationGroup = ({
   ariaLabel,
   className,
-  items,
   onNavigate,
-  pathname
+  role,
+  variant
 }: AppShellNavigationGroupProps) => {
+  const pathname = usePathname() ?? "/";
+  const items =
+    variant === "primary" ? getPrimaryNavigationForRole(role) : getSecondaryNavigationForRole(role);
+
   return (
     <nav aria-label={ariaLabel} className={className}>
       {items.map((item) => (

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  aiAction,
   getPrimaryNavigationForRole,
   primaryNavigation,
   secondaryNavigation
@@ -36,11 +35,7 @@ describe("app shell navigation data", () => {
     expect(getPrimaryNavigationForRole(role).map((item) => item.href)).toEqual(expectedCoreHrefs);
   });
 
-  it("keeps secondary navigation and the primary action aligned with the document-first flow", () => {
+  it("keeps Settings as the only secondary navigation item", () => {
     expect(secondaryNavigation.map((item) => item.href)).toEqual(["/settings"]);
-    expect(aiAction).toMatchObject({
-      href: "/documents",
-      label: "เริ่มจากเอกสาร"
-    });
   });
 });

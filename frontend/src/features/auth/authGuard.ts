@@ -89,6 +89,16 @@ export const requirePageSession = async (href: ProtectedRouteHref) => {
   return decision.session;
 };
 
+export const requireAuthenticatedSession = async () => {
+  const session = await getServerAuthSession();
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  return session;
+};
+
 export const redirectAuthenticatedRoute = async () => {
   const session = await getServerAuthSession();
   const decision = resolvePublicAuthRouteDecision(session);
