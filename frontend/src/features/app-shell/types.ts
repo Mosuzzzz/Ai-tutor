@@ -8,14 +8,10 @@ export type AppShellProps = {
   session: AuthSession;
 };
 
+export type AppShellUser = Pick<AuthSession["user"], "displayName" | "email" | "role">;
+
 export type NavigationItem = {
   allowedRoles: readonly AuthRouteRole[];
-  href: string;
-  icon: LucideIcon;
-  label: string;
-};
-
-export type ShellAction = {
   href: string;
   icon: LucideIcon;
   label: string;

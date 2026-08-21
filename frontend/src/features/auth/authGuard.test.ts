@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { AUTH_COOKIE_NAMES } from "../../lib/api/authCookies";
-import { getServerAuthSession, resolvePageSession, type AuthBackendRequest } from "./authGuard";
+import {
+  getServerAuthSession,
+  resolvePageSession,
+  type AuthBackendRequest
+} from "./authGuard";
 
 const backendSession = {
   accessible_route_groups: ["dashboard", "documents", "chat", "quiz", "analytics"],
@@ -116,5 +120,34 @@ describe("auth guard server helpers", () => {
       type: "render"
     });
     expect(JSON.stringify(result)).not.toContain("access-cookie-value");
+  });
+
+  it("does not reuse an injected session result across independent requests", async () => {
+    const backendRequest = vi
+      .fn()
+      .mockResolvedValueOnce(backendSession)
+      .mockResolvedValueOnce(learnerBackendSession) as unknown as ReturnType<typeof vi.fn> &
+      AuthBackendRequest;
+
+    const firstSession = await getServerAuthSession({
+      backendRequest,
+      cookieStore: createCookieStore("first-request-token")
+    });
+    const secondSession = await getServerAuthSession({
+      backendRequest,
+      cookieStore: createCookieStore("second-request-token")
+    });
+
+    expect(firstSession?.user.email).toBe("teacher@example.com");
+    expect(secondSession?.user.email).toBe("learner@example.com");
+    expect(backendRequest).toHaveBeenCalledTimes(2);
+    expect(backendRequest).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ accessToken: "first-request-token" })
+    );
+    expect(backendRequest).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ accessToken: "second-request-token" })
+    );
   });
 });

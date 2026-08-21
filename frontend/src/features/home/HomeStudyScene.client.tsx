@@ -11,7 +11,8 @@ gsap.registerPlugin(useGSAP);
 
 export const HomeStudyScene = ({ content }: { content: HomeStudySceneContent }) => {
   const sceneRef = useRef<HTMLElement>(null);
-  const timelineRef = useRef<gsap.core.Timeline | null>(null);
+  const explanatoryTimelineRef = useRef<gsap.core.Timeline | null>(null);
+  const ambientTimelineRef = useRef<gsap.core.Timeline | null>(null);
   const manuallyPausedRef = useRef(false);
   const visibleRef = useRef(true);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -21,17 +22,72 @@ export const HomeStudyScene = ({ content }: { content: HomeStudySceneContent }) 
     const media = gsap.matchMedia();
     media.add({
       reduceMotion: "(prefers-reduced-motion: reduce)",
-      mobile: "(max-width: 767px)",
-      fullMotion: "(min-width: 768px) and (prefers-reduced-motion: no-preference)"
+      coarsePointer: "(pointer: coarse)",
+      finePointer: "(pointer: fine)"
     }, (context) => {
-      const conditions = context.conditions as { reduceMotion: boolean; mobile: boolean; fullMotion: boolean };
+      const conditions = context.conditions as { coarsePointer: boolean; finePointer: boolean; reduceMotion: boolean };
+      let disposed = false;
+
+      const applyFinalSceneState = () => {
+        gsap.set("[data-scene-part='document'], [data-scene-part='summary'], [data-scene-part='quiz'], [data-scene-part='result']", {
+          autoAlpha: 1,
+          scale: 1,
+          y: 0
+        });
+        gsap.set("[data-scene-part='highlight']", { scaleX: 1, transformOrigin: "left center" });
+        gsap.set("[data-scene-part='question'], [data-scene-part='answer']", { autoAlpha: 0, y: 0 });
+      };
+
+      const activeTimelines = () => [explanatoryTimelineRef.current, ambientTimelineRef.current].filter((timeline): timeline is gsap.core.Timeline => timeline !== null);
+      const syncPlayback = () => {
+        const shouldPlay = visibleRef.current && !manuallyPausedRef.current && document.visibilityState !== "hidden";
+        activeTimelines().forEach((timeline) => {
+          if (shouldPlay) timeline.play(); else timeline.pause();
+        });
+      };
+
       if (conditions.reduceMotion) {
-        gsap.set("[data-scene-part]", { clearProps: "all" });
-        timelineRef.current = null;
+        applyFinalSceneState();
+        explanatoryTimelineRef.current = null;
+        ambientTimelineRef.current = null;
         return;
       }
 
-      const timeline = gsap.timeline({ defaults: { ease: "power2.out" }, paused: false, repeat: conditions.mobile ? 0 : -1, repeatDelay: 1.1 });
+      const createAmbientTimeline = () => {
+        const ambient = gsap.timeline({
+          defaults: { ease: "sine.inOut" },
+          paused: true,
+          repeat: -1,
+          yoyo: true
+        });
+
+        if (conditions.finePointer && !conditions.coarsePointer) {
+          ambient
+            .to("[data-scene-part='summary']", { duration: 6.4, y: -2 }, 0)
+            .to("[data-scene-part='quiz']", { duration: 7.2, y: 1.5 }, 1.1)
+            .to("[data-scene-part='result']", { duration: 5.8, scale: 1.01, transformOrigin: "center center" }, 2.3);
+        } else {
+          ambient.to("[data-scene-part='result']", {
+            duration: 7.5,
+            scale: 1.008,
+            transformOrigin: "center center"
+          });
+        }
+
+        ambientTimelineRef.current = ambient;
+        syncPlayback();
+      };
+
+      const timeline = gsap.timeline({
+        defaults: { ease: "power2.out" },
+        onComplete: () => {
+          if (disposed) return;
+          applyFinalSceneState();
+          createAmbientTimeline();
+        },
+        paused: true,
+        repeat: 0
+      });
       timeline
         .set("[data-scene-part='document']", { autoAlpha: 0, y: 24 })
         .set("[data-scene-part='highlight']", { scaleX: 0, transformOrigin: "left center" })
@@ -42,16 +98,9 @@ export const HomeStudyScene = ({ content }: { content: HomeStudySceneContent }) 
         .to("[data-scene-part='question']", { autoAlpha: 1, duration: 0.55, y: 0 }, ">+0.3")
         .to("[data-scene-part='answer']", { autoAlpha: 1, duration: 0.65, y: 0 }, ">+0.35")
         .to("[data-scene-part='quiz']", { autoAlpha: 1, duration: 0.65, y: 0 }, ">+0.45")
-        .to("[data-scene-part='result']", { autoAlpha: 1, duration: 0.55, y: 0 }, ">+0.25")
-        .to("[data-scene-part='summary'], [data-scene-part='question'], [data-scene-part='answer'], [data-scene-part='quiz'], [data-scene-part='result']", { autoAlpha: 0, duration: 0.55, y: -10 }, ">+1.2")
-        .to("[data-scene-part='highlight']", { duration: 0.35, scaleX: 0 }, "<")
-        .to("[data-scene-part='document']", { autoAlpha: 0, duration: 0.4, y: -12 }, "<+0.1");
-      timelineRef.current = timeline;
+        .to("[data-scene-part='result']", { autoAlpha: 1, duration: 0.55, y: 0 }, ">+0.25");
+      explanatoryTimelineRef.current = timeline;
 
-      const syncPlayback = () => {
-        const shouldPlay = visibleRef.current && !manuallyPausedRef.current && document.visibilityState !== "hidden";
-        if (shouldPlay) timeline.play(); else timeline.pause();
-      };
       const onVisibilityChange = () => syncPlayback();
       document.addEventListener("visibilitychange", onVisibilityChange);
       const observer = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver(([entry]) => {
@@ -59,11 +108,16 @@ export const HomeStudyScene = ({ content }: { content: HomeStudySceneContent }) 
         syncPlayback();
       }, { threshold: 0.15 });
       if (sceneRef.current) observer?.observe(sceneRef.current);
+      syncPlayback();
 
       return () => {
+        disposed = true;
         document.removeEventListener("visibilitychange", onVisibilityChange);
         observer?.disconnect();
-        timelineRef.current = null;
+        explanatoryTimelineRef.current?.kill();
+        ambientTimelineRef.current?.kill();
+        explanatoryTimelineRef.current = null;
+        ambientTimelineRef.current = null;
       };
     }, sceneRef);
     return () => media.revert();
@@ -71,7 +125,12 @@ export const HomeStudyScene = ({ content }: { content: HomeStudySceneContent }) 
 
   const togglePlayback = () => {
     manuallyPausedRef.current = isPlaying;
-    if (isPlaying) timelineRef.current?.pause(); else if (visibleRef.current) timelineRef.current?.play();
+    const timelines = [explanatoryTimelineRef.current, ambientTimelineRef.current];
+    if (isPlaying) {
+      timelines.forEach((timeline) => timeline?.pause());
+    } else if (visibleRef.current && document.visibilityState !== "hidden") {
+      timelines.forEach((timeline) => timeline?.play());
+    }
     setIsPlaying((playing) => !playing);
   };
 

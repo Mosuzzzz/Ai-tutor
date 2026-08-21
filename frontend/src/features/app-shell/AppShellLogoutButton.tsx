@@ -6,7 +6,11 @@ import { useState } from "react";
 
 import { logout } from "../auth/authApiClient";
 
-export const AppShellLogoutButton = () => {
+type AppShellLogoutButtonProps = {
+  role?: "menuitem";
+};
+
+export const AppShellLogoutButton = ({ role }: AppShellLogoutButtonProps = {}) => {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,6 +38,7 @@ export const AppShellLogoutButton = () => {
         className="flex min-h-11 w-full items-center gap-3 rounded px-3 py-2.5 text-left text-body-md text-on-surface-variant transition-colors duration-200 hover:bg-surface-container-low hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary-fixed-dim focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         disabled={isSubmitting}
         onClick={handleLogout}
+        role={role}
         type="button"
       >
         <LogOut aria-hidden="true" className="h-5 w-5" />

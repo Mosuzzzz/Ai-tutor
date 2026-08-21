@@ -1,4 +1,4 @@
-import { AiTutorLogo } from "../../components/brand/AiTutorLogo";
+import Image from "next/image";
 
 type AppShellBrandProps = {
   compact?: boolean;
@@ -6,14 +6,14 @@ type AppShellBrandProps = {
 
 export const AppShellBrand = ({ compact = false }: AppShellBrandProps) => {
   return (
-    <div aria-label="AI Tutor Learning Platform" className="flex w-full min-w-0 items-center justify-center">
-      <span className="sr-only">AI Tutor</span>
-      <span className="sr-only">Learning Platform</span>
-      <AiTutorLogo
-        className={compact ? "h-10 w-[124px] shrink-0" : "h-[88px] w-full max-w-[220px] shrink-0 rounded-md"}
-        priority
-        sizes={compact ? "124px" : "220px"}
-      />
-    </div>
+    <Image
+      alt="AI Tutor"
+      className={compact ? "h-auto w-[108px] shrink-0" : "h-auto w-[176px] shrink-0"}
+      height={96}
+      priority
+      sizes={compact ? "108px" : "176px"}
+      src="/brand/ai-tutor-wordmark-green.png"
+      width={440}
+    />
   );
 };
