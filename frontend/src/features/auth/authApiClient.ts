@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { AUTH_MESSAGES } from "./authContent";
-import type { AuthSubmissionResult, LoginInput, RegisterValues } from "./types";
+import type { AuthFailureKind, AuthSubmissionResult, LoginInput, RegisterValues } from "./types";
 
 type AuthFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -81,20 +81,38 @@ const authJsonRequest = async (
     const payload = await readJsonBody(response);
     const parsed = authResponseSchema.safeParse(payload);
 
-    if (parsed.success) {
+    if (parsed.success && parsed.data.ok) {
       return parsed.data;
     }
 
     return {
-      ok: false,
-      message: response.ok ? AUTH_MESSAGES.genericError : extractMessage(payload) ?? AUTH_MESSAGES.genericError
+      kind: classifyAuthFailure(response.status, parsed.success ? parsed.data.message : undefined),
+      message: response.ok ? AUTH_MESSAGES.genericError : extractMessage(payload) ?? AUTH_MESSAGES.genericError,
+      ok: false
     };
   } catch {
     return {
+      kind: "unavailable",
       ok: false,
       message: AUTH_MESSAGES.genericError
     };
   }
+};
+
+const classifyAuthFailure = (status: number, message: string | undefined): AuthFailureKind => {
+  if (status === 401) {
+    return "invalid-credentials";
+  }
+
+  if (status === 403 && message === AUTH_MESSAGES.emailVerificationRequired) {
+    return "verification-required";
+  }
+
+  if (status === 400 || status === 409 || status === 422) {
+    return "invalid-input";
+  }
+
+  return "unavailable";
 };
 
 const readJsonBody = async (response: Response): Promise<unknown> => {
