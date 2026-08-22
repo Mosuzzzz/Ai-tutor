@@ -26,10 +26,12 @@ class Config:
     GOOGLE_TOKEN_URL: str = os.getenv("GOOGLE_TOKEN_URL", "https://oauth2.googleapis.com/token")
     GOOGLE_USERINFO_URL: str = os.getenv("GOOGLE_USERINFO_URL", "https://openidconnect.googleapis.com/v1/userinfo")
     GOOGLE_AUTHORIZE_URL: str = os.getenv("GOOGLE_AUTHORIZE_URL", "https://accounts.google.com/o/oauth2/v2/auth")
+    GOOGLE_ISSUER: str = os.getenv("GOOGLE_ISSUER", "https://accounts.google.com")
     # Public callback URL registered in Google console. Empty -> derived from the request base URL.
     GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "").strip()
     # Where the browser lands after a successful/failed Google sign-in.
     OAUTH_SUCCESS_REDIRECT: str = os.getenv("OAUTH_SUCCESS_REDIRECT", FRONTEND_URL.split(",")[0].strip() or "http://localhost:3000")
+    BFF_SHARED_SECRET: str = os.getenv("BFF_SHARED_SECRET", "").strip()
     UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", os.path.join(backend_root, "uploads"))
     SMTP_HOST: str = os.getenv("SMTP_HOST", "").strip()
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
