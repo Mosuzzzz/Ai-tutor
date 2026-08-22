@@ -3,6 +3,7 @@ import { Noto_Sans_Thai } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "./globals.css";
+import "../features/product-navigation/product-navigation.css";
 
 const notoThai = Noto_Sans_Thai({
   subsets: ["thai"],

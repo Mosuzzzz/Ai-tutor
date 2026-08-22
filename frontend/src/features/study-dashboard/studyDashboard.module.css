@@ -1,0 +1,274 @@
+.dashboard {
+  --dashboard-enter-y: 12px;
+  --dashboard-greeting-y: 10px;
+  --dashboard-panel-y: 12px;
+  isolation: isolate;
+}
+
+.greetingTitle {
+  max-width: 42rem;
+  overflow-wrap: anywhere;
+  font-size: clamp(1.75rem, 3.1vw, 2.5rem);
+  line-height: 1.16;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.greetingLead {
+  white-space: nowrap;
+}
+
+.greetingName {
+  overflow-wrap: anywhere;
+}
+
+.heroFrame {
+  animation: dashboard-reveal 480ms cubic-bezier(0.22, 1, 0.36, 1) 40ms both;
+}
+
+.greetingBlock {
+  animation: dashboard-greeting-reveal 440ms cubic-bezier(0.22, 1, 0.36, 1) 90ms both;
+}
+
+.heroPanel {
+  animation: dashboard-panel-reveal 500ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
+}
+
+.reveal {
+  animation: dashboard-reveal 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.delayOverview {
+  animation-delay: 220ms;
+}
+
+.delayActivity {
+  animation-delay: 300ms;
+}
+
+.delayDocuments {
+  animation-delay: 380ms;
+}
+
+.delayReviews {
+  animation-delay: 460ms;
+}
+
+.delayActions {
+  animation-delay: 540ms;
+}
+
+.continuationSurface,
+.documentRow,
+.reviewItem,
+.overviewMetric,
+.metricIcon,
+.primaryAction,
+.secondaryAction,
+.actionArrow,
+.documentIcon {
+  transition-duration: 190ms;
+  transition-property: background-color, border-color, box-shadow, color, opacity, transform;
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.primaryAction:active {
+  transform: scale(0.992);
+  transition-duration: 100ms;
+}
+
+.firstUseStep {
+  animation: dashboard-step-reveal 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 250ms;
+}
+
+.firstUseStep:nth-child(2) {
+  animation-delay: 320ms;
+}
+
+.firstUseStep:nth-child(3) {
+  animation-delay: 390ms;
+}
+
+.chartLine {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: dashboard-line-draw 780ms cubic-bezier(0.22, 1, 0.36, 1) 400ms forwards;
+}
+
+.chartPoint {
+  opacity: 0;
+  animation: dashboard-point-reveal 190ms cubic-bezier(0.22, 1, 0.36, 1) 700ms forwards;
+}
+
+@keyframes dashboard-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(var(--dashboard-enter-y));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dashboard-greeting-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(var(--dashboard-greeting-y));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dashboard-panel-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(var(--dashboard-panel-y)) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dashboard-step-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dashboard-line-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes dashboard-point-reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .continuationSurface:hover {
+    transform: translateY(-2px) scale(1.004);
+    border-color: rgb(39 105 74 / 0.24);
+    box-shadow: 0 12px 28px rgb(31 65 48 / 0.08);
+  }
+
+  .documentRow:hover {
+    transform: translateX(2px);
+    background-color: rgb(226 239 226 / 0.48);
+  }
+
+  .documentRow:hover .documentIcon {
+    transform: translateY(-1px);
+  }
+
+  .reviewItem:hover {
+    transform: translateY(-1px);
+    background-color: rgb(226 239 226 / 0.32);
+  }
+
+  .overviewMetric:hover {
+    background-color: rgb(226 239 226 / 0.7);
+    border-color: rgb(39 105 74 / 0.14);
+  }
+
+  .overviewMetric:hover .metricIcon {
+    color: rgb(25 89 57);
+  }
+
+  .primaryAction:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgb(31 65 48 / 0.12);
+  }
+
+  .secondaryAction:hover {
+    border-color: rgb(39 105 74 / 0.34);
+    background-color: rgb(226 239 226 / 0.62);
+  }
+
+  .primaryAction:hover .actionArrow,
+  .secondaryAction:hover .actionArrow {
+    transform: translateX(3px);
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard {
+    --dashboard-enter-y: 8px;
+    --dashboard-greeting-y: 7px;
+    --dashboard-panel-y: 8px;
+  }
+
+  .heroFrame,
+  .reveal {
+    animation-duration: 420ms;
+  }
+
+  .greetingBlock {
+    animation-duration: 400ms;
+  }
+
+  .heroPanel {
+    animation-duration: 430ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroFrame,
+  .greetingBlock,
+  .heroPanel,
+  .reveal,
+  .chartLine,
+  .chartPoint,
+  .firstUseStep {
+    animation: none;
+    animation-delay: 0ms;
+    opacity: 1;
+    transform: none;
+    stroke-dashoffset: 0;
+  }
+
+  .continuationSurface,
+  .documentRow,
+  .reviewItem,
+  .overviewMetric,
+  .metricIcon,
+  .primaryAction,
+  .secondaryAction,
+  .actionArrow,
+  .documentIcon,
+  .dashboard :global(a),
+  .dashboard :global(article) {
+    animation: none !important;
+    transition-duration: 0.01ms;
+  }
+
+  .continuationSurface:hover,
+  .documentRow:hover,
+  .reviewItem:hover,
+  .primaryAction:hover,
+  .primaryAction:active,
+  .secondaryAction:hover,
+  .primaryAction:hover .actionArrow,
+  .secondaryAction:hover .actionArrow,
+  .dashboard :global(a:hover),
+  .dashboard :global(article:hover) {
+    transform: none;
+  }
+}

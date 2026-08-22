@@ -52,36 +52,23 @@ describe("protected app routes", () => {
     loadStudyDashboardForSession.mockReset();
     loadStudyDashboardForSession.mockResolvedValue({
       dashboard: {
-        apiResponse: {
-          average_score: 88,
-          completed_quizzes: 7,
-          read_documents_count: 4,
-          recent_scores: [],
-          score_trend: [],
-          streak_days: 3
+        availability: { analytics: "available", documents: "available" },
+        continuation: {
+          description: "Ready to continue",
+          kind: "ready-summary",
+          primaryAction: { ariaLabel: "Open latest document", href: "/documents/file-1", label: "Open document" },
+          secondaryActions: [],
+          statusLabel: "พร้อมใช้กับ AI",
+          title: "Study guide.pdf"
         },
         generatedAtLabel: "5 Jun 2026, 10:00",
-        headline: "Study plan ready",
-        metrics: [
-          {
-            helper: "Ready after document processing",
-            id: "ready-documents",
-            label: "Ready documents",
-            value: "4"
-          }
-        ],
-        nextMilestone: "Practice from your latest document",
-        onboardingSteps: [],
-        primaryAction: {
-          description: "Upload a document",
-          href: "/documents",
-          id: "upload-document",
-          title: "Upload first document",
-          tone: "primary"
-        },
-        secondaryActions: [],
-        summary: "A single-user study dashboard",
-        userName: "Study User"
+        greeting: "Welcome back, Study User",
+        hasDocuments: true,
+        intro: "Choose what to study next",
+        progressMetrics: [],
+        recentDocuments: [],
+        recentReviews: [],
+        sectionIssues: []
       },
       status: "ready"
     });
@@ -186,7 +173,7 @@ describe("protected app routes", () => {
   });
 
   it("guards the unified study dashboard route before rendering", async () => {
-    const { default: DashboardPage } = await import("./dashboard/page");
+    const { default: DashboardPage } = await import("./(app)/dashboard/page");
 
     render(await DashboardPage());
 
@@ -198,23 +185,23 @@ describe("protected app routes", () => {
   });
 
   it("guards the shared quiz route for a normal authenticated session", async () => {
-    const { default: QuizPage } = await import("./quiz/page");
+    const { default: QuizPage } = await import("./(app)/quiz/page");
 
-    render(await QuizPage());
+    render(await QuizPage({}));
 
     expect(requirePageSession).toHaveBeenCalledWith("/quiz");
     expect(screen.getByTestId("ai-quiz-generator")).toBeInTheDocument();
   });
 
   it("guards document, chat, analytics, courses, and settings routes", async () => {
-    const { default: DocumentsPage } = await import("./documents/page");
-    const { default: ChatPage } = await import("./chat/page");
-    const { default: AnalyticsPage } = await import("./analytics/page");
-    const { default: CoursesPage } = await import("./courses/page");
-    const { default: SettingsPage } = await import("./settings/page");
+    const { default: DocumentsPage } = await import("./(app)/documents/page");
+    const { default: ChatPage } = await import("./(app)/chat/page");
+    const { default: AnalyticsPage } = await import("./(app)/analytics/page");
+    const { default: CoursesPage } = await import("./(app)/courses/page");
+    const { default: SettingsPage } = await import("./(app)/settings/page");
 
     render(await DocumentsPage());
-    render(await ChatPage());
+    render(await ChatPage({}));
     render(await AnalyticsPage());
     render(await CoursesPage());
     render(await SettingsPage());

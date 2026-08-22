@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthSession } from "@/features/auth/types";
-import CoursesPage from "./courses/page";
-import SettingsPage from "./settings/page";
+import CoursesPage from "./(app)/courses/page";
+import SettingsPage from "./(app)/settings/page";
 import { placeholderModules } from "../features/foundation/placeholderContent";
 
 const studentSession: AuthSession = {
@@ -34,15 +34,14 @@ describe("placeholder routes", () => {
   });
 
   it.each(routePages)(
-    "renders $placeholder.title route inside the app shell",
+    "preserves $placeholder.title route content for the shared app layout",
     async ({ Component, href, placeholder }) => {
       render(await Component());
 
       expect(requirePageSession).toHaveBeenCalledWith(href);
-      expect(screen.getByRole("main")).toHaveTextContent(placeholder.title);
-      expect(screen.getByRole("main")).toHaveTextContent(placeholder.statusLabel);
-      expect(screen.getByRole("main")).toHaveTextContent(placeholder.handoffNote);
-      expect(screen.getByRole("banner")).toHaveTextContent("AI Tutor");
+      expect(screen.getByText(placeholder.title)).toBeInTheDocument();
+      expect(screen.getByText(placeholder.statusLabel)).toBeInTheDocument();
+      expect(screen.getAllByText(placeholder.handoffNote)).toHaveLength(3);
     }
   );
 });

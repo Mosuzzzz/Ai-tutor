@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const css = readFileSync(join(process.cwd(), "src/features/home/home.css"), "utf8");
+const productNavigationCss = readFileSync(join(process.cwd(), "src/features/product-navigation/product-navigation.css"), "utf8");
 
 const channelToLinear = (channel: number) => {
   const value = channel / 255;
@@ -54,12 +55,11 @@ describe("Home style contracts", () => {
     expect(contrastRatio(darkThemeVariable("--home-control-border"), darkThemeVariable("--home-page"))).toBeGreaterThanOrEqual(3);
     expect(contrastRatio(lightThemeVariable("--home-error-text"), lightThemeVariable("--home-elevated-surface"))).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(darkThemeVariable("--home-error-text"), darkThemeVariable("--home-elevated-surface"))).toBeGreaterThanOrEqual(4.5);
-    expect(css).toMatch(/\.home-account-dropdown \[role="status"\]\s*\{\s*color:\s*var\(--home-error-text\);/);
   });
 
-  it("keeps the mobile menu active until the marketing navigation has enough room", () => {
-    expect(css).toMatch(/@media \(min-width: 1120px\)[\s\S]*?\.home-desktop-navigation\s*\{\s*display:\s*flex;/);
-    expect(css).toMatch(/@media \(max-width: 1119px\)[\s\S]*?\.home-navbar-controls \.home-account-label\s*\{\s*display:\s*none;/);
+  it("uses the shared compact product navigation until all three zones have room", () => {
+    expect(productNavigationCss).toMatch(/@media\(min-width:1200px\)\{\.product-desktop-nav\{display:flex\}/);
+    expect(productNavigationCss).toMatch(/@media\(min-width:1200px\)[^}]*\}\.product-menu-trigger\{display:none\}/);
   });
 
   it("uses responsive gutters and a bounded content width", () => {

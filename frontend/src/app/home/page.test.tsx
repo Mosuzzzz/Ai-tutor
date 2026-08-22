@@ -28,7 +28,7 @@ describe("public Home page", () => {
     expect(screen.queryByRole("button", { name: "Hello! learner@example.com" })).not.toBeInTheDocument();
   });
 
-  it("renders the authenticated greeting from the server session", async () => {
+  it("renders direct product navigation without the workspace intermediary", async () => {
     const session: AuthSession = {
       mode: "http-only-cookie",
       storesTokenInClient: false,
@@ -43,7 +43,12 @@ describe("public Home page", () => {
     render(await HomePage());
 
     expect(getServerAuthSession).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("button", { name: "Hello! learner@example.com" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByRole("link", { name: "Documents" })).toHaveAttribute("href", "/documents");
+    expect(screen.getByRole("link", { name: "Chat" })).toHaveAttribute("href", "/chat");
+    expect(screen.getByRole("link", { name: "Quiz" })).toHaveAttribute("href", "/quiz");
+    expect(screen.getByRole("link", { name: "Analytics" })).toHaveAttribute("href", "/analytics");
+    expect(screen.queryByText(/My workspace|พื้นที่เรียนของฉัน/)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Log in" })).not.toBeInTheDocument();
   });
 });

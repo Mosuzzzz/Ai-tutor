@@ -1,10 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { AUTH_COOKIE_NAMES } from "../../lib/api/authCookies";
-import { ApiClientError, type BackendJsonRequestOptions } from "../../lib/api/backendClient";
 import type { AuthSession } from "../auth/types";
 import { loadStudyDashboardForSession, type StudyDashboardBackendRequest } from "./studyDashboardApi";
-import { backendStudyDashboardResponse } from "./studyDashboardContract.test";
 
 const session: AuthSession = {
   mode: "http-only-cookie",
@@ -16,43 +14,115 @@ const session: AuthSession = {
   }
 };
 
+const analyticsResponse = {
+  average_score: 86.4,
+  completed_quizzes: 3,
+  read_documents_count: 5,
+  recent_scores: [
+    {
+      exam_id: "exam-1",
+      filename: "คู่มือความปลอดภัย.pdf",
+      id: "score-1",
+      score: 92,
+      submitted_at: "2026-06-05T10:00:00.000Z"
+    }
+  ],
+  score_trend: [{ average_score: 86.4, date: "2026-06-05" }],
+  streak_days: 2
+};
+
+const documentsResponse = {
+  documents: [
+    {
+      created_at: "2026-06-05T09:00:00.000Z",
+      filename: "คู่มือความปลอดภัย.pdf",
+      id: "file-ready",
+      related_exams_count: 1,
+      status: "ready",
+      summary_available: true,
+      summary_markdown: "# สรุป"
+    }
+  ],
+  status_counts: { error: 0, pending: 0, processing: 0, ready: 1 },
+  total_documents: 1
+};
+
+const emptyAnalyticsResponse = {
+  average_score: 0,
+  completed_quizzes: 0,
+  read_documents_count: 0,
+  recent_scores: [],
+  score_trend: [],
+  streak_days: 0
+};
+
+const emptyDocumentsResponse = {
+  documents: [],
+  status_counts: { error: 0, pending: 0, processing: 0, ready: 0 },
+  total_documents: 0
+};
+
 const createCookieStore = (token?: string) => ({
-  get: (name: string) =>
+  get: vi.fn((name: string) =>
     name === AUTH_COOKIE_NAMES.accessToken && token
       ? {
           value: token
         }
-      : undefined
+      : undefined)
 });
 
+const createBackendRequest = ({
+  analytics = analyticsResponse,
+  documents = documentsResponse,
+  failAnalytics = false,
+  failDocuments = false
+}: {
+  analytics?: typeof analyticsResponse | typeof emptyAnalyticsResponse;
+  documents?: typeof documentsResponse | typeof emptyDocumentsResponse;
+  failAnalytics?: boolean;
+  failDocuments?: boolean;
+} = {}) => vi.fn(async ({ path }: { path: string }) => {
+  if (path === "/api/analytics/dashboard") {
+    if (failAnalytics) throw new Error("raw analytics failure");
+    return analytics;
+  }
+
+  if (path === "/api/files/dashboard") {
+    if (failDocuments) throw new Error("raw documents failure");
+    return documents;
+  }
+
+  throw new Error(`Unexpected path: ${path}`);
+}) as unknown as StudyDashboardBackendRequest;
+
 describe("loadStudyDashboardForSession", () => {
-  it("loads /api/analytics/dashboard with the server-side access cookie only", async () => {
-    const backendRequest = vi.fn(async () => backendStudyDashboardResponse) as unknown as ReturnType<typeof vi.fn> &
-      StudyDashboardBackendRequest;
+  it("loads analytics and documents with one server-side access cookie without serializing the token", async () => {
+    const backendRequest = createBackendRequest();
+    const cookieStore = createCookieStore("server-cookie-token");
 
     const result = await loadStudyDashboardForSession({
       backendRequest,
-      cookieStore: createCookieStore("server-cookie-token"),
+      cookieStore,
       session,
       timestamp: new Date("2026-06-05T10:00:00.000Z")
     });
 
     expect(result.status).toBe("ready");
-    if (result.status === "error") {
-      throw new Error("Expected a study dashboard result");
-    }
-    expect(result.dashboard.userName).toBe("Siwakorn bundi");
-    expect(backendRequest).toHaveBeenCalledWith(
-      expect.objectContaining({
-        accessToken: "server-cookie-token",
-        path: "/api/analytics/dashboard"
-      })
-    );
+    expect(backendRequest).toHaveBeenCalledTimes(2);
+    expect(cookieStore.get).toHaveBeenCalledTimes(1);
+    expect(backendRequest).toHaveBeenCalledWith(expect.objectContaining({
+      accessToken: "server-cookie-token",
+      path: "/api/analytics/dashboard"
+    }));
+    expect(backendRequest).toHaveBeenCalledWith(expect.objectContaining({
+      accessToken: "server-cookie-token",
+      path: "/api/files/dashboard"
+    }));
     expect(JSON.stringify(result)).not.toContain("server-cookie-token");
   });
 
-  it("returns an error result without calling backend when the access cookie is missing", async () => {
-    const backendRequest = vi.fn() as unknown as StudyDashboardBackendRequest;
+  it("returns an error without calling Backend when the access cookie is missing", async () => {
+    const backendRequest = createBackendRequest();
 
     const result = await loadStudyDashboardForSession({
       backendRequest,
@@ -60,51 +130,65 @@ describe("loadStudyDashboardForSession", () => {
       session
     });
 
-    expect(result.status).toBe("error");
-    if (result.status !== "error") {
-      throw new Error("Expected an error result");
-    }
-    expect(result.errorMessage).toBeTruthy();
+    expect(result).toEqual({
+      errorMessage: "กรุณาเข้าสู่ระบบอีกครั้ง",
+      status: "error"
+    });
     expect(backendRequest).not.toHaveBeenCalled();
   });
 
-  it("maps empty and invalid backend responses into UI-safe states", async () => {
-    const emptyRequest = vi.fn(async () => ({
-      average_score: 0,
-      completed_quizzes: 0,
-      read_documents_count: 0,
-      recent_scores: [],
-      score_trend: [],
-      streak_days: 0
-    })) as unknown as StudyDashboardBackendRequest;
-
-    const emptyResult = await loadStudyDashboardForSession({
-      backendRequest: emptyRequest,
+  it("maps two empty sources into the first-use state", async () => {
+    const result = await loadStudyDashboardForSession({
+      backendRequest: createBackendRequest({
+        analytics: emptyAnalyticsResponse,
+        documents: emptyDocumentsResponse
+      }),
       cookieStore: createCookieStore("server-cookie-token"),
       session
     });
 
-    expect(emptyResult.status).toBe("empty");
+    expect(result.status).toBe("empty");
+  });
 
-    const failingRequest = vi.fn(
-      async (_options: BackendJsonRequestOptions<unknown>) => {
-        throw new ApiClientError({
-          code: "invalid_response",
-          message: "Invalid dashboard response"
-        });
-      }
-    ) as unknown as StudyDashboardBackendRequest;
-
-    const errorResult = await loadStudyDashboardForSession({
-      backendRequest: failingRequest,
-      cookieStore: createCookieStore("server-cookie-token"),
-      session
-    });
-
-    expect(errorResult.status).toBe("error");
-    if (errorResult.status !== "error") {
-      throw new Error("Expected an error result");
+  it.each([
+    {
+      expectedIssue: "documents" as const,
+      options: { failDocuments: true },
+      unavailableCopy: "ยังไม่สามารถโหลดข้อมูลเอกสารได้ในขณะนี้"
+    },
+    {
+      expectedIssue: "analytics" as const,
+      options: { failAnalytics: true },
+      unavailableCopy: "ยังไม่สามารถโหลดข้อมูลความคืบหน้าได้ในขณะนี้"
     }
-    expect(errorResult.errorMessage).toBeTruthy();
+  ])("returns useful $expectedIssue partial state without raw errors", async ({ expectedIssue, options, unavailableCopy }) => {
+    const result = await loadStudyDashboardForSession({
+      backendRequest: createBackendRequest(options),
+      cookieStore: createCookieStore("server-cookie-token"),
+      session
+    });
+
+    expect(result.status).toBe("partial");
+    if (!("dashboard" in result)) throw new Error("Expected a partial dashboard");
+    expect(result.dashboard.availability[expectedIssue]).toBe("unavailable");
+    expect(result.dashboard.sectionIssues).toContainEqual(expect.objectContaining({
+      id: expectedIssue,
+      message: unavailableCopy
+    }));
+    expect(JSON.stringify(result)).not.toMatch(/raw analytics failure|raw documents failure/);
+  });
+
+  it("returns one safe Dashboard error when both sources fail", async () => {
+    const result = await loadStudyDashboardForSession({
+      backendRequest: createBackendRequest({ failAnalytics: true, failDocuments: true }),
+      cookieStore: createCookieStore("server-cookie-token"),
+      session
+    });
+
+    expect(result).toEqual({
+      errorMessage: "ไม่สามารถโหลดแดชบอร์ดได้ในขณะนี้",
+      status: "error"
+    });
+    expect(JSON.stringify(result)).not.toMatch(/raw analytics failure|raw documents failure/);
   });
 });

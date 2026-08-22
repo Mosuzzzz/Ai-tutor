@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthSession } from "@/features/auth/types";
-import DocumentSummaryDetailRoute from "./page";
+import DocumentSummaryDetailRoute from "../../(app)/documents/[fileId]/page";
 
 const studentSession: AuthSession = {
   mode: "http-only-cookie",
@@ -116,7 +116,6 @@ describe("document summary detail route", () => {
       selectedDocumentId: "file-ready",
       session: studentSession
     });
-    expect(screen.getByRole("banner")).toHaveTextContent("AI Tutor");
     expect(screen.getByTestId("document-summary-detail")).toHaveAttribute("data-source", "api");
     expect(screen.getByRole("heading", { name: "safety-handbook.pdf" })).toBeInTheDocument();
   });

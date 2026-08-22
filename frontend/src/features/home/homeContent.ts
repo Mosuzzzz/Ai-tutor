@@ -14,7 +14,7 @@ export const HOME_CONTENT: Record<HomeLanguage, HomeContent> = {
       themeLightIconLabel: "Sun", themeDarkIconLabel: "Moon", menuLabel: "Open navigation menu", loginLabel: "Log in",
       accountGreeting: "Hello! {email}", logoutLabel: "Log out", logoutError: "Unable to log out. Please try again."
     },
-    navigation: { howItWorks: "How it works", studyKit: "Study kit", progress: "Progress", faq: "FAQ", startStudying: "Start studying", myWorkspace: "My workspace" },
+    navigation: { howItWorks: "How it works", studyKit: "Study kit", progress: "Progress", faq: "FAQ", startStudying: "Start studying" },
     hero: {
       eyebrow: "Your material, one connected study loop.", heading: "Turn your documents into an AI study workspace.",
       body: "Upload your material, read a clear summary, ask questions tied to the selected document, build a review quiz, and see what to study next.",
@@ -61,7 +61,7 @@ export const HOME_CONTENT: Record<HomeLanguage, HomeContent> = {
       { title: "Sources when available", description: "Citation excerpts are shown when the backend returns them." },
       { title: "Honest states", description: "Processing, unavailable, empty, and error states remain explicit." }
     ] },
-    access: { eyebrow: "Simple access", title: "Start where you are.", body: "Choose the route that matches where you are—create your workspace or continue with material you already added.", guestTitle: "New to AI Tutor?", guestBody: "Create an account to open your personal study workspace.", guestCta: "Create your workspace", memberTitle: "Already studying?", memberBody: "Return to your documents and continue the same learning loop.", memberCta: "Open my workspace" },
+    access: { eyebrow: "Simple access", title: "Start where you are.", body: "Choose the route that matches where you are—create your workspace or continue with material you already added.", guestTitle: "New to AI Tutor?", guestBody: "Create an account to open your personal study workspace.", guestCta: "Create your workspace", memberTitle: "Already studying?", memberBody: "Return to your documents and continue the same learning loop." },
     faq: { eyebrow: "FAQ", title: "Clear answers before you begin.", body: "What the current product supports—and where results depend on your material and backend processing.", items: [
       { question: "What does AI Tutor do with my document?", answer: "It processes supported material so you can read a summary, ask document-based questions, create a review quiz, and inspect personal progress." },
       { question: "Which file types can I upload?", answer: "The current frontend accepts PDF, Word, PowerPoint, and common image files up to its displayed upload limit." },
@@ -79,7 +79,7 @@ export const HOME_CONTENT: Record<HomeLanguage, HomeContent> = {
       themeLightIconLabel: "ดวงอาทิตย์", themeDarkIconLabel: "ดวงจันทร์", menuLabel: "เปิดเมนูนำทาง", loginLabel: "เข้าสู่ระบบ",
       accountGreeting: "สวัสดี! {email}", logoutLabel: "ออกจากระบบ", logoutError: "ไม่สามารถออกจากระบบได้ โปรดลองอีกครั้ง"
     },
-    navigation: { howItWorks: "วิธีการทำงาน", studyKit: "ชุดเครื่องมือเรียน", progress: "ความก้าวหน้า", faq: "คำถามที่พบบ่อย", startStudying: "เริ่มเรียน", myWorkspace: "พื้นที่เรียนของฉัน" },
+    navigation: { howItWorks: "วิธีการทำงาน", studyKit: "ชุดเครื่องมือเรียน", progress: "ความก้าวหน้า", faq: "คำถามที่พบบ่อย", startStudying: "เริ่มเรียน" },
     hero: {
       eyebrow: "จากเอกสารของคุณ สู่การเรียนที่ต่อเนื่อง", heading: "เปลี่ยนเอกสารของคุณให้เป็นพื้นที่เรียนกับ AI",
       body: "อัปโหลดเนื้อหา อ่านสรุป ถามคำถามจากเอกสารที่เลือก สร้างควิซทบทวน และดูว่าควรกลับไปเรียนเรื่องใดต่อ",
@@ -119,7 +119,7 @@ export const HOME_CONTENT: Record<HomeLanguage, HomeContent> = {
       { title: "แหล่งข้อมูลเมื่อมี", description: "แสดง citation หรือข้อความต้นฉบับเมื่อ Backend ส่งมา" },
       { title: "สถานะที่ตรงไปตรงมา", description: "แสดง processing, unavailable, empty และ error อย่างชัดเจน" }
     ] },
-    access: { eyebrow: "เริ่มต้นอย่างเรียบง่าย", title: "ไปต่อจากจุดที่คุณอยู่", body: "เลือกเส้นทางที่เหมาะกับคุณ—สร้างพื้นที่เรียนใหม่ หรือเรียนต่อจากเนื้อหาที่เพิ่มไว้แล้ว", guestTitle: "เพิ่งเริ่มใช้ AI Tutor?", guestBody: "สร้างบัญชีเพื่อเปิดพื้นที่เรียนส่วนตัว", guestCta: "สร้างพื้นที่เรียน", memberTitle: "กำลังเรียนต่ออยู่?", memberBody: "กลับไปยังเอกสารและเรียนต่อใน flow เดิม", memberCta: "เปิดพื้นที่เรียนของฉัน" },
+    access: { eyebrow: "เริ่มต้นอย่างเรียบง่าย", title: "ไปต่อจากจุดที่คุณอยู่", body: "เลือกเส้นทางที่เหมาะกับคุณ—สร้างพื้นที่เรียนใหม่ หรือเรียนต่อจากเนื้อหาที่เพิ่มไว้แล้ว", guestTitle: "เพิ่งเริ่มใช้ AI Tutor?", guestBody: "สร้างบัญชีเพื่อเปิดพื้นที่เรียนส่วนตัว", guestCta: "สร้างพื้นที่เรียน", memberTitle: "กำลังเรียนต่ออยู่?", memberBody: "กลับไปยังเอกสารและเรียนต่อใน flow เดิม" },
     faq: { eyebrow: "คำถามที่พบบ่อย", title: "คำตอบที่ชัดเจนก่อนเริ่มเรียน", body: "สิ่งที่ product ปัจจุบันรองรับ และจุดที่ผลลัพธ์ขึ้นอยู่กับเนื้อหาหรือการประมวลผล", items: [
       { question: "AI Tutor ทำอะไรกับเอกสารของฉัน?", answer: "ระบบประมวลผลเนื้อหาที่รองรับเพื่อให้คุณอ่านสรุป ถามจากเอกสาร สร้างควิซ และดูความก้าวหน้าส่วนตัว" },
       { question: "อัปโหลดไฟล์ประเภทใดได้บ้าง?", answer: "Frontend ปัจจุบันรองรับ PDF, Word, PowerPoint และรูปภาพทั่วไป ภายใต้ขนาดที่หน้าอัปโหลดระบุ" },
