@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from database import Base, engine, SessionLocal
 from models import User
 from main import app
+import routers.public.auth as auth_router
 
 
 client = TestClient(app, base_url="http://testserver")
@@ -37,7 +38,7 @@ def register_and_login(email: str, password: str, full_name: str = "Test User") 
     return login_resp.json()["access_token"]
 
 
-def run_auth_flow():
+def run_auth_flow(monkeypatch=None):
     email = "new.user@example.com"
     password = "StrongPass123!"
 
@@ -77,9 +78,32 @@ def run_auth_flow():
     refresh_after_logout = client.post("/api/auth/token/refresh", json={"refresh_token": refresh_token})
     assert refresh_after_logout.status_code == 401
 
+    delivered_tokens = {}
+    if monkeypatch:
+        monkeypatch.setattr(auth_router.email_service, "is_email_delivery_configured", lambda: True)
+        monkeypatch.setattr(
+            auth_router.email_service,
+            "send_password_reset_email",
+            lambda recipient, token: delivered_tokens.update(reset=token),
+        )
+        monkeypatch.setattr(
+            auth_router.email_service,
+            "send_magic_link_email",
+            lambda recipient, token: delivered_tokens.update(magic=token),
+        )
+    else:
+        auth_router.email_service.is_email_delivery_configured = lambda: True
+        auth_router.email_service.send_password_reset_email = (
+            lambda recipient, token: delivered_tokens.update(reset=token)
+        )
+        auth_router.email_service.send_magic_link_email = (
+            lambda recipient, token: delivered_tokens.update(magic=token)
+        )
+
     forgot_resp = client.post("/api/auth/forgot-password", json={"email": email})
     assert forgot_resp.status_code == 200
-    reset_token = forgot_resp.json()["dev_token"]
+    assert "dev_token" not in forgot_resp.json()
+    reset_token = delivered_tokens.get("reset")
     assert reset_token
 
     reset_resp = client.post(
@@ -90,7 +114,8 @@ def run_auth_flow():
 
     magic_request_resp = client.post("/api/auth/magic-link/request", json={"email": email})
     assert magic_request_resp.status_code == 200
-    magic_token = magic_request_resp.json()["dev_token"]
+    assert "dev_token" not in magic_request_resp.json()
+    magic_token = delivered_tokens.get("magic")
     assert magic_token
 
     magic_verify_resp = client.post("/api/auth/magic-link/verify", json={"token": magic_token})
@@ -98,9 +123,9 @@ def run_auth_flow():
     assert magic_verify_resp.json()["access_token"]
 
 
-def test_auth_flow():
+def test_auth_flow(monkeypatch):
     reset_db()
-    run_auth_flow()
+    run_auth_flow(monkeypatch)
 
 
 def test_two_role_access_and_session_payload():

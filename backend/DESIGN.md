@@ -82,31 +82,30 @@ AI services มี offline fallback (ไม่มี GROQ_API_KEY ก็รั�
 - drop คอลัมน์ `tenant_id` ทุกตาราง, drop ตาราง `tenants`, drop `exams.status`/`exams.submitted_by`
 - dev: drop ทั้ง db แล้ว create ใหม่ได้เลย
 
-## Google Login (consumer OAuth) — branch `GoogleOAuthLogin`
+## Google Login (consumer OAuth)
 
-เพิ่ม social login ด้วย Google โดย **backend-only ไม่แตะ frontend** — redirect flow ทั้งหมดอยู่ใน FastAPI
+Google OAuth ใช้ Next.js เป็น BFF; browser ไม่เรียก token exchange และไม่เห็น AI Tutor token JSON
 
 Endpoints (`routers/public/auth.py`):
 
 | Endpoint | หน้าที่ |
 | --- | --- |
-| `GET /api/auth/google/start` | ตั้ง state cookie (CSRF) แล้ว redirect ไป Google consent |
-| `GET /api/auth/google/callback` | ตรวจ state -> แลก code -> find-or-create user (`auth_provider="google"`) -> ตั้ง HttpOnly cookie -> redirect กลับ `OAUTH_SUCCESS_REDIRECT` |
-| `POST /api/auth/google` | exchange แบบ programmatic (รับ `code`+`redirect_uri` คืน `Token`) เผื่อ BFF เรียกในอนาคต |
+| `POST /api/auth/google/start` | BFF-only; สร้าง state transaction + PKCE แล้วคืน authorize URL ให้ Next |
+| `POST /api/auth/google/callback` | BFF-only; consume state, แลก code, ตรวจ identity แล้วคืน structured session result |
 
 พฤติกรรม:
 
-- user ใหม่จาก Google ถูกสร้างเป็น role `user`, email ถือว่า verified ทันที
-- email เดิม (local) ที่ login ด้วย Google จะถูก link และ mark verified ให้
-- ถ้า email ไม่ verified จาก Google -> 400; ถ้าไม่ตั้ง `GOOGLE_CLIENT_ID/SECRET` -> 503
-- token ไม่เคยโผล่ใน URL; ส่งผ่าน HttpOnly cookie เท่านั้น
+- Backend เก็บ state hash และ PKCE verifier แบบ short-lived/use-once; state ถูกลบทุก terminal path
+- identity ผูกด้วย canonical Google `issuer` + `sub`; `email_verified` ต้องเป็น boolean `true`
+- email ที่ชนกับ local/admin account จะคืน `account_conflict` และไม่ link อัตโนมัติ
+- provider/config URL และ frontend callback/success origin ต้องผ่าน exact allowlist
+- Next ตรวจ `/api/auth/session` ก่อนตั้ง access/refresh cookies แบบ `HttpOnly; Secure; SameSite=Strict`
+- endpoint เดิม `POST /api/auth/google` ถูกลบแล้ว
 
-ENV (ดู `backend/.env.example`): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` (optional), `OAUTH_SUCCESS_REDIRECT`
-ลงทะเบียน Authorized redirect URI ที่ Google console = `<public-backend-origin>/api/auth/google/callback`
+ENV (ดู `.env.example`): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `OAUTH_SUCCESS_REDIRECT`, `BFF_SHARED_SECRET`
+ลงทะเบียน Authorized redirect URI ที่ Google console = `<frontend-origin>/api/auth/google/callback`
 
-⚠️ **Cross-origin cookie caveat**: session cookie เป็น host-only (`__Host-` prefix) ดังนั้น backend กับ app ที่ผู้ใช้เห็นต้องอยู่ origin เดียวกัน (โดเมนเดียว/ reverse proxy) cookie ถึงจะถูกส่งให้ app ได้ — ถ้า dev รันคนละ port (`:8000` vs `:3000`) cookie จะถูกตั้งบน origin ของ backend การต่อ frontend จริง (ปุ่ม + อ่าน session) เป็นงานแยกที่ยังไม่ได้ทำตามคำสั่ง "ไม่แตะ frontend"
-
-Tests: `backend/tests/test_google_oauth.py` (6 เคส — config gate, create/reuse user, unverified reject, start redirect+state, callback set-cookie, state mismatch)
+Tests: `backend/tests/test_google_oauth.py`
 
 ## ⚠️ ผลกระทบต่อ Frontend (ยังไม่แตะตามที่สั่ง)
 

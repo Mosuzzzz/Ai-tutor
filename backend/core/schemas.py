@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime
 
 # --- Auth Schemas ---
@@ -36,13 +36,19 @@ class AuthActionResponse(BaseModel):
     dev_token: Optional[str] = None
 
 
+class RecoveryRequestResponse(BaseModel):
+    message: str
+
+
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 
-class GoogleAuthRequest(BaseModel):
-    code: str
-    redirect_uri: str
+class GoogleOAuthCallbackRequest(BaseModel):
+    code: Optional[str] = None
+    state: Optional[str] = None
+    oauth_state: Optional[str] = None
+    error: Optional[str] = None
 
 
 class Token(BaseModel):
@@ -51,6 +57,28 @@ class Token(BaseModel):
     expires_in: int
     refresh_token: Optional[str] = None
     refresh_expires_in: Optional[int] = None
+
+
+class GoogleOAuthStartResponse(BaseModel):
+    authorization_url: str
+    expires_in: int
+    state: str
+
+
+class GoogleOAuthResult(BaseModel):
+    ok: bool
+    classification: Literal[
+        "success",
+        "denied",
+        "invalid_state",
+        "expired_state",
+        "provider_failure",
+        "identity_rejected",
+        "account_conflict",
+        "provisioning_failure",
+    ]
+    message: str
+    session: Optional[Token] = None
 
 
 class SessionResponse(BaseModel):

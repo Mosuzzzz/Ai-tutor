@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Text, Integer, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, String, Text, Integer, DateTime, ForeignKey, JSON, UniqueConstraint
 from sqlalchemy.orm import relationship
 from core.database import Base
 from core.config import settings
@@ -45,6 +45,7 @@ class User(Base):
     exams = relationship("Exam", back_populates="owner", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="user", cascade="all, delete-orphan")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    oauth_identities = relationship("OAuthIdentity", back_populates="user", cascade="all, delete-orphan")
 
 
 class File(Base):
@@ -122,3 +123,33 @@ class RefreshToken(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     user = relationship("User", back_populates="refresh_tokens")
+
+
+class OAuthIdentity(Base):
+    """Stable provider identity; email is metadata, never an account-linking key."""
+
+    __tablename__ = "oauth_identities"
+    __table_args__ = (UniqueConstraint("issuer", "subject", name="uq_oauth_identity_issuer_subject"),)
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    issuer = Column(String(255), nullable=False)
+    subject = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_login_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user = relationship("User", back_populates="oauth_identities")
+
+
+class OAuthAuthorization(Base):
+    """Short-lived, one-time OAuth transaction owned and validated by the backend."""
+
+    __tablename__ = "oauth_authorizations"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    state_hash = Column(String(64), unique=True, nullable=False, index=True)
+    code_verifier = Column(String(128), nullable=False)
+    redirect_uri = Column(String(2048), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

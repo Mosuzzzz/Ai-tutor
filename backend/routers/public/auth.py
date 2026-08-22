@@ -6,9 +6,12 @@ Only two roles exist: ``user`` (everyone in the core study flow) and ``admin``
 """
 from datetime import datetime, timedelta
 from typing import Dict, Any
+import base64
+import hashlib
+import secrets
+from urllib.parse import urlparse
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from sqlalchemy.orm import Session
 from auth import (
     create_access_token,
@@ -21,7 +24,7 @@ from auth import (
     resolve_refresh_token,
 )
 from database import get_db
-from models import User, AuditLog, RefreshToken
+from models import User, AuditLog, RefreshToken, OAuthAuthorization, OAuthIdentity
 import schemas
 
 import services.email_service as email_service
@@ -216,14 +219,13 @@ def logout_current_user(current_user: User = Depends(get_current_user), db: Sess
     return schemas.AuthActionResponse(message="Logged out successfully.")
 
 
-@router.post("/forgot-password", response_model=schemas.AuthActionResponse)
+@router.post("/forgot-password", response_model=schemas.RecoveryRequestResponse)
 def forgot_password(request: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
     """Generates a password reset token without revealing whether the email exists."""
     user = db.query(User).filter(User.email == request.email, User.auth_provider == "local").first()
-    dev_token = None
 
     if user and user.email_verified_at:
-        dev_token = create_and_store_token(
+        reset_token = create_and_store_token(
             user,
             "reset_token_hash",
             "reset_token_expires_at",
@@ -232,20 +234,15 @@ def forgot_password(request: schemas.ForgotPasswordRequest, db: Session = Depend
         # Attempt to send real email when configured
         if email_service.is_email_delivery_configured():
             try:
-                email_service.send_password_reset_email(user.email, dev_token)
-                dev_token = None
+                email_service.send_password_reset_email(user.email, reset_token)
             except Exception:
-                # swallow and keep dev_token for debugging
                 pass
 
         db.add(AuditLog(user_id=user.id, action="PASSWORD_RESET_REQUESTED", details="Password reset requested", ip_address="127.0.0.1"))
         db.commit()
 
-    return schemas.AuthActionResponse(
+    return schemas.RecoveryRequestResponse(
         message="If the account exists, a password reset link has been sent.",
-        email=request.email,
-        expires_in=RESET_TOKEN_EXPIRES_MINUTES * 60 if dev_token else None,
-        dev_token=dev_token,
     )
 
 
@@ -271,14 +268,13 @@ def reset_password(request: schemas.ResetPasswordRequest, db: Session = Depends(
     )
 
 
-@router.post("/magic-link/request", response_model=schemas.AuthActionResponse)
+@router.post("/magic-link/request", response_model=schemas.RecoveryRequestResponse)
 def request_magic_link(request: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
     """Creates a passwordless login token for a verified local account."""
     user = db.query(User).filter(User.email == request.email, User.auth_provider == "local").first()
-    dev_token = None
 
     if user:
-        dev_token = create_and_store_token(
+        magic_token = create_and_store_token(
             user,
             "magic_link_token_hash",
             "magic_link_token_expires_at",
@@ -287,19 +283,15 @@ def request_magic_link(request: schemas.ForgotPasswordRequest, db: Session = Dep
         # Send magic link via email when configured
         if email_service.is_email_delivery_configured():
             try:
-                email_service.send_magic_link_email(user.email, dev_token)
-                dev_token = None
+                email_service.send_magic_link_email(user.email, magic_token)
             except Exception:
                 pass
 
         db.add(AuditLog(user_id=user.id, action="MAGIC_LINK_REQUESTED", details="Magic link requested", ip_address="127.0.0.1"))
         db.commit()
 
-    return schemas.AuthActionResponse(
+    return schemas.RecoveryRequestResponse(
         message="If the account exists, a magic link has been sent.",
-        email=request.email,
-        expires_in=MAGIC_LINK_TOKEN_EXPIRES_MINUTES * 60 if dev_token else None,
-        dev_token=dev_token,
     )
 
 
@@ -353,37 +345,94 @@ def refresh_access_token(request: schemas.RefreshTokenRequest, req_meta: Request
     return schemas.Token(access_token=token_str, token_type="bearer", expires_in=expires_in, refresh_token=new_token, refresh_expires_in=new_expires_in)
 
 
-# --- Google OAuth (consumer social login) ---
-#
-# The whole redirect dance lives in the backend so no frontend code is required:
-#   GET  /api/auth/google/start    -> redirect the browser to Google
-#   GET  /api/auth/google/callback -> exchange code, set HttpOnly cookies, redirect home
-# A programmatic POST /api/auth/google is also exposed for callers that already
-# hold an authorization code (e.g. a future BFF).
-#
-# Deployment note: the session cookies are host-only (``__Host-`` prefix), so the
-# backend and the user-facing app must share an origin (same domain / reverse
-# proxy) for the cookie to be visible to the app. Tokens never appear in URLs.
+# --- Google OAuth (BFF-only authorization-code flow) ---
 
-OAUTH_ACCESS_COOKIE = "__Host-ai_tutor_access_token"
-OAUTH_REFRESH_COOKIE = "__Host-ai_tutor_refresh_token"
-OAUTH_STATE_COOKIE = "__Host-ai_tutor_oauth_state"
 OAUTH_STATE_MAX_AGE_SECONDS = 600
+GOOGLE_AUTHORIZE_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
+GOOGLE_USERINFO_ENDPOINT = "https://openidconnect.googleapis.com/v1/userinfo"
+GOOGLE_ISSUER = "https://accounts.google.com"
+BFF_AUTH_HEADER = "x-ai-tutor-bff-key"
+
+
+class OAuthProviderError(Exception):
+    """Provider details must never cross the backend/BFF trust boundary."""
+
+
+class OAuthIdentityError(Exception):
+    pass
+
+
+class OAuthAccountConflict(Exception):
+    pass
 
 
 def _require_google_configured() -> None:
-    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET or not settings.GOOGLE_REDIRECT_URI:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Google login is not configured")
 
+    if not settings.BFF_SHARED_SECRET:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Google login is not configured")
 
-def _google_redirect_uri(request: Request) -> str:
-    """Resolve the callback URL; must match what is registered in Google console."""
-    if settings.GOOGLE_REDIRECT_URI:
-        return settings.GOOGLE_REDIRECT_URI
-    return str(request.base_url).rstrip("/") + "/api/auth/google/callback"
+    configured_endpoints = (
+        (settings.GOOGLE_AUTHORIZE_URL, GOOGLE_AUTHORIZE_ENDPOINT),
+        (settings.GOOGLE_TOKEN_URL, GOOGLE_TOKEN_ENDPOINT),
+        (settings.GOOGLE_USERINFO_URL, GOOGLE_USERINFO_ENDPOINT),
+        (settings.GOOGLE_ISSUER, GOOGLE_ISSUER),
+    )
+    if any(configured != allowed for configured, allowed in configured_endpoints):
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Google login configuration is not allowed")
+
+    redirect = _parse_origin_url(settings.GOOGLE_REDIRECT_URI)
+    success = _parse_origin_url(settings.OAUTH_SUCCESS_REDIRECT)
+    allowed_origins = {_origin(value) for value in settings.FRONTEND_URL.split(",") if value.strip()}
+    if (
+        redirect is None
+        or redirect.path != "/api/auth/google/callback"
+        or redirect.query
+        or redirect.fragment
+        or success is None
+        or success.path not in ("", "/")
+        or _origin(settings.GOOGLE_REDIRECT_URI) not in allowed_origins
+        or _origin(settings.OAUTH_SUCCESS_REDIRECT) not in allowed_origins
+    ):
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Google login configuration is not allowed")
 
 
-def fetch_google_profile(code: str, redirect_uri: str) -> Dict[str, Any]:
+def _require_bff(request: Request) -> None:
+    if not settings.BFF_SHARED_SECRET:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="BFF authentication is not configured")
+    provided = request.headers.get(BFF_AUTH_HEADER, "")
+    if not provided or not secrets.compare_digest(provided, settings.BFF_SHARED_SECRET):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="BFF authentication required")
+
+
+def _parse_origin_url(value: str):
+    try:
+        parsed = urlparse(value.strip())
+    except ValueError:
+        return None
+    if parsed.scheme not in {"https", "http"} or not parsed.hostname or parsed.username or parsed.password:
+        return None
+    if parsed.scheme == "http" and parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
+        return None
+    return parsed
+
+
+def _origin(value: str) -> str:
+    parsed = _parse_origin_url(value)
+    if parsed is None:
+        return ""
+    try:
+        port = parsed.port
+    except ValueError:
+        return ""
+    default_port = 443 if parsed.scheme == "https" else 80
+    port_suffix = f":{port}" if port and port != default_port else ""
+    return f"{parsed.scheme}://{parsed.hostname}{port_suffix}"
+
+
+def fetch_google_profile(code: str, redirect_uri: str, code_verifier: str) -> Dict[str, Any]:
     """Exchange an authorization code for the Google account profile.
 
     Isolated so it can be stubbed in tests. Raises HTTPException on any failure.
@@ -398,6 +447,7 @@ def fetch_google_profile(code: str, redirect_uri: str) -> Dict[str, Any]:
                     "client_secret": settings.GOOGLE_CLIENT_SECRET,
                     "redirect_uri": redirect_uri,
                     "grant_type": "authorization_code",
+                    "code_verifier": code_verifier,
                 },
             )
             token_resp.raise_for_status()
@@ -411,23 +461,37 @@ def fetch_google_profile(code: str, redirect_uri: str) -> Dict[str, Any]:
             )
             userinfo_resp.raise_for_status()
             return userinfo_resp.json()
-    except HTTPException:
-        raise
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Google sign-in failed: {exc}") from exc
+        raise OAuthProviderError() from exc
 
 
 def provision_google_user(db: Session, profile: Dict[str, Any], req_meta: Request | None) -> schemas.Token:
-    """Find-or-create a user from a verified Google profile and mint session tokens."""
+    """Find-or-create by issuer/subject only and mint tokens for the BFF."""
     email = (profile.get("email") or "").strip().lower()
     if not email:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google account has no email")
-    if profile.get("email_verified") is False:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google email is not verified")
+        raise OAuthIdentityError()
+    if profile.get("email_verified") is not True:
+        raise OAuthIdentityError()
 
-    user = db.query(User).filter(User.email == email).first()
-    is_new_user = user is None
-    if is_new_user:
+    issuer = profile.get("iss") or GOOGLE_ISSUER
+    subject = profile.get("sub")
+    if issuer != GOOGLE_ISSUER or not isinstance(subject, str) or not subject.strip():
+        raise OAuthIdentityError()
+
+    identity = db.query(OAuthIdentity).filter(
+        OAuthIdentity.issuer == issuer,
+        OAuthIdentity.subject == subject,
+    ).first()
+    is_new_user = identity is None
+    if identity:
+        user = identity.user
+        identity.email = email
+        identity.last_login_at = datetime.utcnow()
+    else:
+        # Email is not proof of account ownership. Never attach Google to an
+        # existing password, admin, or legacy account implicitly.
+        if db.query(User).filter(User.email == email).first():
+            raise OAuthAccountConflict()
         user = User(
             email=email,
             full_name=profile.get("name") or email.split("@")[0],
@@ -436,11 +500,8 @@ def provision_google_user(db: Session, profile: Dict[str, Any], req_meta: Reques
             email_verified_at=datetime.utcnow(),
         )
         db.add(user)
-        db.commit()
-        db.refresh(user)
-    elif not user.email_verified_at:
-        # A Google-verified email is trustworthy; mark a pre-existing local account verified.
-        user.email_verified_at = datetime.utcnow()
+        db.flush()
+        db.add(OAuthIdentity(user_id=user.id, issuer=issuer, subject=subject, email=email))
 
     token_data = build_user_payload(user)
     expires_delta = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -464,78 +525,104 @@ def provision_google_user(db: Session, profile: Dict[str, Any], req_meta: Reques
     )
 
 
-@router.get("/google/start")
-def google_start(request: Request):
-    """Begin Google sign-in: set a CSRF state cookie and redirect to Google."""
+@router.post("/google/start", response_model=schemas.GoogleOAuthStartResponse)
+def google_start(request: Request, response: Response, db: Session = Depends(get_db)):
+    """Create a backend-owned one-time transaction for the trusted Next BFF."""
+    _require_bff(request)
     _require_google_configured()
+    response.headers["Cache-Control"] = "no-store"
 
+    now = datetime.utcnow()
+    db.query(OAuthAuthorization).filter(OAuthAuthorization.expires_at <= now).delete(synchronize_session=False)
     state = generate_secure_token()
-    redirect_uri = _google_redirect_uri(request)
+    code_verifier = secrets.token_urlsafe(64)
+    challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode("ascii")).digest()).decode("ascii").rstrip("=")
+    db.add(OAuthAuthorization(
+        state_hash=hash_secure_token(state),
+        code_verifier=code_verifier,
+        redirect_uri=settings.GOOGLE_REDIRECT_URI,
+        expires_at=now + timedelta(seconds=OAUTH_STATE_MAX_AGE_SECONDS),
+    ))
+    db.commit()
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
-        "redirect_uri": redirect_uri,
+        "redirect_uri": settings.GOOGLE_REDIRECT_URI,
         "response_type": "code",
         "scope": "openid email profile",
         "state": state,
-        "access_type": "offline",
         "prompt": "select_account",
+        "code_challenge": challenge,
+        "code_challenge_method": "S256",
     }
     authorize_url = httpx.URL(settings.GOOGLE_AUTHORIZE_URL, params=params)
-
-    response = RedirectResponse(url=str(authorize_url), status_code=status.HTTP_302_FOUND)
-    # sameSite "lax" so the cookie returns on Google's top-level redirect back.
-    response.set_cookie(
-        OAUTH_STATE_COOKIE,
-        state,
-        max_age=OAUTH_STATE_MAX_AGE_SECONDS,
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        path="/",
+    return schemas.GoogleOAuthStartResponse(
+        authorization_url=str(authorize_url),
+        expires_in=OAUTH_STATE_MAX_AGE_SECONDS,
+        state=state,
     )
-    return response
 
 
-@router.get("/google/callback")
-def google_callback(request: Request, db: Session = Depends(get_db)):
-    """Complete Google sign-in: verify state, exchange the code, set session cookies."""
-    _require_google_configured()
+def _oauth_result(classification: str, message: str, token: schemas.Token | None = None):
+    return schemas.GoogleOAuthResult(
+        ok=classification == "success",
+        classification=classification,
+        message=message,
+        session=token,
+    )
 
-    success_base = settings.OAUTH_SUCCESS_REDIRECT.rstrip("/")
 
-    if request.query_params.get("error"):
-        return RedirectResponse(url=f"{success_base}/login?error=google_denied", status_code=status.HTTP_302_FOUND)
+@router.post("/google/callback", response_model=schemas.GoogleOAuthResult)
+def google_callback(
+    payload: schemas.GoogleOAuthCallbackRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    """Consume state, validate Google identity, and return tokens only to the BFF."""
+    _require_bff(request)
+    response.headers["Cache-Control"] = "no-store"
 
-    code = request.query_params.get("code")
-    state = request.query_params.get("state")
-    stored_state = request.cookies.get(OAUTH_STATE_COOKIE)
-    if not code or not state or not stored_state or state != stored_state:
-        return RedirectResponse(url=f"{success_base}/login?error=google_state", status_code=status.HTTP_302_FOUND)
+    lookup_state = payload.oauth_state or payload.state
+    transaction = None
+    if lookup_state:
+        transaction = db.query(OAuthAuthorization).filter(
+            OAuthAuthorization.state_hash == hash_secure_token(lookup_state)
+        ).first()
+
+    # Delete before any provider/provisioning work. Every path after a recognized
+    # transaction is terminal and cannot replay it, even if downstream work fails.
+    if transaction:
+        db.delete(transaction)
+        db.commit()
+
+    if not transaction or not payload.state or not payload.oauth_state:
+        return _oauth_result("invalid_state", "OAuth state is invalid or has already been used")
+    if not secrets.compare_digest(payload.state, payload.oauth_state):
+        return _oauth_result("invalid_state", "OAuth state does not match")
+    if transaction.expires_at <= datetime.utcnow():
+        return _oauth_result("expired_state", "OAuth transaction has expired")
+    if payload.error:
+        return _oauth_result("denied", "Google authorization was denied")
+    if not payload.code:
+        return _oauth_result("provider_failure", "Google authorization did not return a code")
 
     try:
-        profile = fetch_google_profile(code, _google_redirect_uri(request))
+        _require_google_configured()
+        profile = fetch_google_profile(payload.code, transaction.redirect_uri, transaction.code_verifier)
         token = provision_google_user(db, profile, request)
+        return _oauth_result("success", "Google sign-in succeeded", token)
+    except OAuthProviderError:
+        db.rollback()
+        return _oauth_result("provider_failure", "Google sign-in could not be completed")
     except HTTPException:
-        return RedirectResponse(url=f"{success_base}/login?error=google_failed", status_code=status.HTTP_302_FOUND)
-
-    response = RedirectResponse(url=f"{success_base}/", status_code=status.HTTP_302_FOUND)
-    response.set_cookie(
-        OAUTH_ACCESS_COOKIE, token.access_token, max_age=token.expires_in,
-        httponly=True, secure=True, samesite="lax", path="/",
-    )
-    if token.refresh_token and token.refresh_expires_in:
-        response.set_cookie(
-            OAUTH_REFRESH_COOKIE, token.refresh_token, max_age=token.refresh_expires_in,
-            httponly=True, secure=True, samesite="lax", path="/",
-        )
-    # Consume the one-time state cookie.
-    response.delete_cookie(OAUTH_STATE_COOKIE, path="/")
-    return response
-
-
-@router.post("/google", response_model=schemas.Token)
-def login_with_google(request: schemas.GoogleAuthRequest, req_meta: Request, db: Session = Depends(get_db)):
-    """Programmatic exchange: take an authorization ``code`` and return session tokens."""
-    _require_google_configured()
-    profile = fetch_google_profile(request.code, request.redirect_uri)
-    return provision_google_user(db, profile, req_meta)
+        db.rollback()
+        return _oauth_result("provider_failure", "Google sign-in configuration is unavailable")
+    except OAuthIdentityError:
+        db.rollback()
+        return _oauth_result("identity_rejected", "Google identity did not meet sign-in requirements")
+    except OAuthAccountConflict:
+        db.rollback()
+        return _oauth_result("account_conflict", "An existing account requires explicit linking")
+    except Exception:
+        db.rollback()
+        return _oauth_result("provisioning_failure", "The account session could not be created")
