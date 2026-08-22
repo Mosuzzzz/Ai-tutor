@@ -78,11 +78,9 @@ describe("HomeLandingPage preferences", () => {
 
     const themeButton = await screen.findByRole("button", { name: "Theme: Light" });
     expect(themeButton).toHaveAttribute("aria-pressed", "false");
-    expect(themeButton).toHaveTextContent("Sun");
     fireEvent.click(themeButton);
 
     expect(screen.getByRole("button", { name: "Theme: Dark" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Theme: Dark" })).toHaveTextContent("Moon");
     expect(screen.getByRole("main").parentElement).toHaveAttribute("data-home-theme", "dark");
     expect(localStorage.getItem(HOME_THEME_STORAGE_KEY)).toBe("dark");
   });

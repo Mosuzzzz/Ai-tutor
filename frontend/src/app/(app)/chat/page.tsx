@@ -5,16 +5,12 @@ import { loadAiChatSummaryForSession } from "@/features/ai-chat/aiChatApi";
 export const dynamic = "force-dynamic";
 
 type ChatPageProps = {
-  searchParams?:
-    | Promise<{
-        documentId?: string | string[];
-      }>
-    | {
-        documentId?: string | string[];
-      };
+  searchParams?: Promise<{
+    documentId?: string | string[];
+  }>;
 };
 
-const ChatPage = async ({ searchParams }: ChatPageProps = {}) => {
+const ChatPage = async ({ searchParams }: ChatPageProps) => {
   const session = await requirePageSession("/chat");
   const selectedDocumentId = await resolveSelectedDocumentId(searchParams);
   const chatResult = await loadAiChatSummaryForSession({

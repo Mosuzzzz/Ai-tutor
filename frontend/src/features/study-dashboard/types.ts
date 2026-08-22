@@ -1,60 +1,94 @@
-export type StudyDashboardApiResponse = {
-  average_score: number;
-  completed_quizzes: number;
-  read_documents_count: number;
-  recent_scores: RecentScore[];
-  score_trend: ScoreTrendPoint[];
-  streak_days: number;
-};
-
-export type RecentScore = {
-  exam_id: string;
-  filename: string;
-  id: string;
-  score: number;
-  submitted_at: string;
-};
-
-export type ScoreTrendPoint = {
-  average_score: number;
-  date: string;
-  id: string;
-};
+export type DashboardDataSourceId = "analytics" | "documents";
+export type DashboardSourceAvailability = "available" | "unavailable";
+export type DashboardDocumentStatus = "pending" | "processing" | "ready" | "error";
 
 export type StudyDashboardAction = {
+  ariaLabel: string;
+  href: string;
+  label: string;
+};
+
+export type StudyDashboardSupportingAction = StudyDashboardAction & {
+  id: "analytics" | "documents" | "quiz";
+};
+
+export type StudyDashboardScoreTrendPoint = {
+  date: string;
+  dateLabel: string;
+  score: number;
+  scoreLabel: string;
+};
+
+export type StudyDashboardContinuation = {
   description: string;
+  documentStatus?: DashboardDocumentStatus;
+  kind:
+    | "ready-summary"
+    | "ready-document"
+    | "processing-document"
+    | "failed-document"
+    | "first-document"
+    | "documents-unavailable";
+  primaryAction: StudyDashboardAction;
+  secondaryActions: StudyDashboardAction[];
+  statusLabel?: string;
+  title: string;
+  uploadedAt?: string;
+  uploadedAtLabel?: string;
+};
+
+export type StudyDashboardRecentDocument = {
+  action: StudyDashboardAction;
+  filename: string;
+  id: string;
+  relatedQuizCount?: number;
+  summaryAvailable: boolean;
+  status: DashboardDocumentStatus;
+  statusLabel: string;
+  uploadedAt: string;
+  uploadedAtLabel: string;
+};
+
+export type StudyDashboardRecentReview = {
+  ariaLabel: string;
+  filename: string;
+  gradeLabel: string;
   href: string;
   id: string;
-  title: string;
-  tone: "primary" | "secondary";
+  score: number;
+  scoreLabel: string;
+  submittedAt: string;
+  submittedAtLabel: string;
 };
 
 export type StudyDashboardMetric = {
   helper: string;
-  id: string;
+  id: "ready-documents" | "completed-quizzes" | "average-score";
   label: string;
   value: string;
 };
 
-export type StudyDashboardStep = {
-  description: string;
-  id: string;
-  title: string;
+export type StudyDashboardSectionIssue = {
+  id: DashboardDataSourceId;
+  message: string;
 };
 
 export type StudyDashboardViewModel = {
-  apiResponse: StudyDashboardApiResponse;
+  availability: Record<DashboardDataSourceId, DashboardSourceAvailability>;
+  continuation: StudyDashboardContinuation;
+  displayName: string | null;
+  generatedAt: string;
   generatedAtLabel: string;
-  headline: string;
-  metrics: StudyDashboardMetric[];
-  nextMilestone: string;
-  onboardingSteps: StudyDashboardStep[];
-  primaryAction: StudyDashboardAction;
-  secondaryActions: StudyDashboardAction[];
-  summary: string;
-  userName: string;
+  greeting: string;
+  hasDocuments: boolean;
+  intro: string;
+  nextActions: StudyDashboardSupportingAction[];
+  progressMetrics: StudyDashboardMetric[];
+  recentDocuments: StudyDashboardRecentDocument[];
+  recentReviews: StudyDashboardRecentReview[];
+  scoreTrend: StudyDashboardScoreTrendPoint[];
+  sectionIssues: StudyDashboardSectionIssue[];
 };
 
-export type StudyDashboardDataSource = "api" | "api-ready-mock";
-
-export type StudyDashboardStatus = "empty" | "ready" | "loading" | "error";
+export type StudyDashboardDataSource = "api";
+export type StudyDashboardStatus = "empty" | "ready" | "partial" | "error";

@@ -1,5 +1,7 @@
 import { normalizePercentValue } from "../../lib/percent";
-import type { RecentScore } from "./types";
+import type { StudyDashboardResponse } from "./studyDashboardContract";
+
+type RecentScore = StudyDashboardResponse["recent_scores"][number];
 
 export const getProgressPercentValue = (value: number) => {
   return normalizePercentValue(value);
@@ -27,28 +29,13 @@ export const scoreToGrade = (score: number) => {
   return "ควรทบทวน";
 };
 
-export const sortRecentScoresByScore = (scores: RecentScore[]) => {
-  return [...scores].sort((first, second) => second.score - first.score);
+export const getRecentScores = (scores: RecentScore[], limit = 3) => {
+  return [...scores]
+    .sort((first, second) => getTimestamp(second.submitted_at) - getTimestamp(first.submitted_at))
+    .slice(0, Math.max(0, limit));
 };
 
-export const getTopScores = (scores: RecentScore[], limit = 3) => {
-  return sortRecentScoresByScore(scores).slice(0, limit);
-};
-
-export const getRelativeTimeLabel = (dateValue: string, now = new Date()) => {
-  const date = new Date(dateValue);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.max(0, Math.round(diffMs / 60000));
-
-  if (diffMinutes < 60) {
-    return `${diffMinutes} นาทีที่แล้ว`;
-  }
-
-  const diffHours = Math.round(diffMinutes / 60);
-
-  if (diffHours < 24) {
-    return `${diffHours} ชั่วโมงที่แล้ว`;
-  }
-
-  return `${Math.round(diffHours / 24)} วันที่แล้ว`;
+const getTimestamp = (dateValue: string) => {
+  const timestamp = Date.parse(dateValue);
+  return Number.isNaN(timestamp) ? 0 : timestamp;
 };

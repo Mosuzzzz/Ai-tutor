@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthSession } from "@/features/auth/types";
-import DashboardPage from "./page";
+import DashboardPage from "../(app)/dashboard/page";
 
 const studySession: AuthSession = {
   mode: "http-only-cookie",
@@ -32,42 +32,25 @@ describe("dashboard page", () => {
     loadStudyDashboardForSession.mockReset();
     loadStudyDashboardForSession.mockResolvedValue({
       dashboard: {
-        apiResponse: {
-          average_score: 88,
-          completed_quizzes: 7,
-          read_documents_count: 4,
-          recent_scores: [],
-          score_trend: [],
-          streak_days: 3
+        availability: { analytics: "available", documents: "available" },
+        continuation: {
+          description: "สรุปพร้อมแล้ว",
+          kind: "ready-summary",
+          primaryAction: { ariaLabel: "เปิดเอกสารล่าสุด", href: "/documents/file-1", label: "เปิดเอกสาร" },
+          secondaryActions: [],
+          statusLabel: "พร้อมใช้กับ AI",
+          title: "คู่มือเรียน.pdf"
         },
+        displayName: "Student One",
+        generatedAt: "2026-06-05T10:00:00.000Z",
         generatedAtLabel: "5 มิ.ย. 2569 10:00",
-        headline: "แผนทบทวนของคุณพร้อมแล้ว",
-        metrics: [
-          {
-            helper: "จะเริ่มนับหลังอัปโหลดและประมวลผลเสร็จ",
-            id: "ready-documents",
-            label: "เอกสารพร้อมอ่าน",
-            value: "4"
-          },
-          {
-            helper: "คะแนนแรกจะปรากฏหลังส่งคำตอบ",
-            id: "completed-quizzes",
-            label: "ควิซที่ทำแล้ว",
-            value: "7"
-          }
-        ],
-        nextMilestone: "ต่อยอดด้วยควิซทบทวนชุดถัดไป",
-        onboardingSteps: [],
-        primaryAction: {
-          description: "ให้ระบบสรุปและเตรียมเนื้อหา",
-          href: "/documents",
-          id: "upload-document",
-          title: "อัปโหลดเอกสารแรก",
-          tone: "primary"
-        },
-        secondaryActions: [],
-        summary: "Student One มีเอกสาร 4 รายการและควิซ 7 ชุดในเส้นทางทบทวนล่าสุด",
-        userName: "Student One"
+        greeting: "กลับมาเรียนต่อกันเถอะ, Student One",
+        hasDocuments: true,
+        intro: "เลือกสิ่งที่ควรเรียนต่อ",
+        progressMetrics: [],
+        recentDocuments: [],
+        recentReviews: [],
+        sectionIssues: []
       },
       status: "ready"
     });
@@ -78,7 +61,7 @@ describe("dashboard page", () => {
 
     expect(requirePageSession).toHaveBeenCalledWith("/dashboard");
     expect(loadStudyDashboardForSession).toHaveBeenCalledWith({ session: studySession });
-    expect(screen.getByRole("main")).toHaveTextContent("แดชบอร์ดของฉัน");
+    expect(screen.getByTestId("study-dashboard")).toHaveTextContent("Welcome back, Student One");
     expect(screen.getByTestId("study-dashboard")).toHaveAttribute("data-source", "api");
   });
 
@@ -91,6 +74,6 @@ describe("dashboard page", () => {
     render(await DashboardPage());
 
     expect(requirePageSession).toHaveBeenCalledWith("/dashboard");
-    expect(screen.getByRole("alert")).toHaveTextContent("ไม่สามารถโหลดแดชบอร์ดได้");
+    expect(screen.getByRole("alert")).toHaveTextContent("The Dashboard is unavailable right now.");
   });
 });

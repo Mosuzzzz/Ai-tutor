@@ -8,8 +8,17 @@ import {
   type BackendJsonRequestOptions
 } from "../../lib/api/backendClient";
 import type { AuthSession } from "../auth/types";
-import { STUDY_DASHBOARD_API_PATH, studyDashboardResponseSchema } from "./studyDashboardContract";
-import { isStudyDashboardResponseEmpty, toStudyDashboardViewModel } from "./studyDashboardMapper";
+import {
+  DOCUMENTS_DASHBOARD_API_PATH,
+  documentLibraryResponseSchema,
+  type DocumentLibraryResponse
+} from "../document-summary/documentSummaryContract";
+import {
+  STUDY_DASHBOARD_API_PATH,
+  studyDashboardResponseSchema,
+  type StudyDashboardResponse
+} from "./studyDashboardContract";
+import { isStudyDashboardDataEmpty, toStudyDashboardViewModel } from "./studyDashboardMapper";
 import type { StudyDashboardStatus, StudyDashboardViewModel } from "./types";
 
 export type StudyDashboardBackendRequest = <TResponse>(
@@ -30,7 +39,7 @@ type LoadStudyDashboardOptions = {
 export type StudyDashboardLoadResult =
   | {
       dashboard: StudyDashboardViewModel;
-      status: Exclude<StudyDashboardStatus, "error" | "loading">;
+      status: Exclude<StudyDashboardStatus, "error">;
     }
   | {
       errorMessage: string;
@@ -49,35 +58,43 @@ export const loadStudyDashboardForSession = async ({
   if (!accessToken) {
     return {
       errorMessage: mapApiErrorToMessage(
-        new ApiClientError({
-          code: "unauthorized",
-          message: "Missing access cookie"
-        })
+        new ApiClientError({ code: "unauthorized", message: "Missing access cookie" })
       ),
       status: "error"
     };
   }
 
-  try {
-    const response = await backendRequest({
+  const [analyticsResult, documentsResult] = await Promise.allSettled([
+    Promise.resolve().then(() => backendRequest<StudyDashboardResponse>({
       accessToken,
       path: STUDY_DASHBOARD_API_PATH,
       schema: studyDashboardResponseSchema
-    });
-    const dashboard = toStudyDashboardViewModel({
-      response,
-      session,
-      timestamp
-    });
+    })),
+    Promise.resolve().then(() => backendRequest<DocumentLibraryResponse>({
+      accessToken,
+      path: DOCUMENTS_DASHBOARD_API_PATH,
+      schema: documentLibraryResponseSchema
+    }))
+  ]);
 
+  if (analyticsResult.status === "rejected" && documentsResult.status === "rejected") {
     return {
-      dashboard,
-      status: isStudyDashboardResponseEmpty(response) ? "empty" : "ready"
-    };
-  } catch (error) {
-    return {
-      errorMessage: mapApiErrorToMessage(error),
+      errorMessage: "ไม่สามารถโหลดแดชบอร์ดได้ในขณะนี้",
       status: "error"
     };
   }
+
+  const analytics = analyticsResult.status === "fulfilled" ? analyticsResult.value : undefined;
+  const documents = documentsResult.status === "fulfilled" ? documentsResult.value : undefined;
+  const dashboard = toStudyDashboardViewModel({ analytics, documents, session, timestamp });
+
+  return {
+    dashboard,
+    status:
+      analytics && documents
+        ? isStudyDashboardDataEmpty({ analytics, documents })
+          ? "empty"
+          : "ready"
+        : "partial"
+  };
 };

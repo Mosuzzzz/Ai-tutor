@@ -5,18 +5,13 @@ import { loadQuizGeneratorForSession } from "@/features/ai-quiz-generator/quizGe
 export const dynamic = "force-dynamic";
 
 type QuizPageProps = {
-  searchParams?:
-    | Promise<{
-        documentId?: string | string[];
-        examId?: string | string[];
-      }>
-    | {
-        documentId?: string | string[];
-        examId?: string | string[];
-      };
+  searchParams?: Promise<{
+    documentId?: string | string[];
+    examId?: string | string[];
+  }>;
 };
 
-const QuizPage = async ({ searchParams }: QuizPageProps = {}) => {
+const QuizPage = async ({ searchParams }: QuizPageProps) => {
   const session = await requirePageSession("/quiz");
   const { selectedDocumentId, selectedExamId } = await resolveQuizSearchParams(searchParams);
   const quizResult = await loadQuizGeneratorForSession({

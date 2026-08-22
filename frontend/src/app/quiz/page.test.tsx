@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthSession } from "@/features/auth/types";
 import { aiQuizGeneratorMock } from "@/features/ai-quiz-generator/quizGeneratorData";
-import QuizPage from "./page";
+import QuizPage from "../(app)/quiz/page";
 
 const userSession: AuthSession = {
   mode: "http-only-cookie",
@@ -38,14 +38,13 @@ describe("quiz route", () => {
   });
 
   it("renders the AI quiz generator feature inside the app shell with API data", async () => {
-    render(await QuizPage());
+    render(await QuizPage({}));
 
     expect(requirePageSession).toHaveBeenCalledWith("/quiz");
     expect(loadQuizGeneratorForSession).toHaveBeenCalledWith({
       session: userSession
     });
-    expect(screen.getByRole("banner")).toHaveTextContent("AI Tutor");
-    expect(screen.getByRole("main")).toContainElement(screen.getByTestId("ai-quiz-generator"));
+    expect(screen.getByTestId("ai-quiz-generator")).toBeInTheDocument();
     expect(screen.getByTestId("ai-quiz-generator")).toHaveAttribute("data-source", "api");
   });
 

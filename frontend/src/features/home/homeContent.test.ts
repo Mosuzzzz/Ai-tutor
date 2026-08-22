@@ -37,8 +37,7 @@ describe("Home content", () => {
       studyKit: expect.any(String),
       progress: expect.any(String),
       faq: expect.any(String),
-      startStudying: expect.any(String),
-      myWorkspace: expect.any(String)
+      startStudying: expect.any(String)
     }));
     expect(content.hero).toEqual(
       expect.objectContaining({
@@ -90,8 +89,7 @@ describe("Home content", () => {
         studyKit: "Study kit",
         progress: "Progress",
         faq: "FAQ",
-        startStudying: "Start studying",
-        myWorkspace: "My workspace"
+        startStudying: "Start studying"
       },
       hero: {
         eyebrow: "Your material, one connected study loop.",
@@ -126,8 +124,7 @@ describe("Home content", () => {
         studyKit: "ชุดเครื่องมือเรียน",
         progress: "ความก้าวหน้า",
         faq: "คำถามที่พบบ่อย",
-        startStudying: "เริ่มเรียน",
-        myWorkspace: "พื้นที่เรียนของฉัน"
+        startStudying: "เริ่มเรียน"
       },
       hero: {
         eyebrow: "จากเอกสารของคุณ สู่การเรียนที่ต่อเนื่อง",

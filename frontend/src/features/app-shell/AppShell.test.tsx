@@ -1,8 +1,13 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AppShell } from "./AppShell";
 import type { AuthSession } from "../auth/types";
+import type { DocumentLibraryResponse } from "../document-summary/documentSummaryContract";
+import { HOME_LANGUAGE_STORAGE_KEY, HOME_THEME_STORAGE_KEY } from "../home/homePreferences";
+import type { StudyDashboardResponse } from "../study-dashboard/studyDashboardContract";
+import { toStudyDashboardViewModel } from "../study-dashboard/studyDashboardMapper";
+import { StudyDashboardPage } from "../study-dashboard/StudyDashboardPage";
+import { AppShell } from "./AppShell";
 
 const routerRefresh = vi.hoisted(() => vi.fn());
 const routerReplace = vi.hoisted(() => vi.fn());
@@ -23,14 +28,55 @@ const learnerSession: AuthSession = {
   mode: "http-only-cookie",
   storesTokenInClient: false,
   user: {
-    displayName: "ชื่อผู้เรียนที่ยาวมากเพื่อทดสอบพื้นที่บัญชี",
+    displayName: "Learner",
     email: "a-very-long-learning-account@example.com",
     role: "user"
   }
 };
 
+const emptyAnalytics: StudyDashboardResponse = {
+  average_score: 0,
+  completed_quizzes: 0,
+  read_documents_count: 0,
+  recent_scores: [],
+  score_trend: [],
+  streak_days: 0
+};
+
+const emptyDocuments: DocumentLibraryResponse = {
+  documents: [],
+  status_counts: { error: 0, pending: 0, processing: 0, ready: 0 },
+  total_documents: 0
+};
+
+const populatedAnalytics: StudyDashboardResponse = {
+  ...emptyAnalytics,
+  average_score: 88,
+  completed_quizzes: 2,
+  recent_scores: [{ exam_id: "exam-1", filename: "ชีววิทยา.pdf", id: "review-1", score: 88, submitted_at: "2026-08-21T10:00:00.000Z" }],
+  score_trend: [
+    { average_score: 82, date: "2026-08-20" },
+    { average_score: 88, date: "2026-08-21" }
+  ]
+};
+
+const populatedDocuments: DocumentLibraryResponse = {
+  documents: [{
+    created_at: "2026-08-21T09:00:00.000Z",
+    filename: "ชีววิทยา.pdf",
+    id: "document-1",
+    related_exams_count: 1,
+    status: "ready",
+    summary_available: true,
+    summary_markdown: null
+  }],
+  status_counts: { error: 0, pending: 0, processing: 0, ready: 1 },
+  total_documents: 1
+};
+
 describe("AppShell", () => {
   beforeEach(() => {
+    localStorage.clear();
     vi.restoreAllMocks();
     routerRefresh.mockReset();
     routerReplace.mockReset();
@@ -38,171 +84,145 @@ describe("AppShell", () => {
     document.body.style.overflow = "";
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
+  afterEach(() => vi.unstubAllGlobals());
 
-  it("renders landmarks and preserves nested active navigation", () => {
+  it("keeps the protected content landmark under the shared horizontal product header", () => {
     render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
 
     expect(screen.getByRole("link", { name: "ข้ามไปยังเนื้อหาหลัก" })).toHaveAttribute("href", "#main-content");
-    expect(screen.getByRole("complementary", { name: "แถบนำทางหลัก" })).toBeInTheDocument();
-    expect(screen.getByRole("banner", { name: "แถบบนของแอป" })).toBeInTheDocument();
+    expect(screen.getByRole("banner", { name: "Product header" })).toBeInTheDocument();
+    expect(screen.queryByRole("complementary", { name: "แถบนำทางหลัก" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("banner", { name: "แถบบนของแอป" })).not.toBeInTheDocument();
     expect(screen.getByRole("main", { name: "พื้นที่เนื้อหาหลัก" })).toHaveAttribute("id", "main-content");
-    expect(screen.getByRole("link", { name: /เอกสารของฉัน/ })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: /^แดชบอร์ด$/ })).not.toHaveAttribute("aria-current");
   });
 
-  it("uses the approved wordmark and renders only approved navigation", () => {
+  it("provides direct product routes and preserves nested active navigation", () => {
     render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
 
-    expect(screen.getAllByRole("img", { name: "AI Tutor" })[0]).toHaveAttribute("src", expect.stringContaining("ai-tutor-wordmark-green.png"));
-    expect(screen.getByRole("link", { name: /^แดชบอร์ด$/ })).toHaveAttribute("href", "/dashboard");
-    expect(screen.getByRole("link", { name: /เอกสารของฉัน/ })).toHaveAttribute("href", "/documents");
-    expect(screen.getByRole("link", { name: /แชทกับเอกสาร/ })).toHaveAttribute("href", "/chat");
-    expect(screen.getByRole("link", { name: /ควิซทบทวน/ })).toHaveAttribute("href", "/quiz");
-    expect(screen.getByRole("link", { name: /สถิติการทบทวน/ })).toHaveAttribute("href", "/analytics");
-    expect(screen.getByRole("link", { name: /การตั้งค่า/ })).toHaveAttribute("href", "/settings");
-    expect(screen.queryByRole("link", { name: /คอร์สเรียน/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "เริ่มจากเอกสาร" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByRole("link", { name: "Documents" })).toHaveAttribute("href", "/documents");
+    expect(screen.getByRole("link", { name: "Chat" })).toHaveAttribute("href", "/chat");
+    expect(screen.getByRole("link", { name: "Quiz" })).toHaveAttribute("href", "/quiz");
+    expect(screen.getByRole("link", { name: "Analytics" })).toHaveAttribute("href", "/analytics");
+    expect(screen.getByRole("link", { name: "Documents" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
   });
 
-  it("shows a contextual non-heading label and no unsupported topbar controls", () => {
+  it("uses the approved shared wordmark and omits retired or unsupported navigation", () => {
     render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
 
-    const topbar = screen.getByRole("banner", { name: "แถบบนของแอป" });
-    expect(within(topbar).getByText("เอกสารของฉัน")).toBeInTheDocument();
-    expect(within(topbar).queryByRole("heading")).not.toBeInTheDocument();
-    expect(within(topbar).queryByRole("searchbox")).not.toBeInTheDocument();
-    expect(within(topbar).queryByRole("button", { name: "การแจ้งเตือน" })).not.toBeInTheDocument();
-    expect(within(topbar).queryByRole("button", { name: "ช่วยเหลือ" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "AI Tutor home" })).toHaveAttribute("href", "/home");
+    expect(screen.getByRole("link", { name: "AI Tutor home" }).querySelector("img")).toHaveAttribute("src", expect.stringContaining("ai-tutor-wordmark-green.png"));
+    expect(screen.queryByRole("link", { name: /Courses|คอร์สเรียน/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /My workspace|พื้นที่เรียนของฉัน/ })).not.toBeInTheDocument();
   });
 
-  it("keeps identity, Settings, and Logout in the desktop account menu", () => {
+  it("restores the shared language preference for App navigation chrome", async () => {
+    localStorage.setItem(HOME_LANGUAGE_STORAGE_KEY, "th");
     render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
-    fireEvent.click(screen.getByRole("button", { name: /เปิดเมนูบัญชี/ }));
 
-    const menu = screen.getByRole("menu", { name: "เมนูบัญชี" });
-    expect(menu).toHaveTextContent(learnerSession.user.displayName ?? "");
+    expect(await screen.findByRole("link", { name: "เอกสารของฉัน" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("button", { name: "ภาษา: TH" })).toBeInTheDocument();
+  });
+
+  it("keeps an empty Dashboard in the same active language as the product navigation", async () => {
+    const dashboard = toStudyDashboardViewModel({ analytics: emptyAnalytics, documents: emptyDocuments, session: learnerSession });
+    render(<AppShell session={learnerSession}><StudyDashboardPage dashboard={dashboard} status="empty" /></AppShell>);
+
+    expect(screen.getByRole("button", { name: "Language: EN" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Start with your documents" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Learning overview" })).toBeInTheDocument();
+    expect(screen.queryByText("เริ่มจากเอกสารของคุณ")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Language: EN" }));
+
+    expect(await screen.findByRole("button", { name: "ภาษา: TH" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "เริ่มจากเอกสารของคุณ" })).toBeInTheDocument();
+    expect(screen.queryByText("Start with your documents")).not.toBeInTheDocument();
+  });
+
+  it("localizes populated Dashboard copy, dates, and accessibility text without translating user data", async () => {
+    const dashboard = toStudyDashboardViewModel({
+      analytics: populatedAnalytics,
+      documents: populatedDocuments,
+      session: learnerSession,
+      timestamp: new Date("2026-08-22T10:00:00.000Z")
+    });
+    render(<AppShell session={learnerSession}><StudyDashboardPage dashboard={dashboard} status="ready" /></AppShell>);
+
+    const page = screen.getByTestId("study-dashboard");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Welcome back, Learner");
+    expect(screen.getByRole("heading", { level: 2, name: "Continue learning" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Quiz score trend" })).toBeInTheDocument();
+    expect(screen.getAllByText("ชีววิทยา.pdf").length).toBeGreaterThan(0);
+    expect(screen.getByText(/Quiz score trend from 2 data points: 82%, 88%/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Uploaded Aug 21, 2026/).length).toBeGreaterThan(0);
+    expect(page).not.toHaveTextContent(/แนวโน้มคะแนนควิซ|เอกสารล่าสุด|การทบทวนล่าสุด|ทำอะไรต่อได้บ้าง/);
+
+    fireEvent.click(screen.getByRole("button", { name: "Language: EN" }));
+
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("กลับมาเรียนต่อกันเถอะ, Learner");
+    expect(screen.getByRole("heading", { level: 2, name: "แนวโน้มคะแนนควิซ" })).toBeInTheDocument();
+    expect(screen.getByText(/แนวโน้มคะแนนควิซจาก 2 จุดข้อมูล: 82%, 88%/)).toBeInTheDocument();
+    expect(screen.getAllByText("ชีววิทยา.pdf").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/อัปโหลด 21 ส.ค. 2569/).length).toBeGreaterThan(0);
+    expect(page).not.toHaveTextContent(/Quiz score trend|Recent documents|Recent reviews|What you can do next/);
+  });
+
+  it("themes only the shared frame while keeping the transitional feature body on its stable canvas", async () => {
+    localStorage.setItem(HOME_THEME_STORAGE_KEY, "dark");
+    const { container } = render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
+
+    await waitFor(() => expect(container.firstElementChild).toHaveAttribute("data-product-theme", "dark"));
+    expect(screen.getByRole("main", { name: "พื้นที่เนื้อหาหลัก" })).toHaveClass("bg-foundation-canvas");
+  });
+
+  it("does not serialize session implementation details into protected chrome", () => {
+    render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
+
+    expect(screen.queryByText("http-only-cookie")).not.toBeInTheDocument();
+    expect(screen.queryByText("storesTokenInClient")).not.toBeInTheDocument();
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /notification|help|การแจ้งเตือน|ช่วยเหลือ/i })).not.toBeInTheDocument();
+  });
+
+  it("keeps the account trigger compact and Settings inside the account menu", () => {
+    render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
+    const trigger = screen.getByRole("button", { name: /Open account menu Learner/ });
+
+    expect(trigger).not.toHaveTextContent(learnerSession.user.email);
+    expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
+    fireEvent.click(trigger);
+
+    const menu = screen.getByRole("menu", { name: "Account menu" });
     expect(menu).toHaveTextContent(learnerSession.user.email);
-    expect(within(menu).getByRole("menuitem", { name: "การตั้งค่า" })).toHaveAttribute("href", "/settings");
-    expect(within(menu).getByRole("menuitem", { name: "ออกจากระบบ" })).toBeInTheDocument();
+    expect(within(menu).getByRole("menuitem", { name: "Settings" })).toHaveAttribute("href", "/settings");
   });
 
-  it("locks body scroll and restores focus after Escape", async () => {
+  it("preserves mobile focus, Escape, restoration, and body locking", async () => {
     render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
-    const menuButton = screen.getByRole("button", { name: "เปิดเมนู" });
+    const menuButton = screen.getByRole("button", { name: "Open navigation menu" });
     menuButton.focus();
     fireEvent.click(menuButton);
 
-    expect(screen.getByRole("dialog", { name: "เมนูหลัก" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Product navigation" })).toBeInTheDocument();
     expect(document.body.style.overflow).toBe("hidden");
-    expect(screen.getByRole("button", { name: "ปิดเมนู" })).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Close navigation menu" })).toHaveFocus();
     fireEvent.keyDown(document, { key: "Escape" });
 
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "เมนูหลัก" })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Product navigation" })).not.toBeInTheDocument());
     expect(document.body.style.overflow).toBe("");
     expect(menuButton).toHaveFocus();
   });
 
-  it("traps focus and closes the mobile drawer after navigation", async () => {
+  it("preserves protected-App logout through the same-origin BFF and redirects to /login", async () => {
+    const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse({ message: "Logged out", ok: true }));
     render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
-    fireEvent.click(screen.getByRole("button", { name: "เปิดเมนู" }));
-    const dialog = screen.getByRole("dialog", { name: "เมนูหลัก" });
-    const closeButton = within(dialog).getByRole("button", { name: "ปิดเมนู" });
-    const logoutButton = within(dialog).getByRole("button", { name: "ออกจากระบบ" });
-
-    closeButton.focus();
-    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
-    expect(logoutButton).toHaveFocus();
-    const dashboardLink = within(dialog).getByRole("link", { name: /^แดชบอร์ด$/ });
-    dashboardLink.addEventListener("click", (event) => event.preventDefault());
-    fireEvent.click(dashboardLink);
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "เมนูหลัก" })).not.toBeInTheDocument());
-  });
-
-  it("cleans up body scroll locking when the shell unmounts", () => {
-    const { unmount } = render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
-    fireEvent.click(screen.getByRole("button", { name: "เปิดเมนู" }));
-    expect(document.body.style.overflow).toBe("hidden");
-    unmount();
-    expect(document.body.style.overflow).toBe("");
-  });
-
-  it("closes the mobile drawer immediately for reduced-motion users", () => {
-    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({
-      matches: query === "(prefers-reduced-motion: reduce)"
-    })));
-    render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
-    fireEvent.click(screen.getByRole("button", { name: "เปิดเมนู" }));
-
-    fireEvent.click(screen.getByRole("button", { name: "ปิดเมนู" }));
-
-    expect(screen.queryByRole("dialog", { name: "เมนูหลัก" })).not.toBeInTheDocument();
-    expect(document.body.style.overflow).toBe("");
-  });
-
-  it("closes and cleans up the mobile drawer when the viewport reaches desktop", () => {
-    let desktopChangeListener: ((event: { matches: boolean }) => void) | undefined;
-    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({
-      addEventListener: (_event: string, listener: (event: { matches: boolean }) => void) => {
-        if (query === "(min-width: 1024px)") desktopChangeListener = listener;
-      },
-      matches: false,
-      removeEventListener: vi.fn()
-    })));
-    render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
-    const menuButton = screen.getByRole("button", { name: "เปิดเมนู" });
-    menuButton.focus();
-    fireEvent.click(menuButton);
-    expect(document.body.style.overflow).toBe("hidden");
-
-    act(() => desktopChangeListener?.({ matches: true }));
-
-    expect(screen.queryByRole("dialog", { name: "เมนูหลัก" })).not.toBeInTheDocument();
-    expect(document.body.style.overflow).toBe("");
-    expect(menuButton).toHaveFocus();
-  });
-
-  it("logs out through the same-origin BFF and redirects to /login", async () => {
-    const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse({ message: "ออกจากระบบสำเร็จ", ok: true }));
-    render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
-    fireEvent.click(screen.getByRole("button", { name: /เปิดเมนูบัญชี/ }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "ออกจากระบบ" }));
+    fireEvent.click(screen.getByRole("button", { name: /Open account menu Learner/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Log out" }));
 
     await waitFor(() => expect(fetcher).toHaveBeenCalledWith("/api/auth/logout", expect.objectContaining({ credentials: "same-origin", method: "POST" })));
     expect(routerReplace).toHaveBeenCalledWith("/login");
     expect(routerRefresh).toHaveBeenCalledTimes(1);
-  });
-
-  it("keeps the user in place and announces a safe logout failure", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse({ message: "ไม่สามารถออกจากระบบได้ในขณะนี้", ok: false }, { status: 503 }));
-    render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
-    fireEvent.click(screen.getByRole("button", { name: /เปิดเมนูบัญชี/ }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "ออกจากระบบ" }));
-
-    expect(await screen.findByRole("status")).toHaveTextContent("ไม่สามารถออกจากระบบได้ในขณะนี้");
-    expect(routerReplace).not.toHaveBeenCalled();
-    expect(routerRefresh).not.toHaveBeenCalled();
-  });
-
-  it("prevents repeated logout submissions while the request is pending", async () => {
-    let resolveLogout: ((response: Response) => void) | undefined;
-    const fetcher = vi.spyOn(globalThis, "fetch").mockImplementation(
-      () => new Promise<Response>((resolve) => {
-        resolveLogout = resolve;
-      })
-    );
-    render(<AppShell session={learnerSession}><p>Route content</p></AppShell>);
-    fireEvent.click(screen.getByRole("button", { name: /เปิดเมนูบัญชี/ }));
-    const logoutButton = screen.getByRole("menuitem", { name: "ออกจากระบบ" });
-
-    fireEvent.click(logoutButton);
-    fireEvent.click(logoutButton);
-
-    expect(logoutButton).toBeDisabled();
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    resolveLogout?.(jsonResponse({ message: "ออกจากระบบสำเร็จ", ok: true }));
-    await waitFor(() => expect(routerReplace).toHaveBeenCalledWith("/login"));
   });
 });

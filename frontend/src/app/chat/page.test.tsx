@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthSession } from "@/features/auth/types";
-import ChatPage from "./page";
+import ChatPage from "../(app)/chat/page";
 
 const userSession: AuthSession = {
   mode: "http-only-cookie",
@@ -54,13 +54,12 @@ describe("chat route", () => {
   });
 
   it("renders the API-backed AI chat and summary feature inside the app shell", async () => {
-    render(await ChatPage());
+    render(await ChatPage({}));
 
     expect(requirePageSession).toHaveBeenCalledWith("/chat");
     expect(loadAiChatSummaryForSession).toHaveBeenCalledWith({
       session: userSession
     });
-    expect(screen.getByRole("banner")).toHaveTextContent("AI Tutor");
     expect(screen.getByTestId("ai-chat-summary")).toBeInTheDocument();
     expect(screen.getByTestId("ai-chat-summary")).toHaveAttribute("data-source", "api");
   });

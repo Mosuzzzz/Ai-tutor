@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthSession } from "@/features/auth/types";
-import DocumentsPage from "./page";
+import DocumentsPage from "../(app)/documents/page";
 
 const userSession: AuthSession = {
   mode: "http-only-cookie",
@@ -63,7 +63,6 @@ describe("documents route", () => {
     expect(loadDocumentSummaryForSession).toHaveBeenCalledWith({
       session: userSession
     });
-    expect(screen.getByRole("banner")).toHaveTextContent("AI Tutor");
     expect(screen.getByTestId("document-summary")).toBeInTheDocument();
     expect(screen.getByTestId("document-summary")).toHaveAttribute("data-source", "api");
   });
