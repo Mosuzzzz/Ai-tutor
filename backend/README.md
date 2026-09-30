@@ -7,7 +7,7 @@ This backend supports explicit email/password auth and a BFF-only Google OAuth f
 - `POST /api/auth/register`
 	- Creates a tenant and user explicitly.
 	- Does **not** auto-login the user.
-	- Returns a verification token in development mode so the flow can be tested locally.
+	- Returns a verification token only when `APP_ENV=development` or `APP_ENV=test`; the default is production and withholds it.
 - `POST /api/auth/verify-email`
 	- Confirms the account email before login.
 - `POST /api/auth/login`
@@ -33,6 +33,7 @@ This backend supports explicit email/password auth and a BFF-only Google OAuth f
 ### Notes
 
 - `FRONTEND_URL` controls CORS. For local development it defaults to `http://localhost:3000`.
+- Set `APP_ENV=development` in the backend `.env` to enable local verification tokens. Production deployments should leave it unset or set it to `production`.
 - `JWT_SECRET_KEY` must be set explicitly; the app will not start without it.
 
 ### Smoke tests

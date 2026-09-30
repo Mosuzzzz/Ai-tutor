@@ -33,7 +33,7 @@ docker compose up -d
 ```
 
 ### 3. Launching the API Server
-Ensure your `.env` contains the correct database URL (`DATABASE_URL=postgresql://postgres:mysecretpassword@localhost:5432/enterprise_platform`), then start the development server:
+Ensure your `.env` contains the correct database URL (`DATABASE_URL=postgresql://postgres:mysecretpassword@localhost:5432/enterprise_platform`) and `APP_ENV=development`, then start the development server. When SMTP is not configured, verification tokens are only returned in development or test mode; production defaults to withholding them:
 ```bash
 uv run python index.py
 ```

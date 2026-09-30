@@ -1,17 +1,17 @@
 import { z } from "zod";
 
 import {
+  examResponseSchema,
   quizGenerationInputSchema,
-  trainerExamResponseSchema,
   type QuizGenerationInput,
-  type TrainerExamResponse
+  type ExamResponse
 } from "./quizGeneratorContract";
 
 type QuizGenerationFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 export type QuizGenerationResult =
   | {
-      exam: TrainerExamResponse;
+      exam: ExamResponse;
       ok: true;
     }
   | {
@@ -20,7 +20,7 @@ export type QuizGenerationResult =
     };
 
 const quizGenerationSuccessSchema = z.object({
-  exam: trainerExamResponseSchema,
+  exam: examResponseSchema,
   ok: z.literal(true)
 });
 

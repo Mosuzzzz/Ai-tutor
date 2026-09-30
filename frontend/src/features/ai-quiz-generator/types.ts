@@ -4,7 +4,7 @@ export type QuizSourceStatus = "ready" | "processing" | "error";
 
 export type QuizSourceType = "document" | "manual" | "course";
 
-export type QuizDraftStatus = "draft" | "ready_to_publish" | "published";
+export type QuizDraftStatus = "draft" | "ready_to_publish" | "published" | "submitted";
 
 export type QuizGenerationRequest = {
   file_id: string;
@@ -78,7 +78,6 @@ export type QuizGeneratorViewModel = {
   selectedSourceId: string;
   generateEndpoint: "/api/exams/generate";
   detailEndpointPattern: "/api/exams/{exam_id}";
-  publishEndpointPattern: "/api/exams/{exam_id}/publish";
   request: QuizGenerationRequest;
   sources: QuizSource[];
   draft: {

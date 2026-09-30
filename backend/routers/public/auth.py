@@ -118,15 +118,17 @@ def register_user(request: schemas.RegisterRequest, db: Session = Depends(get_db
     )
     db.commit()
 
-    # Send verification email if SMTP is configured; otherwise return dev_token for local testing
-    dev_token = verification_token
+    # Only expose a verification token in explicit local/test environments.
+    # A configured mailer failure must never turn into public token disclosure.
+    dev_token = None
     if email_service.is_email_delivery_configured():
         try:
             email_service.send_verification_email(user.email, verification_token)
-            dev_token = None
         except Exception:
-            # Don't block registration on transient email send failures; keep dev_token for debugging
+            # Registration stays generic; the token remains usable if delivery is retried.
             pass
+    elif settings.APP_ENV in {"development", "test"}:
+        dev_token = verification_token
 
     return schemas.AuthActionResponse(
         message="Registration complete. Please verify your email before signing in.",
@@ -258,6 +260,10 @@ def reset_password(request: schemas.ResetPasswordRequest, db: Session = Depends(
     user.password_hash = hash_password(request.new_password)
     user.reset_token_hash = None
     user.reset_token_expires_at = None
+    db.query(RefreshToken).filter(
+        RefreshToken.user_id == user.id,
+        RefreshToken.revoked_at.is_(None),
+    ).update({RefreshToken.revoked_at: datetime.utcnow()}, synchronize_session=False)
     db.add(AuditLog(user_id=user.id, action="PASSWORD_RESET", details="Password reset completed", ip_address="127.0.0.1"))
     db.commit()
 

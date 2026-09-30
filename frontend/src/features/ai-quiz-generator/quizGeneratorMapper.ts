@@ -53,7 +53,7 @@ export const toGeneratedQuizDraft = ({
         source
       })
     ),
-    status: toQuizDraftStatus(examResponse.status),
+    status: toQuizDraftStatus(examResponse.taken_at),
     title: source ? `แบบร่างควิซจาก ${source.filename}` : `แบบร่างควิซ ${examResponse.id}`
   };
 };
@@ -103,7 +103,6 @@ export const toQuizGeneratorViewModel = ({
         value: String(sources.filter((source) => source.status === "ready").length)
       }
     ],
-    publishEndpointPattern: aiQuizGeneratorMock.publishEndpointPattern,
     request: {
       difficulty: "medium",
       file_id: selectedSource?.id ?? "",
@@ -248,12 +247,8 @@ const toQuizQuestionPreview = ({
   };
 };
 
-const toQuizDraftStatus = (status: ExamResponse["status"]): QuizDraftStatus => {
-  if (status === "published") {
-    return "published";
-  }
-
-  return "draft";
+const toQuizDraftStatus = (takenAt: ExamResponse["taken_at"]): QuizDraftStatus => {
+  return takenAt ? "submitted" : "draft";
 };
 
 const resolveOptionLabel = (

@@ -34,6 +34,7 @@ const sourceStatusLabels: Record<QuizSourceStatus, string> = {
 
 const draftStatusLabels: Record<QuizDraftStatus, string> = {
   draft: "แบบร่าง",
+  submitted: "ทำแล้ว",
   published: "เผยแพร่แล้ว",
   ready_to_publish: "พร้อมเผยแพร่"
 };

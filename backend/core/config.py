@@ -18,6 +18,7 @@ class Config:
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", "30"))
+    APP_ENV: str = os.getenv("APP_ENV", "production").strip().lower()
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
     # Google OAuth (consumer social login). Empty by default -> endpoint reports "not configured".
