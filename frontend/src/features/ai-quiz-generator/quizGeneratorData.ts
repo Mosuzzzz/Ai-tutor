@@ -97,7 +97,6 @@ export const aiQuizGeneratorMock: QuizGeneratorViewModel = {
       value: "2"
     }
   ],
-  publishEndpointPattern: "/api/exams/{exam_id}/publish",
   request: {
     difficulty: "medium",
     file_id: "doc-lab-safety",

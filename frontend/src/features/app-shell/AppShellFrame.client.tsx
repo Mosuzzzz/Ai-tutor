@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 
+import { refreshSession } from "../auth/authApiClient";
 import type { AuthSession } from "../auth/types";
 import { ProductLanguageProvider } from "../product-navigation/ProductLanguageContext.client";
 import { ProductNavigation } from "../product-navigation/ProductNavigation";
@@ -14,6 +16,43 @@ type AppShellFrameProps = {
 
 export const AppShellFrame = ({ children, session }: AppShellFrameProps) => {
   const { language, theme, toggleLanguage, toggleTheme } = useProductPreferences();
+  const refreshInFlight = useRef(false);
+
+  useEffect(() => {
+    let lastRefreshAt = 0;
+
+    const refresh = async () => {
+      if (refreshInFlight.current || document.visibilityState === "hidden") {
+        return;
+      }
+
+      refreshInFlight.current = true;
+      const result = await refreshSession();
+      refreshInFlight.current = false;
+
+      if (result.ok) {
+        lastRefreshAt = Date.now();
+      } else if (result.kind === "invalid-credentials") {
+        window.location.assign("/login");
+      }
+    };
+
+    void refresh();
+    const timer = window.setInterval(() => {
+      void refresh();
+    }, 10 * 60 * 1000);
+    const onFocus = () => {
+      if (Date.now() - lastRefreshAt >= 8 * 60 * 1000) {
+        void refresh();
+      }
+    };
+
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
 
   return (
     <ProductLanguageProvider language={language}>

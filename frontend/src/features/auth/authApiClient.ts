@@ -49,6 +49,13 @@ export const submitRegister = async (
   return authJsonRequest("/api/auth/register", "POST", registerBody, fetcher);
 };
 
+export const verifyEmail = async (
+  token: string,
+  fetcher: AuthFetch = globalThis.fetch
+): Promise<AuthSubmissionResult> => {
+  return authJsonRequest("/api/auth/verify-email", "POST", { token }, fetcher);
+};
+
 export const getAuthSession = async (fetcher: AuthFetch = globalThis.fetch): Promise<AuthSubmissionResult> => {
   return authJsonRequest("/api/auth/session", "GET", undefined, fetcher);
 };

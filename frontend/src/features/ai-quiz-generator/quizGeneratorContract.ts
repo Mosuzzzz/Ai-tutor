@@ -37,14 +37,15 @@ export const trainerExamQuestionSchema = baseExamQuestionSchema.extend({
 });
 
 export const learnerExamQuestionSchema = baseExamQuestionSchema.strict();
+export const examQuestionResponseSchema = z.union([trainerExamQuestionSchema, learnerExamQuestionSchema]);
 
 const baseExamResponseSchema = z.object({
   file_id: z.string(),
   id: z.string(),
   score: z.number().nullable().optional(),
-  status: examStatusSchema,
+  status: examStatusSchema.optional(),
   taken_at: z.string().nullable().optional(),
-  tenant_id: z.string(),
+  tenant_id: z.string().optional(),
   user_answers: z.record(z.string(), z.number().int().nonnegative()).nullable().optional()
 });
 
@@ -64,8 +65,9 @@ export const examUpdateInputSchema = z.object({
 
 export const examUpdateResponseSchema = z.object({
   id: z.string(),
-  questions: z.array(trainerExamQuestionSchema),
-  status: examStatusSchema
+  questions: z.array(examQuestionResponseSchema),
+  status: examStatusSchema.optional(),
+  taken_at: z.string().nullable().optional()
 });
 
 export const examPublishResponseSchema = z.object({

@@ -3,3 +3,4 @@ import { authRouteHandlers } from "../_lib/authBffHandlers";
 export const runtime = "nodejs";
 
 export const POST = authRouteHandlers.refresh;
+export const GET = authRouteHandlers.refreshRedirect;

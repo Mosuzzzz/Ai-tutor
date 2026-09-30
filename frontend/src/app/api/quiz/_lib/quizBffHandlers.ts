@@ -13,8 +13,6 @@ import {
   EXAM_GENERATE_API_PATH,
   examDetailApiPath,
   examGenerateRequestSchema,
-  examPublishApiPath,
-  examPublishResponseSchema,
   examResponseSchema,
   examSubmitApiPath,
   examSubmitInputSchema,
@@ -22,8 +20,7 @@ import {
   examUpdateApiPath,
   examUpdateInputSchema,
   examUpdateResponseSchema,
-  quizGenerationInputSchema,
-  trainerExamResponseSchema
+  quizGenerationInputSchema
 } from "../../../../features/ai-quiz-generator/quizGeneratorContract";
 
 export type QuizBackendRequest = <TResponse>(
@@ -97,7 +94,7 @@ export const createQuizRouteHandlers = ({
           body,
           method: "POST",
           path: EXAM_GENERATE_API_PATH,
-          schema: trainerExamResponseSchema
+          schema: examResponseSchema
         });
 
         return createQuizSuccessResponse({ exam });
@@ -105,18 +102,15 @@ export const createQuizRouteHandlers = ({
         return createQuizErrorResponse(error);
       }
     },
-    publish: async (request: Request, { examId }: ExamRouteContext) => {
+    publish: async (request: Request, _context: ExamRouteContext) => {
       try {
+        void _context;
         assertRequestOrigin(request);
-        const accessToken = readAccessToken(request);
-        const publishResult = await backendRequest({
-          accessToken,
-          method: "POST",
-          path: examPublishApiPath(examId),
-          schema: examPublishResponseSchema
-        });
-
-        return createQuizSuccessResponse({ publishResult });
+        readAccessToken(request);
+        return NextResponse.json(
+          { message: "Personal quizzes do not have a publish step.", ok: false },
+          { status: 410 }
+        );
       } catch (error) {
         return createQuizErrorResponse(error);
       }

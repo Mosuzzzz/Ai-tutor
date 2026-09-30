@@ -66,7 +66,16 @@ export const resolvePageSession = async (
   href: ProtectedRouteHref,
   options: ServerAuthSessionOptions = {}
 ): Promise<PageSessionDecision> => {
-  const session = await getServerAuthSession(options);
+  const cookieStore = options.cookieStore ?? (await cookies());
+  const session = await getServerAuthSession({ ...options, cookieStore });
+
+  if (!session && cookieStore.get(AUTH_COOKIE_NAMES.refreshToken)?.value) {
+    return {
+      href: buildRefreshHref(href),
+      type: "redirect"
+    };
+  }
+
   const decision = resolveProtectedRouteDecision(session, href);
 
   if (decision.type === "redirect") {
@@ -90,9 +99,13 @@ export const requirePageSession = async (href: ProtectedRouteHref) => {
 };
 
 export const requireAuthenticatedSession = async () => {
-  const session = await getServerAuthSession();
+  const cookieStore = await cookies();
+  const session = await getServerAuthSession({ cookieStore });
 
   if (!session) {
+    if (cookieStore.get(AUTH_COOKIE_NAMES.refreshToken)?.value) {
+      redirect(buildRefreshHref("/dashboard"));
+    }
     redirect("/login");
   }
 
@@ -100,10 +113,20 @@ export const requireAuthenticatedSession = async () => {
 };
 
 export const redirectAuthenticatedRoute = async () => {
-  const session = await getServerAuthSession();
+  const cookieStore = await cookies();
+  const session = await getServerAuthSession({ cookieStore });
+
+  if (!session && cookieStore.get(AUTH_COOKIE_NAMES.refreshToken)?.value) {
+    redirect(buildRefreshHref("/dashboard"));
+  }
+
   const decision = resolvePublicAuthRouteDecision(session);
 
   if (decision.type === "redirect") {
     redirect(decision.href);
   }
+};
+
+const buildRefreshHref = (returnTo: string) => {
+  return `/api/auth/refresh?returnTo=${encodeURIComponent(returnTo)}`;
 };

@@ -47,6 +47,10 @@ const registerRouteInputSchema = z.object({
   password: z.string().min(8)
 });
 
+const verifyEmailInputSchema = z.object({
+  token: z.string().trim().min(1)
+});
+
 const DEV_EMAIL_VERIFIED_MESSAGE = "สมัครสมาชิกและยืนยันอีเมลสำหรับ local dev แล้ว กรุณาเข้าสู่ระบบ";
 
 export const createAuthRouteHandlers = ({
@@ -60,6 +64,25 @@ export const createAuthRouteHandlers = ({
       host: request.headers.get("host") ?? new URL(request.url).host,
       method: request.method,
       origin: request.headers.get("origin")
+    });
+  };
+
+  const exchangeRefreshToken = async (request: Request) => {
+    const refreshToken = readRequestCookie(request, AUTH_COOKIE_NAMES.refreshToken);
+
+    if (!refreshToken) {
+      throw new ApiClientError({
+        code: "unauthorized",
+        message: "Missing refresh token",
+        status: 401
+      });
+    }
+
+    return backendRequest({
+      body: { refresh_token: refreshToken },
+      method: "POST",
+      path: "/api/auth/token/refresh",
+      schema: tokenResponseSchema
     });
   };
 
@@ -120,37 +143,39 @@ export const createAuthRouteHandlers = ({
     refresh: async (request: Request) => {
       try {
         assertRequestOrigin(request);
-        const refreshToken = readRequestCookie(request, AUTH_COOKIE_NAMES.refreshToken);
-
-        if (!refreshToken) {
-          return createAuthErrorResponse(
-            new ApiClientError({
-              code: "unauthorized",
-              message: "Missing refresh token",
-              status: 401
-            })
-          );
-        }
-
-        const token = await backendRequest({
-          body: {
-            refresh_token: refreshToken
-          },
-          method: "POST",
-          path: "/api/auth/token/refresh",
-          schema: tokenResponseSchema
-        });
-        const session = await backendRequest({
-          accessToken: token.access_token,
-          path: "/api/auth/session",
-          schema: sessionResponseSchema
-        });
-        const response = createSessionResponse("ต่ออายุ session สำเร็จ", session);
+        const token = await exchangeRefreshToken(request);
+        const response = NextResponse.json(
+          { message: "ต่ออายุ session สำเร็จ", ok: true },
+          { status: 200 }
+        );
         setTokenCookies(response, token);
+        response.headers.set("Cache-Control", "no-store");
 
         return response;
       } catch (error) {
         return createAuthErrorResponse(error);
+      }
+    },
+
+    refreshRedirect: async (request: Request) => {
+      const returnTo = resolveSafeReturnTo(request);
+
+      try {
+        const token = await exchangeRefreshToken(request);
+        const response = NextResponse.redirect(new URL(returnTo, request.url));
+        setTokenCookies(response, token);
+        response.headers.set("Cache-Control", "no-store");
+        return response;
+      } catch (error) {
+        const isTransientFailure =
+          error instanceof ApiClientError &&
+          (error.status === undefined || error.status >= 500 || error.status < 400);
+        const response = NextResponse.redirect(new URL(isTransientFailure ? "/" : "/login", request.url));
+        if (!isTransientFailure) {
+          clearTokenCookies(response);
+        }
+        response.headers.set("Cache-Control", "no-store");
+        return response;
       }
     },
 
@@ -199,6 +224,29 @@ export const createAuthRouteHandlers = ({
             requiresEmailVerification: Boolean(result.requires_email_verification)
           },
           { status: 201 }
+        );
+      } catch (error) {
+        return createAuthErrorResponse(error);
+      }
+    },
+
+    verifyEmail: async (request: Request) => {
+      try {
+        assertRequestOrigin(request);
+        const input = verifyEmailInputSchema.parse(await readRouteJson(request));
+        const result = await backendRequest({
+          body: input,
+          method: "POST",
+          path: "/api/auth/verify-email",
+          schema: authActionResponseSchema
+        });
+
+        return NextResponse.json(
+          {
+            message: result.message || "Email verified successfully.",
+            ok: true
+          },
+          { status: 200 }
         );
       } catch (error) {
         return createAuthErrorResponse(error);
@@ -370,3 +418,16 @@ function getConfiguredAllowedOrigins() {
     .map((origin) => origin.trim())
     .filter(Boolean);
 }
+
+const resolveSafeReturnTo = (request: Request) => {
+  const target = new URL(request.url).searchParams.get("returnTo");
+
+  if (!target || !target.startsWith("/") || target.startsWith("//") || target.includes("\\")) {
+    return "/dashboard";
+  }
+
+  const resolved = new URL(target, request.url);
+  return resolved.origin === new URL(request.url).origin
+    ? `${resolved.pathname}${resolved.search}${resolved.hash}`
+    : "/dashboard";
+};

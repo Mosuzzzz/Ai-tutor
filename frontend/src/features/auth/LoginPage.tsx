@@ -10,7 +10,7 @@ import { Button } from "../../components/ui/Button";
 import { AuthField, AuthStatus, PlannedGoogleAuth } from "./AuthFormFields";
 import { AuthShell } from "./AuthShell";
 import type { AuthVisualState } from "./AuthStudyCompanion";
-import { submitLogin } from "./authApiClient";
+import { submitLogin, verifyEmail } from "./authApiClient";
 import { AUTH_COPY, AUTH_FEEDBACK, AUTH_MESSAGES, INITIAL_LOGIN_FORM } from "./authContent";
 import { AUTHENTICATED_HOME_ROUTE } from "./authRoutePolicy";
 import { validateLogin } from "./authValidation";
@@ -35,12 +35,13 @@ const getLoginFailureFeedback = (submission: Extract<AuthSubmissionResult, { ok:
   return AUTH_FEEDBACK.login.unavailable;
 };
 
-export const LoginPage = () => {
+export const LoginPage = ({ verificationToken }: { verificationToken?: string }) => {
   const router = useRouter();
   const [form, setForm] = useState<LoginInput>(INITIAL_LOGIN_FORM);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof LoginInput, string>>>({});
   const [submissionStatus, setSubmissionStatus] = useState<AuthSubmissionStatus>("idle");
   const [submissionFeedback, setSubmissionFeedback] = useState<AuthFeedback | null>(null);
+  const [verificationFeedback, setVerificationFeedback] = useState<(AuthFeedback & { tone: "error" | "info" | "success" }) | null>(null);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [visualState, setVisualState] = useState<AuthVisualState>("idle");
   const redirectTimerRef = useRef<number | null>(null);
@@ -54,6 +55,32 @@ export const LoginPage = () => {
       window.clearTimeout(redirectTimerRef.current);
     }
   }, []);
+
+  useEffect(() => {
+    if (!verificationToken) {
+      return;
+    }
+
+    let active = true;
+    window.history.replaceState(null, "", "/login");
+    setVerificationFeedback({ title: "กำลังยืนยันอีเมล", tone: "info" });
+    void verifyEmail(verificationToken).then((result) => {
+      if (!active) {
+        return;
+      }
+
+      setVerificationFeedback({
+        tone: result.ok ? "success" : "error",
+        title: result.ok
+          ? "ยืนยันอีเมลสำเร็จ กรุณาเข้าสู่ระบบ"
+          : "ลิงก์ยืนยันไม่ถูกต้องหรือหมดอายุ"
+      });
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [verificationToken]);
 
   const updateField = (field: keyof LoginInput, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -122,6 +149,9 @@ export const LoginPage = () => {
       </div>
 
       <form className="space-y-5" noValidate onSubmit={handleSubmit}>
+        {verificationFeedback ? (
+          <AuthStatus {...verificationFeedback} />
+        ) : null}
         {submissionStatus !== "idle" && submissionFeedback && (
           <AuthStatus
             tone={
